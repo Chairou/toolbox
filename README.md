@@ -18,7 +18,8 @@
         func PostJSON(url string, body interface{}) Helper //发送POST请求, 内容为JSON格式的body
         func UrlPathEscape(url string) string //对URL进行转义
         func (p *baseResult) BaseResult() *baseResult // BaseResult 返回Http请求的基本结果，包含Status和Body
-        func (p *jsonResult) Bind(object interface{}, path ...interface{}) error // Bind 将返回值存储到Object中
+        func (p *jsonResult) Bind(object interface{}, path ...interface{}) error 
+        // Bind 将返回值存储到Object中
         注意, 测试用例中有对返回字串和JSON串的处理方法
 
 ### logger
@@ -55,7 +56,8 @@
         func (c *RedisPool) HMGet(key string, values ...string) ([]string, error) // redis HMGET
         func (c *RedisPool) HMSet(key string, kv map[string]string) (string, error) // redis HMSET
         func (c *RedisPool) HGetAll(key string) (map[string]string, error) // redis HGETALL
-        func (c *RedisPool) HSetEX(key, field string, value interface{}, expire int) (int64, error) // redis HSET and expire
+        func (c *RedisPool) HSetEX(key, field string, value interface{}, expire int) (int64, error) 
+        // redis HSET and expire
         func (c *RedisPool) Increment(key string) (int64, error) // redis INCR
         func (c *RedisPool) LIndex(key string, index int) (string, error) // redis LINDEX
         func (c *RedisPool) LLen(key string) (int64, error) //redis LLEN
@@ -113,7 +115,8 @@
         func TimePtr(val interface{}) *time.Time // 把上述3种类型转为time指针
         func StringToArray(ext string) (array []string, err error) //"-a 123 -b hello" ---> ["-a","123","-b","hello"]
         func StringToMap(ext string) (map[string]string, error) // "-a 123 -b hello" ---> {"-a":"123","-b":"hello"}
-        func JsonToArray(ext string) ([]string, error) // "{\"-a\":\"123\",\"-b\":\"hello\"}" ---> ["-a","123","-b","hello"]
+        func JsonToArray(ext string) ([]string, error) 
+        // "{\"-a\":\"123\",\"-b\":\"hello\"}" ---> ["-a","123","-b","hello"]
         func JsonToString(ext string) (string, error) // "{\"-a\":\"123\",\"-b\":\"hello\"}" ---> "-a 123 -b hello"
         func StructToMap(in interface{}, tagName string) (map[string]interface{}, error) // 结构体转为Map
 

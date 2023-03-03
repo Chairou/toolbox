@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net"
 	"regexp"
-	"runtime"
 	"strconv"
 	"strings"
 )
@@ -20,33 +19,8 @@ func HashString(str string) string {
 	return hex.EncodeToString(bs)
 }
 
-func GetLocalIPAddr() string {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		return ""
-	}
-	for _, addr := range addrs {
-		ipaddr, _, err := net.ParseCIDR(addr.String())
-		if err != nil {
-			continue
-		}
-		if ipaddr.IsLoopback() {
-			continue
-		}
-		if ipaddr.To4() != nil {
-			if runtime.GOOS == "darwin" {
-				if !strings.HasPrefix(ipaddr.String(), "192") {
-					continue
-				}
-			}
-			return ipaddr.String()
-		}
-	}
-	return ""
-}
-
-// FilteredSQLInject 正则过滤sql注入的方法
-func FilteredSQLInject(toMatchStr string) bool {
+// IsSQLInject 正则过滤sql注入的方法
+func IsSQLInject(toMatchStr string) bool {
 	str := `(?:')|(?:--)|(/\\*(?:.|[\\n\\r])*?\\*/)|(?i)(\b(select|update|and|or|delete|insert|trancate|char|chr|into|substr|ascii|declare|exec|count|master|into|drop|execute)\b)`
 	re, err := regexp.Compile(str)
 	if err != nil {
@@ -124,7 +98,7 @@ func IntToByte(data int, len uintptr) (ret []byte) {
 	return ret
 }
 
-func CheckQQNumber(qq string) (err error) {
+func IsQQNumber(qq string) (err error) {
 	pattern := "^[1-9][0-9]{4,13}$"
 	matched, err := regexp.MatchString(pattern, qq)
 	if err != nil {
@@ -133,13 +107,13 @@ func CheckQQNumber(qq string) (err error) {
 	if !matched {
 		//长度验证
 		if len(qq) < 5 {
-			return fmt.Errorf("输入的QQ号[%s]格式不正确,请输入正确的QQ!", qq)
+			return fmt.Errorf("输入的QQ号[%s]格式不正确,请输入正确的QQ", qq)
 		}
 	}
 	return nil
 }
 
-func CheckOpenid(openid string) (err error) {
+func IsOpenid(openid string) (err error) {
 	//验证是否为openid
 	pattern := "^[a-zA-Z0-9_-]{28,34}$"
 	matched, err := regexp.MatchString(pattern, openid)
@@ -149,13 +123,13 @@ func CheckOpenid(openid string) (err error) {
 	if !matched {
 		//长度验证
 		if len(openid) < 5 {
-			return fmt.Errorf("输入的openid[%s]格式不正确,请输入正确的openid!", openid)
+			return fmt.Errorf("输入的openid[%s]格式不正确,请输入正确的openid", openid)
 		}
 	}
 	return nil
 }
 
-func CheckEmail(email string) (err error) {
+func IsEmail(email string) (err error) {
 	//验证是否为email
 	pattern := "^[a-z0-9]{1}[a-z0-9_-]{1,}@[a-z0-9]{1,}(.[a-z]{2,})*.[a-z]{2,}$"
 	matched, err := regexp.MatchString(pattern, email)
@@ -163,28 +137,15 @@ func CheckEmail(email string) (err error) {
 		return err
 	}
 	if !matched {
-		return fmt.Errorf("输入的邮箱地址[%s]格式不正确,请输入正确的邮箱地址!", email)
+		return fmt.Errorf("输入的邮箱地址[%s]格式不正确,请输入正确的邮箱地址", email)
 	}
 	return nil
 }
 
-func CheckMobile(mobile string) bool {
+func IsMobile(mobile string) bool {
 	reg := `^1([38][0-9]|14[579]|5[^4]|16[6]|7[1-35-8]|9[189])\d{8}$`
 	rgx := regexp.MustCompile(reg)
 	return rgx.MatchString(mobile)
-}
-
-func CheckIdCard(idCard string) (err error) {
-	//验证是否为idCard
-	pattern := "^[1-9]{1}d{5}[1-9]{2}d{9}[Xx0-9]{1}$"
-	matched, err := regexp.MatchString(pattern, idCard)
-	if err != nil {
-		return err
-	}
-	if !matched {
-		return fmt.Errorf("输入的身份证号码[%s]格式不正确,请输入正确的身份证号码!", idCard)
-	}
-	return nil
 }
 
 // IsValidIDCardNumber 只能用到2099年, 到达2100年就会出错
@@ -241,8 +202,8 @@ func IsValidIDCardCheckSum(idCard string) bool {
 	return checkCode == string(idCard[17])
 }
 
-// CheckField 检查合法输入, 白名单, 汉字, 数字, 字母,下划线,点
-func CheckField(field string) (err error) {
+// IsValidField 检查合法输入, 白名单, 汉字, 数字, 字母,下划线,点
+func IsValidField(field string) (err error) {
 	if len(field) <= 0 {
 		return fmt.Errorf("field is null")
 	}
@@ -253,12 +214,12 @@ func CheckField(field string) (err error) {
 		return err
 	}
 	if !matched {
-		return fmt.Errorf("所传字段[%s]存在注入风险!", field)
+		return fmt.Errorf("所传字段[%s]存在注入风险", field)
 	}
 	return nil
 }
 
-func CheckIP(ip string) bool {
+func IsIP(ip string) bool {
 	address := net.ParseIP(ip)
 	if address == nil {
 		fmt.Println("ip地址格式不正确")

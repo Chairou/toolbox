@@ -10,7 +10,7 @@ import (
 
 var redisMap sync.Map
 
-type RedisPool struct {
+type RdPool struct {
 	pool   *redigo.Pool
 	Name   string
 	addr   string
@@ -18,12 +18,12 @@ type RedisPool struct {
 }
 
 // NewRedis 生成新的redis实例并放入Pool中
-func NewRedis(name string, addr string, passwd string) *RedisPool {
+func NewRedis(name string, addr string, passwd string) *RdPool {
 	inst, ok := redisMap.Load(name)
 	if ok {
-		return inst.(*RedisPool)
+		return inst.(*RdPool)
 	} else {
-		inst := &RedisPool{addr: addr, passwd: passwd}
+		inst := &RdPool{addr: addr, passwd: passwd}
 		inst.newRedisPool(addr, passwd)
 		redisMap.Store(name, inst)
 		return inst
@@ -31,27 +31,27 @@ func NewRedis(name string, addr string, passwd string) *RedisPool {
 }
 
 // GetRedisPool 每次用前先获得redis pool的实例
-func GetRedisPool(name string) (*RedisPool, error) {
+func GetRedisPool(name string) (*RdPool, error) {
 	inst, ok := redisMap.Load(name)
 	if ok {
-		return inst.(*RedisPool), nil
+		return inst.(*RdPool), nil
 	} else {
 		return nil, errors.New("get redis pool from syncMap err.")
 	}
 }
 
 // GetRedisByName 不处理错误, 连写方式
-func GetRedisByName(name string) *RedisPool {
+func GetRedisByName(name string) *RdPool {
 	inst, ok := redisMap.Load(name)
 	if ok {
-		return inst.(*RedisPool)
+		return inst.(*RdPool)
 	} else {
 		fmt.Println("GetRedisByName err:", name)
 		return nil
 	}
 }
 
-func (c *RedisPool) newRedisPool(addr string, passwd string) {
+func (c *RdPool) newRedisPool(addr string, passwd string) {
 	setPasswd := redigo.DialPassword(passwd)
 	c.pool = &redigo.Pool{
 		MaxIdle:     5,
@@ -71,7 +71,7 @@ func (c *RedisPool) newRedisPool(addr string, passwd string) {
 // redis> GET mykey
 // "Hello"
 // redis>
-func (c *RedisPool) Get(key string) (string, error) {
+func (c *RdPool) Get(key string) (string, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -84,7 +84,7 @@ func (c *RedisPool) Get(key string) (string, error) {
 }
 
 // SilenceGet 不会返回错误, 只返回空
-func (c *RedisPool) SilenceGet(key string) string {
+func (c *RdPool) SilenceGet(key string) string {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -99,7 +99,7 @@ func (c *RedisPool) SilenceGet(key string) string {
 // HGet
 // redis> HGET myhash field1
 // "foo"
-func (c *RedisPool) HGet(key string, subKey string) (string, error) {
+func (c *RdPool) HGet(key string, subKey string) (string, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -114,7 +114,7 @@ func (c *RedisPool) HGet(key string, subKey string) (string, error) {
 // Set
 // redis> SET mykey "Hello"
 // "OK"
-func (c *RedisPool) Set(key string, val string) (string, error) {
+func (c *RdPool) Set(key string, val string) (string, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -129,7 +129,7 @@ func (c *RedisPool) Set(key string, val string) (string, error) {
 // HSet
 // redis> HSET myhash field1 "foo"
 // (integer) 1
-func (c *RedisPool) HSet(key string, subKey string, val string) (int64, error) {
+func (c *RdPool) HSet(key string, subKey string, val string) (int64, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -148,7 +148,7 @@ func (c *RedisPool) HSet(key string, subKey string, val string) (int64, error) {
 // "OK"
 // redis> DEL key1 key2 key3
 // (integer) 2
-func (c *RedisPool) Del(key string) (int64, error) {
+func (c *RdPool) Del(key string) (int64, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -161,7 +161,7 @@ func (c *RedisPool) Del(key string) (int64, error) {
 }
 
 // Do 通用接口
-func (c *RedisPool) Do(commandName string, args ...interface{}) (interface{}, error) {
+func (c *RdPool) Do(commandName string, args ...interface{}) (interface{}, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -174,7 +174,7 @@ func (c *RedisPool) Do(commandName string, args ...interface{}) (interface{}, er
 }
 
 // ClosePool 关闭连接池
-func (c *RedisPool) ClosePool() error {
+func (c *RdPool) ClosePool() error {
 	err := c.pool.Close()
 	redisMap.Delete(c.Name)
 	if err != nil {
@@ -190,7 +190,7 @@ func (c *RedisPool) ClosePool() error {
 // (integer) 1
 // redis> TTL mykey
 // (integer) 10
-func (c *RedisPool) Expired(key string, seconds int) (int64, error) {
+func (c *RdPool) Expired(key string, seconds int) (int64, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -202,7 +202,7 @@ func (c *RedisPool) Expired(key string, seconds int) (int64, error) {
 	return ret, nil
 }
 
-func (c *RedisPool) Ttl(key string) (int64, error) {
+func (c *RdPool) Ttl(key string) (int64, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -223,7 +223,7 @@ func (c *RedisPool) Ttl(key string) (int64, error) {
 // 1) "Hello"
 // 2) "World"
 // 3) (nil)
-func (c *RedisPool) HMGet(key string, values ...string) ([]string, error) {
+func (c *RdPool) HMGet(key string, values ...string) ([]string, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -242,7 +242,7 @@ func (c *RedisPool) HMGet(key string, values ...string) ([]string, error) {
 // "Hello"
 // redis> HGET myhash field2
 // "World"
-func (c *RedisPool) HMSet(key string, kv map[string]string) (string, error) {
+func (c *RdPool) HMSet(key string, kv map[string]string) (string, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -259,7 +259,7 @@ func (c *RedisPool) HMSet(key string, kv map[string]string) (string, error) {
 // (integer) 1
 // redis> HDEL myhash field1
 // (integer) 1
-func (c *RedisPool) HDel(key string, fields ...string) (int64, error) {
+func (c *RdPool) HDel(key string, fields ...string) (int64, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -281,7 +281,7 @@ func (c *RedisPool) HDel(key string, fields ...string) (int64, error) {
 // 2) "Hello"
 // 3) "field2"
 // 4) "World"
-func (c *RedisPool) HGetAll(key string) (map[string]string, error) {
+func (c *RdPool) HGetAll(key string) (map[string]string, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -300,7 +300,7 @@ func (c *RedisPool) HGetAll(key string) (map[string]string, error) {
 // (integer) 1
 // 127.0.0.1:6379> ttl chair
 // (integer) 8
-func (c *RedisPool) HSetEX(key, field string, value interface{}, expire int) (int64, error) {
+func (c *RdPool) HSetEX(key, field string, value interface{}, expire int) (int64, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -323,7 +323,7 @@ func (c *RedisPool) HSetEX(key, field string, value interface{}, expire int) (in
 // (integer) 11
 // redis> GET mykey
 // "11"
-func (c *RedisPool) Increment(key string) (int64, error) {
+func (c *RdPool) Increment(key string) (int64, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -346,7 +346,7 @@ func (c *RedisPool) Increment(key string) (int64, error) {
 // "World"
 // redis> LINDEX mylist 3
 // (nil)
-func (c *RedisPool) LIndex(key string, index int) (string, error) {
+func (c *RdPool) LIndex(key string, index int) (string, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -366,7 +366,7 @@ func (c *RedisPool) LIndex(key string, index int) (string, error) {
 // redis> LLEN mylist
 // (integer) 2
 // redis>
-func (c *RedisPool) LLen(key string) (int64, error) {
+func (c *RdPool) LLen(key string) (int64, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -389,7 +389,7 @@ func (c *RedisPool) LLen(key string) (int64, error) {
 // redis> LRANGE mylist 0 -1
 // 1) "four"
 // 2) "five"
-func (c *RedisPool) LPop(key string) (string, error) {
+func (c *RdPool) LPop(key string) (string, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -409,7 +409,7 @@ func (c *RedisPool) LPop(key string) (string, error) {
 // redis> LRANGE mylist 0 -1
 // 1) "hello"
 // 2) "world"
-func (c *RedisPool) LPush(key string, values ...interface{}) (int64, error) {
+func (c *RdPool) LPush(key string, values ...interface{}) (int64, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -437,7 +437,7 @@ func (c *RedisPool) LPush(key string, values ...interface{}) (int64, error) {
 // 2) "World"
 // redis> LRANGE myotherlist 0 -1
 // (empty array)
-func (c *RedisPool) LPushX(key string, values ...interface{}) (int64, error) {
+func (c *RdPool) LPushX(key string, values ...interface{}) (int64, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -467,7 +467,7 @@ func (c *RedisPool) LPushX(key string, values ...interface{}) (int64, error) {
 // redis> LRANGE mylist 0 -1
 // 1) "hello"
 // 2) "foo"
-func (c *RedisPool) LRem(key string, count int, value string) (int64, error) {
+func (c *RdPool) LRem(key string, count int, value string) (int64, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -494,7 +494,7 @@ func (c *RedisPool) LRem(key string, count int, value string) (int64, error) {
 // 1) "four"
 // 2) "five"
 // 3) "three"
-func (c *RedisPool) LSet(key, value string, index int) (int64, error) {
+func (c *RdPool) LSet(key, value string, index int) (int64, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -518,7 +518,7 @@ func (c *RedisPool) LSet(key, value string, index int) (int64, error) {
 // redis> LRANGE mylist 0 -1
 // 1) "two"
 // 2) "three"
-func (c *RedisPool) LTrim(key string, start, stop int) (string, error) {
+func (c *RdPool) LTrim(key string, start, stop int) (string, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -530,7 +530,7 @@ func (c *RedisPool) LTrim(key string, start, stop int) (string, error) {
 	return ret, nil
 }
 
-func (c *RedisPool) MGet(keys ...string) ([]string, error) {
+func (c *RdPool) MGet(keys ...string) ([]string, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -543,7 +543,7 @@ func (c *RedisPool) MGet(keys ...string) ([]string, error) {
 }
 
 // MSet redis> MSET key1 "Hello" key2 "World"
-func (c *RedisPool) MSet(pairs ...interface{}) (string, error) {
+func (c *RdPool) MSet(pairs ...interface{}) (string, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -558,7 +558,7 @@ func (c *RedisPool) MSet(pairs ...interface{}) (string, error) {
 // Ping
 // redis> PING
 // "PONG"
-func (c *RedisPool) Ping() (string, error) {
+func (c *RdPool) Ping() (string, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -578,7 +578,7 @@ func (c *RedisPool) Ping() (string, error) {
 // redis> GET mykey
 // "Hello"
 // redis>
-func (c *RedisPool) SetEX(key string, value interface{}, expire int) (string, error) {
+func (c *RdPool) SetEX(key string, value interface{}, expire int) (string, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -597,7 +597,7 @@ func (c *RedisPool) SetEX(key string, value interface{}, expire int) (string, er
 // (integer) 0
 // redis> GET mykey
 // "Hello"
-func (c *RedisPool) SetNX(key string, value interface{}, expire int) (int64, error) {
+func (c *RdPool) SetNX(key string, value interface{}, expire int) (int64, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
@@ -609,7 +609,7 @@ func (c *RedisPool) SetNX(key string, value interface{}, expire int) (int64, err
 	return ret, nil
 }
 
-func (c *RedisPool) LRange(key string, start, stop int64) ([]string, error) {
+func (c *RdPool) LRange(key string, start, stop int64) ([]string, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()

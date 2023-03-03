@@ -4,11 +4,11 @@ import (
 	"testing"
 )
 
-//  go test -v valiad_test.go checkValiad.go
+//  go test -v valiad_test.go valiad.go
 
 func TestFilteredSQLInject(t *testing.T) {
 	str := "id OR (SELECT*FROM(SELECT(SLEEP(3)))plko) limit 1"
-	if FilteredSQLInject(str) {
+	if IsSQLInject(str) {
 		t.Log("true, has injected")
 	} else {
 		t.Error("false, filter error")
@@ -40,7 +40,7 @@ func TestIsNumeric(t *testing.T) {
 
 func TestCheckEmail(t *testing.T) {
 	email := "test@example.com"
-	err := CheckEmail(email)
+	err := IsEmail(email)
 	if err != nil {
 		t.Error(email, err)
 	}
@@ -48,11 +48,11 @@ func TestCheckEmail(t *testing.T) {
 
 func TestCheckMobile(t *testing.T) {
 	mobileNumber := "18675511217"
-	ok := CheckMobile(mobileNumber)
+	ok := IsMobile(mobileNumber)
 	if ok == true {
-		t.Log("CheckMobile correct")
+		t.Log("IsMobile correct")
 	} else {
-		t.Error("CheckMobile wrong")
+		t.Error("IsMobile wrong")
 	}
 }
 
@@ -75,21 +75,62 @@ func TestCheckId(t *testing.T) {
 
 func TestCheckField(t *testing.T) {
 	str := "我.爱.宝贝kerr123-"
-	err := CheckField(str)
+	err := IsValidField(str)
 	if err != nil {
-		t.Error("CheckField err:", err)
+		t.Error("IsValidField err:", err)
 	}
 }
 
 func TestCheckIP(t *testing.T) {
 	ip := "127.0.0.1"
-	ok := CheckIP(ip)
+	ok := IsIP(ip)
 	if ok == false {
-		t.Error("CheckIP err:", ip)
+		t.Error("IsIP err:", ip)
 	}
 	ip = "2001:0db8:86a3:08d3:1319:8a2e:0370:7344"
-	ok = CheckIP(ip)
+	ok = IsIP(ip)
 	if ok == false {
-		t.Error("CheckIP err:", ip)
+		t.Error("IsIP err:", ip)
+	}
+}
+
+func TestCheckQQNumber(t *testing.T) {
+	qqNumber := "414141"
+	err := IsQQNumber(qqNumber)
+	if err != nil {
+		t.Error("CheckQQNumber err:", err)
+	}
+}
+
+func TestIntToByte(t *testing.T) {
+	var aa int = 16
+	byteList := IntToByte(aa, 4)
+	t.Log(byteList)
+	if byteList[0] != 16 {
+		t.Error("CheckIntToByte err:")
+	}
+}
+
+func TestSaltMD5(t *testing.T) {
+	source := "123"
+	dig := SaltMD5(source)
+	if dig != "6226dd203e19b0bc02ee41af34275a44" {
+		t.Error("CheckSaltMD5 err:", dig)
+	}
+}
+
+func TestIsOpenid(t *testing.T) {
+	openid := "wx_a123456789012345678901234567890"
+	err := IsOpenid(openid)
+	if err != nil {
+		t.Error("CheckIsOpenid err:", err)
+	}
+}
+
+func TestHashString(t *testing.T) {
+	source := "123"
+	dig := HashString(source)
+	if dig != "40bd001563085fc35165329ea1ff5c5ecbdbbeef" {
+		t.Error("HashString err:", dig)
 	}
 }

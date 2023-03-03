@@ -2,6 +2,7 @@ package conf
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"runtime"
@@ -14,13 +15,9 @@ import (
 // parameters envName
 // return envValue
 func GetEnvironment(envName string) (envValue string) {
-	log, err := logger.NewLogPool("internal.log")
-	if err != nil {
-		fmt.Println("GetEnvironment|NewLogPool err:", err)
-	}
 	envValue = os.Getenv(envName)
 	if envValue == "" {
-		log.Errorln("Getenv null:", envName)
+		log.Print("Getenv null:", envName)
 		return ""
 	}
 	return envValue
@@ -76,4 +73,20 @@ func GetLocalIPAddr() string {
 		}
 	}
 	return ""
+}
+
+func SetEnv(key string, value string) error {
+	err := os.Setenv(key, value)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UnSetEnv(key string) error {
+	err := os.Unsetenv(key)
+	if err != nil {
+		return err
+	}
+	return nil
 }

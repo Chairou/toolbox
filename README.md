@@ -1,5 +1,5 @@
 # toolbox
-    一个简单, 尽量少依赖的goilang工具箱和开发库, 联系email<chairou#tencent.com, chair.ou#gmail.com>
+    一个简单, 尽量少依赖的golang工具箱和开发库, 联系email<chair.ou#gmail.com>
 
 # 创作动机
 近二十年的技术工作, 发现自己并没有太多的积累,所以, 我开始了这个项目, 
@@ -27,7 +27,7 @@
         注意, 测试用例中有对返回字串和JSON串的处理方法
 
 ### logger
-    用途: 最简单的打日志
+    用途: 最简单的打日志, 支持日志分割,日志等级调整
     测试用例: go test -v log_test.go logger.go
     主要函数:
         func NewLogPool(fileName string) (*logPool, error) // 生成日志实例

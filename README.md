@@ -48,13 +48,13 @@
         func GetRedisPool(name string) (*RedisPool, error) // 获取redis实例
         func GetRedisByName(name string) *RedisPool // 获取redis实例, 忽略错误
         func (c *RedisPool) Get(key string) (string, error) // redis GET
-        func (c *RedisPool) SilenceGet(key string) string // 不会返回错误, 有问题只返回空字串
+        func (c *RedisPool) SilenceGet(key string) string // 静默获取kv, 不会返回错误, 有问题只返回空字串
         func (c *RedisPool) HGet(key string, subKey string) (string, error) // redis HGET
         func (c *RedisPool) Set(key string, val string) (string, error) // redis SET
         func (c *RedisPool) HSet(key string, subKey string, val string) (int64, error) // redis HSET
         func (c *RedisPool) Del(key string) (int64, error) // redis DEL
         func (c *RedisPool) Do(commandName string, args ...interface{}) (interface{}, error) // redis DO 通用接口
-        func (c *RedisPool) ClosePool() error // 关闭连接池
+        func (c *RedisPool) ClosePool() error // 关闭连接池, 释放sync.Map
         func (c *RedisPool) Expired(key string, seconds int) (int64, error) // redis expire
         func (c *RedisPool) Ttl(key string) (int64, error) // redis TTL
         func (c *RedisPool) HMGet(key string, values ...string) ([]string, error) // redis HMGET

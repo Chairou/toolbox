@@ -14,6 +14,12 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
+const (
+	TIME_DATE      string = "2006-01-02"
+	TIME_NORMAL    string = "2006-01-02 15:04:05"
+	TIME_SHORTDATE string = "20060102"
+)
+
 func GbkToUtf8(s []byte) ([]byte, error) {
 	reader := transform.NewReader(bytes.NewReader(s), simplifiedchinese.GBK.NewDecoder())
 	d, e := io.ReadAll(reader)
@@ -36,17 +42,17 @@ func String(val interface{}) string {
 	if val == nil {
 		return ""
 	}
-	re_value := reflect.ValueOf(val)
-	for re_value.Kind() == reflect.Ptr {
-		re_value = re_value.Elem()
-		if !re_value.IsValid() {
+	reValue := reflect.ValueOf(val)
+	for reValue.Kind() == reflect.Ptr {
+		reValue = reValue.Elem()
+		if !reValue.IsValid() {
 			return ""
 		}
-		val = re_value.Interface()
+		val = reValue.Interface()
 		if val == nil {
 			return ""
 		}
-		re_value = reflect.ValueOf(val)
+		reValue = reflect.ValueOf(val)
 	}
 	if val == nil {
 		return ""
@@ -66,17 +72,17 @@ func Int64(val interface{}) (int64, bool) {
 	if val == nil {
 		return 0, false
 	}
-	re_value := reflect.ValueOf(val)
-	for re_value.Kind() == reflect.Ptr {
-		re_value = re_value.Elem()
-		if !re_value.IsValid() {
+	reValue := reflect.ValueOf(val)
+	for reValue.Kind() == reflect.Ptr {
+		reValue = reValue.Elem()
+		if !reValue.IsValid() {
 			return 0, false
 		}
-		val = re_value.Interface()
+		val = reValue.Interface()
 		if val == nil {
 			return 0, false
 		}
-		re_value = reflect.ValueOf(val)
+		reValue = reflect.ValueOf(val)
 	}
 	if val == nil {
 		return 0, false
@@ -106,7 +112,7 @@ func Int64(val interface{}) (int64, bool) {
 	case int32:
 		return int64(v), true
 	case int64:
-		return int64(v), true
+		return v, true
 	case float32:
 		return int64(v), true
 	case float64:
@@ -130,17 +136,17 @@ func Uint64(val interface{}) (uint64, bool) {
 	if val == nil {
 		return 0, false
 	}
-	re_value := reflect.ValueOf(val)
-	for re_value.Kind() == reflect.Ptr {
-		re_value = re_value.Elem()
-		if !re_value.IsValid() {
+	reValue := reflect.ValueOf(val)
+	for reValue.Kind() == reflect.Ptr {
+		reValue = reValue.Elem()
+		if !reValue.IsValid() {
 			return 0, false
 		}
-		val = re_value.Interface()
+		val = reValue.Interface()
 		if val == nil {
 			return 0, false
 		}
-		re_value = reflect.ValueOf(val)
+		reValue = reflect.ValueOf(val)
 	}
 	if val == nil {
 		return 0, false
@@ -160,7 +166,7 @@ func Uint64(val interface{}) (uint64, bool) {
 	case uint32:
 		return uint64(v), true
 	case uint64:
-		return uint64(v), true
+		return v, true
 	case int8:
 		return uint64(v), true
 	case int16:
@@ -191,13 +197,13 @@ func Uint64(val interface{}) (uint64, bool) {
 }
 
 func Int(val interface{}) (int, bool) {
-	ival, succ := Int64(val)
-	return int(ival), succ
+	tmpVal, suc := Int64(val)
+	return int(tmpVal), suc
 }
 
 func Uint(val interface{}) (uint, bool) {
-	uval, succ := Uint64(val)
-	return uint(uval), succ
+	tmpVal, suc := Uint64(val)
+	return uint(tmpVal), suc
 }
 
 func Float64(val interface{}) (float64, bool) {
@@ -248,7 +254,7 @@ func Float64(val interface{}) (float64, bool) {
 	case float32:
 		return float64(v), true
 	case float64:
-		return float64(v), true
+		return v, true
 	case []byte:
 		return Float64(string(v))
 	case string:
@@ -264,8 +270,8 @@ func Float64(val interface{}) (float64, bool) {
 }
 
 func Bool(val interface{}) (bool, bool) {
-	ival, succ := Int64(val)
-	return ival != 0, succ
+	tmpVal, suc := Int64(val)
+	return tmpVal != 0, suc
 }
 
 func IsNil(val interface{}) bool {
@@ -311,11 +317,11 @@ func Time(val interface{}) (time.Time, bool) {
 		var err error
 		switch tlen {
 		case 8:
-			t, err = time.ParseInLocation("20060102", v, time.Local)
+			t, err = time.ParseInLocation(TIME_SHORTDATE, v, time.Local)
 		case 10:
-			t, err = time.ParseInLocation("2006-01-02", v, time.Local)
+			t, err = time.ParseInLocation(TIME_DATE, v, time.Local)
 		case 19:
-			t, err = time.ParseInLocation("2006-01-02 15:04:05", v, time.Local)
+			t, err = time.ParseInLocation(TIME_NORMAL, v, time.Local)
 		default:
 			return t, false
 		}
@@ -521,7 +527,7 @@ func JsonToString(ext string) (string, error) {
 		return "", fmt.Errorf("json length is not even(%d), check your parameters", keyCount)
 	}
 
-	return str, nil
+	return strings.TrimSpace(str), nil
 }
 
 // StructToMap 结构体转为Map[string]interface{} chairou添加

@@ -1,0 +1,49 @@
+package logger
+
+import "testing"
+
+// go test -v log_test.go logger.go
+
+func TestLogger(t *testing.T) {
+	type Sample struct {
+		Sex  string
+		Age  int64
+		Name string
+	}
+	sample := &Sample{Sex: "man", Age: 45, Name: "Roy"}
+	log, err := NewLogPool("test1.log")
+	if err != nil {
+		t.Error("NewLogPool err:", err)
+	}
+	log.Infoln("a", 1)
+	log.Infof("%+v", sample)
+
+	sample.Sex = "woman"
+	sample.Age = 20
+	sample.Name = "Jessica"
+	log2, err := GetLogPool("test1.log")
+	t.Log(log2.Path, log2.FileName)
+	if err != nil {
+		t.Error("GetLogPool err:", err)
+	}
+	log2.Debugln("b", 2)
+	log2.Debugf("%+v", sample)
+}
+
+func TestLogPool_SetLevel(t *testing.T) {
+	log, err := NewLogPool("test1.log")
+	if err != nil {
+		t.Error("NewLogPool err:", err)
+	}
+	log.SetLevel(ERROR_LEVEL)
+	log.Infoln("write INFO in ERROR_LEVEL")
+
+	log, err = GetLogPool("test1.log")
+	if err != nil {
+		t.Error("NewLogPool err:", err)
+	}
+	log.Infoln("write INFO in ERROR_LEVEL")
+	log.SetLevel(INFO_LEVEL)
+	log.Infoln("write INFO in INFO_LEVEL")
+
+}

@@ -1,0 +1,6 @@
+INFO: 2023/03/02 23:24:55 /Users/chairou/code/src/toolboxlite/logger/logger.go:110: write INFO in INFO_LEVEL
+INFO: 2023/03/03 00:01:58 /Users/chairou/code/src/toolboxlite/logger/logger.go:110: a 1
+INFO: 2023/03/03 00:01:58 /Users/chairou/code/src/toolboxlite/logger/logger.go:104: &{Sex:man Age:45 Name:Roy}
+DEBUG: 2023/03/03 00:01:58 /Users/chairou/code/src/toolboxlite/logger/logger.go:98: b 2
+DEBUG: 2023/03/03 00:01:58 /Users/chairou/code/src/toolboxlite/logger/logger.go:92: &{Sex:woman Age:20 Name:Jessica}
+INFO: 2023/03/03 00:01:58 /Users/chairou/code/src/toolboxlite/logger/logger.go:110: write INFO in INFO_LEVEL

@@ -1,0 +1,15 @@
+*.zip
+*.tgz
+*.log
+*.idea
+*.exe
+*.kubeconfig
+logdata
+.idea
+.DS_Store
+.vscode
+# editor and IDE paraphernalia
+.idea
+*.swp
+*.swo
+*~

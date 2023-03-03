@@ -42,15 +42,15 @@ func TestBool(t *testing.T) {
 }
 
 func TestInt(t *testing.T) {
-	ans, _ := Int64("-9999")
+	ans, _ := Int("-9999")
 	if ans != -9999 {
 		t.Error("must be int -9999, not string", ans)
 	}
 }
 
 func TestUInt(t *testing.T) {
-	ans, _ := Uint64("9999")
-	if ans != 9999 {
+	ans, _ := Uint("9999")
+	if ans != uint(9999) {
 		t.Error("must be Uint 9999, not string", ans)
 	}
 }
@@ -116,5 +116,41 @@ func BenchmarkStructToMap(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		retData, _ = StructToMap(p, "json")
+	}
+}
+
+func TestJsonToArray(t *testing.T) {
+	jsonStr := `{"-a":"123","-b":"hello"}`
+	array, err := JsonToArray(jsonStr)
+	if err != nil {
+		t.Error("JsonToArray err:", err)
+	}
+	t.Log(array)
+	if !(array[0] == "-a" && array[1] == "123" && array[2] == "-b" && array[3] == "hello") {
+		t.Error("JsonToArray expected err")
+	}
+}
+
+func TestStringToMap(t *testing.T) {
+	str := "-a 123 -b hello"
+	toMap, err := StringToMap(str)
+	if err != nil {
+		t.Error("StringToMap err:", err)
+	}
+	t.Log(toMap)
+	if !(toMap["-a"] == "123" && toMap["-b"] == "hello") {
+		t.Error("StringToMap expected err")
+	}
+}
+
+func TestJsonToString(t *testing.T) {
+	jsonStr := `{"-a":"123","-b":"hello"}`
+	str, err := JsonToString(jsonStr)
+	if err != nil {
+		t.Error("JsonToArray err:", err)
+	}
+	t.Log(str)
+	if !(str == "-a 123 -b hello" || str == "-b hello -a 123") {
+		t.Error("JsonToArray expected err")
 	}
 }

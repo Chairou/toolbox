@@ -10,13 +10,13 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 )
 
-func FlateCompress(origData []byte) (result []byte, err error) {
+func FlatCompress(origData []byte) (result []byte, err error) {
 	var buf bytes.Buffer
 	w, err := flate.NewWriter(&buf, -1)
 	if err != nil {
@@ -28,8 +28,8 @@ func FlateCompress(origData []byte) (result []byte, err error) {
 	return
 }
 
-func FlateUnCompress(compressData []byte) (result []byte, err error) {
-	result, err = ioutil.ReadAll(flate.NewReader(bytes.NewReader(compressData)))
+func FlatUnCompress(compressData []byte) (result []byte, err error) {
+	result, err = io.ReadAll(flate.NewReader(bytes.NewReader(compressData)))
 	return
 }
 
@@ -54,13 +54,18 @@ func MD5File(fileName string) (result string, err error) {
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			fmt.Println("MD5File|Close err:", err)
+		}
+	}(f)
 
 	h := md5.New()
 	if _, err := io.Copy(h, f); err != nil {
 		return "", err
 	}
-	result = fmt.Sprintf("%x", h.Sum(nil))
+	result = hex.EncodeToString(h.Sum(nil))
 	return result, nil
 }
 
@@ -76,7 +81,12 @@ func Sha1File(fileName string) (result string, err error) {
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			fmt.Println("MD5File|Close err:", err)
+		}
+	}(f)
 
 	h := sha1.New()
 	if _, err := io.Copy(h, f); err != nil {
@@ -98,7 +108,12 @@ func Sha256File(fileName string) (result string, err error) {
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			fmt.Println("MD5File|Close err:", err)
+		}
+	}(f)
 
 	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {
@@ -120,8 +135,12 @@ func Sha512File(fileName string) (result string, err error) {
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
-
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			fmt.Println("MD5File|Close err:", err)
+		}
+	}(f)
 	h := sha512.New()
 	if _, err := io.Copy(h, f); err != nil {
 		return "", err
@@ -130,21 +149,21 @@ func Sha512File(fileName string) (result string, err error) {
 	return result, nil
 }
 
-// @brief:填充明文
+// PKCS5Padding @brief:填充明文
 func PKCS5Padding(plaintext []byte, blockSize int) []byte {
 	padding := blockSize - len(plaintext)%blockSize
-	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
-	return append(plaintext, padtext...)
+	paddingText := bytes.Repeat([]byte{byte(padding)}, padding)
+	return append(plaintext, paddingText...)
 }
 
-// @brief:去除填充数据
+// PKCS5UnPadding @brief:去除填充数据
 func PKCS5UnPadding(origData []byte) []byte {
 	length := len(origData)
 	unpadding := int(origData[length-1])
 	return origData[:(length - unpadding)]
 }
 
-// @brief:AES加密
+// AesEncrypt @brief:AES加密
 // AES秘钥的长度只能是16、24或32字节，分别对应三种AES，即AES-128, AES-192和AES-256，三者的区别是加密的轮数不同；
 func AesEncrypt(origData, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
@@ -156,12 +175,12 @@ func AesEncrypt(origData, key []byte) ([]byte, error) {
 	blockSize := block.BlockSize()
 	origData = PKCS5Padding(origData, blockSize)
 	blockMode := cipher.NewCBCEncrypter(block, key[:blockSize]) //初始向量的长度必须等于块block的长度16字节
-	crypted := make([]byte, len(origData))
-	blockMode.CryptBlocks(crypted, origData)
-	return crypted, nil
+	encrypted := make([]byte, len(origData))
+	blockMode.CryptBlocks(encrypted, origData)
+	return encrypted, nil
 }
 
-// @brief:AES解密
+// AesDecrypt @brief:AES解密
 // AES秘钥的长度只能是16、24或32字节，分别对应三种AES，即AES-128, AES-192和AES-256，三者的区别是加密的轮数不同；
 func AesDecrypt(crypted, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)

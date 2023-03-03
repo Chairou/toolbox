@@ -2,7 +2,10 @@ package conf
 
 import (
 	"fmt"
+	"net"
 	"os"
+	"runtime"
+	"strings"
 	"toolbox/logger"
 )
 
@@ -45,4 +48,32 @@ func Getwd() (getwd string, err error) {
 		return "", nil
 	}
 	return getwd, nil
+}
+
+// GetLocalIPAddr get the local IP address
+// GetLocalIPAddr 获取本地IP
+// return IP address
+func GetLocalIPAddr() string {
+	addresses, err := net.InterfaceAddrs()
+	if err != nil {
+		return ""
+	}
+	for _, addr := range addresses {
+		ipaddr, _, err := net.ParseCIDR(addr.String())
+		if err != nil {
+			continue
+		}
+		if ipaddr.IsLoopback() {
+			continue
+		}
+		if ipaddr.To4() != nil {
+			if runtime.GOOS == "darwin" {
+				if !strings.HasPrefix(ipaddr.String(), "192") {
+					continue
+				}
+			}
+			return ipaddr.String()
+		}
+	}
+	return ""
 }

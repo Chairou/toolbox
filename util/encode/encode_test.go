@@ -25,8 +25,8 @@ func TestBase64EnDecode(t *testing.T) {
 
 func TestFlateCompress(t *testing.T) {
 	str := "我是努力的八王子ABCabc123!@#"
-	compressBytes, _ := FlateCompress([]byte(str))
-	deCompressBytes, _ := FlateUnCompress(compressBytes)
+	compressBytes, _ := FlatCompress([]byte(str))
+	deCompressBytes, _ := FlatUnCompress(compressBytes)
 	if string(deCompressBytes) != str {
 		t.Error("must be string 我是努力的八王子ABCabc123!@#, not string", string(deCompressBytes))
 	}
@@ -77,7 +77,7 @@ func BenchmarkFlateCompress(b *testing.B) {
 	fmt.Println(string(compressBytes))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		compressBytes, _ = FlateCompress([]byte(str))
+		compressBytes, _ = FlatCompress([]byte(str))
 	}
 	b.ReportAllocs()
 }
@@ -102,5 +102,53 @@ func BenchmarkAesDecrypt(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		tmp, _ = AesDecrypt(crypted, []byte("12345678901234567890123456789012"))
+	}
+}
+
+func TestMD5File(t *testing.T) {
+	md5Str, err := MD5File("testfile.txt")
+	if err != nil {
+		t.Error("MD5File err:", err)
+	}
+	t.Log(md5Str)
+	if md5Str != "2886c3704317e0fb012e4a002c5d2a56" {
+		t.Error("MD5File should be 2886c3704317e0fb012e4a002c5d2a56 , but ", md5Str)
+	}
+}
+
+func TestSha1File(t *testing.T) {
+	sha1Str, err := Sha1File("testfile.txt")
+	if err != nil {
+		t.Error("MD5File err:", err)
+	}
+	t.Log(sha1Str)
+	if sha1Str != "0eb72683588d104c2d6d62a2bb1b671e157feb0a" {
+		t.Error("Sha1File should be 0eb72683588d104c2d6d62a2bb1b671e157feb0a , but ", sha1Str)
+	}
+}
+
+func TestSha256File(t *testing.T) {
+	sha256Str, err := Sha256File("testfile.txt")
+	if err != nil {
+		t.Error("MD5File err:", err)
+	}
+	t.Log(sha256Str)
+	if sha256Str != "3e456bcbdd4e3f32de40c7482fcca896da15161cd4cd6d8e561cafc6c3122f7f" {
+		t.Error("Sha256File should be 3e456bcbdd4e3f32de40c7482fcca896da15161cd4cd6d8e561cafc6c3122f7f , but ",
+			sha256Str)
+	}
+}
+
+func TestSha512File(t *testing.T) {
+	sha512Str, err := Sha512File("testfile.txt")
+	if err != nil {
+		t.Error("MD5File err:", err)
+	}
+	t.Log(sha512Str)
+	if sha512Str != "0611b5b4d806ec5f50c39b26e68d1458221158bc012d96561e7ab9ea09c46922b71cc09256afade818afa626328204d"+
+		"a84af442762251104db49f1fcdc25994c" {
+		t.Error("Sha256File should be 0611b5b4d806ec5f50c39b26e68d1458221158bc012d96561e7ab9ea09c469"+
+			"22b71cc09256afade818afa626328204da84af442762251104db49f1fcdc25994c , but ",
+			sha512Str)
 	}
 }

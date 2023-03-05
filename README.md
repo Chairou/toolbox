@@ -82,7 +82,8 @@
     用途: 计算日期和IP范围
     测试用例: go test -v calDate_test.go calDate.go calIP_test.go calIP.go
     主要函数:
-        func GetDiffDays(t1, t2 time.Time) int // 获取两个时间相差的天数
+        // 获取两个时间相差的天数,小时数,分钟数,秒数, 用法见函数注释和测试用例
+        func GetDiffTime(previousTime, laterTime interface{}, flag int) (int64, error) {
         func GetFirstAndLastDateOfWeek(date time.Time) // 获取当天所在周的周一和周日时间
         func SubNetMaskToLen(netmask string) (int, error) // 获取子网掩码位数
         func LenToSubNetMask(subnet int) string // 从掩码位数转换为点十分制的子网掩码

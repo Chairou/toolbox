@@ -1,12 +1,11 @@
 package conf
 
 import (
-	"fmt"
+	"log"
 	"net"
 	"os"
 	"runtime"
 	"strings"
-	"toolbox/logger"
 )
 
 // GetEnvironment get the system environment by name.
@@ -14,13 +13,9 @@ import (
 // parameters envName
 // return envValue
 func GetEnvironment(envName string) (envValue string) {
-	log, err := logger.NewLogPool("internal.log")
-	if err != nil {
-		fmt.Println("GetEnvironment|NewLogPool err:", err)
-	}
 	envValue = os.Getenv(envName)
 	if envValue == "" {
-		log.Errorln("Getenv null:", envName)
+		log.Print("Getenv null:", envName)
 		return ""
 	}
 	return envValue
@@ -38,13 +33,9 @@ func GetPid() (pid int) {
 // Getwd 获取当前工作目录
 // return getwd
 func Getwd() (getwd string, err error) {
-	log, err := logger.NewLogPool("internal.log")
-	if err != nil {
-		fmt.Println("GetEnvironment|NewLogPool err:", err)
-	}
 	getwd, err = os.Getwd()
 	if err != nil {
-		log.Errorln("Getwd|Getwd err:", err)
+		log.Println("Getwd|Getwd err:", err)
 		return "", nil
 	}
 	return getwd, nil
@@ -76,4 +67,20 @@ func GetLocalIPAddr() string {
 		}
 	}
 	return ""
+}
+
+func SetEnv(key string, value string) error {
+	err := os.Setenv(key, value)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UnSetEnv(key string) error {
+	err := os.Unsetenv(key)
+	if err != nil {
+		return err
+	}
+	return nil
 }

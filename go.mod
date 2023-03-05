@@ -12,6 +12,7 @@ require (
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing v1.0.600
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.600
 	golang.org/x/text v0.4.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
@@ -21,4 +22,5 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -7,15 +7,6 @@ import (
 
 // go test -v calDate_test.go calDate.go calIP_test.go calIP.go
 
-func TestGetDiffDays(t *testing.T) {
-	t1 := time.Date(2023, 2, 14, 1, 1, 1, 1, time.Local)
-	t2 := time.Date(2023, 2, 19, 1, 1, 1, 1, time.Local)
-	days := GetDiffDays(t2, t1)
-	if days != 5 {
-		t.Error("GetDiffDays err")
-	}
-}
-
 /*
 *******************************
 按照国际标准ISO 8601 的说法，星期一是一周的开始，
@@ -32,5 +23,107 @@ func TestGetFirstAndLastDateOfWeek(t *testing.T) {
 	t.Log(monday, sunday)
 	if monday != "2023-02-13" || sunday != "2023-02-19" {
 		t.Error("GetFirstAndLastDateOfWeek err:", monday, sunday)
+	}
+}
+
+//
+func TestGetDiffDays(t *testing.T) {
+	t1 := "2023-02-14 01:01:01"
+	t2 := "2023-02-19 01:01:01"
+	days, err := GetDiffTime(t1, t2, TIME_TO_DAYS)
+	if err != nil {
+		t.Error(err)
+	}
+	if days != 5 {
+		t.Error("GetDiffDays err")
+	}
+	t.Log(days)
+
+	t3 := time.Date(2023, 2, 14, 1, 1, 1, 1, time.Local)
+	t4 := time.Date(2023, 2, 19, 1, 1, 1, 1, time.Local)
+	days, err = GetDiffTime(t3, t4, TIME_TO_DAYS)
+	if err != nil {
+		t.Error(err)
+	}
+	if days != 5 {
+		t.Error("GetDiffDays err")
+	}
+	t.Log(days)
+
+}
+
+func TestGetDiffHours(t *testing.T) {
+	t1 := "2023-01-14 00:11:10"
+	t2 := "2023-02-13 00:10:10"
+
+	hours, err := GetDiffTime(t1, t2, TIME_TO_HOURS)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(hours)
+	if hours != 719 {
+		t.Error("GetDiffHours err")
+	}
+	t3 := time.Date(2023, 01, 14, 00, 11, 10, 0, time.Local)
+	t4 := time.Date(2023, 02, 13, 00, 10, 10, 0, time.Local)
+	hours, err = GetDiffTime(t3, t4, TIME_TO_HOURS)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(hours)
+	if hours != 719 {
+		t.Error("GetDiffHours err")
+	}
+}
+
+func TestGetDiffMinutes(t *testing.T) {
+	t1 := "2023-01-13 00:10:00"
+	t2 := "2023-02-14 00:11:00"
+
+	minutes, err := GetDiffTime(t1, t2, TIME_TO_MINUTES)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(minutes)
+	if minutes != 46081 {
+		t.Error("GetDiffMinutes err")
+	}
+
+	t3 := time.Date(2023, 01, 13, 00, 10, 00, 0, time.Local)
+	t4 := time.Date(2023, 02, 14, 00, 11, 00, 0, time.Local)
+	minutes, err = GetDiffTime(t3, t4, TIME_TO_MINUTES)
+
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(minutes)
+	if minutes != 46081 {
+		t.Error("GetDiffMinutes err")
+	}
+}
+
+func TestGetDiffSeconds(t *testing.T) {
+	t1 := "2023-01-13 00:10:00"
+	t2 := "2023-02-14 00:11:00"
+
+	minutes, err := GetDiffTime(t1, t2, TIME_TO_SECONDS)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(minutes)
+	if minutes != 2764860 {
+		t.Error("GetDiffMinutes err")
+	}
+
+	t3 := time.Date(2023, 01, 13, 00, 10, 00, 0, time.Local)
+	t4 := time.Date(2023, 02, 14, 00, 11, 00, 0, time.Local)
+	minutes, err = GetDiffTime(t3, t4, TIME_TO_SECONDS)
+
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(minutes)
+	if minutes != 2764860 {
+		t.Error("GetDiffMinutes err")
 	}
 }

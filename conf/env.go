@@ -1,13 +1,11 @@
 package conf
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"os"
 	"runtime"
 	"strings"
-	"toolbox/logger"
 )
 
 // GetEnvironment get the system environment by name.
@@ -35,13 +33,9 @@ func GetPid() (pid int) {
 // Getwd 获取当前工作目录
 // return getwd
 func Getwd() (getwd string, err error) {
-	log, err := logger.NewLogPool("internal.log")
-	if err != nil {
-		fmt.Println("GetEnvironment|NewLogPool err:", err)
-	}
 	getwd, err = os.Getwd()
 	if err != nil {
-		log.Errorln("Getwd|Getwd err:", err)
+		log.Println("Getwd|Getwd err:", err)
 		return "", nil
 	}
 	return getwd, nil

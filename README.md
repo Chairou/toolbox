@@ -1,5 +1,7 @@
 # toolbox
-    一个简单, 尽量少依赖的golang工具箱和开发库 [English version](https://github.com/Chairou/toolbox/wiki#toolbox) 
+[English version](https://github.com/Chairou/toolbox/wiki#toolbox)
+一个简单, 尽量少依赖的golang工具箱和开发库
+ 
 
 # 创作动机
 近二十年的技术工作, 发现自己并没有太多的积累,所以, 我开始了这个项目,

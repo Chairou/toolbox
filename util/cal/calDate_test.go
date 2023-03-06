@@ -26,7 +26,6 @@ func TestGetFirstAndLastDateOfWeek(t *testing.T) {
 	}
 }
 
-//
 func TestGetDiffDays(t *testing.T) {
 	t1 := "2023-02-14 01:01:01"
 	t2 := "2023-02-19 01:01:01"
@@ -126,4 +125,14 @@ func TestGetDiffSeconds(t *testing.T) {
 	if minutes != 2764860 {
 		t.Error("GetDiffMinutes err")
 	}
+}
+
+func TestLocation(t *testing.T) {
+	loc, _ := time.LoadLocation("Cuba")
+	now := time.Now()
+	t1, err := time.ParseInLocation(TIME_NORMAL, now.Format(TIME_NORMAL), loc)
+	if err != nil {
+		return
+	}
+	t.Log(t1)
 }

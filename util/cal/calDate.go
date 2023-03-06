@@ -118,3 +118,7 @@ func getDiffStr(previous, later string, flag int) (int64, error) {
 	diffDays := getDiff(previousTime, laterTime, flag)
 	return diffDays, nil
 }
+
+func UnixTimeStamp2TimeStr(sec int64) string {
+	return time.Unix(sec, 0).Format(TIME_NORMAL)
+}

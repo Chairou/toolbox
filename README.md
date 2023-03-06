@@ -1,10 +1,10 @@
 # toolbox
-    一个简单, 尽量少依赖的golang工具箱和开发库, 联系email<chair.ou#gmail.com>
+    一个简单, 尽量少依赖的golang工具箱和开发库 [English version](https://github.com/Chairou/toolbox/wiki#toolbox) 
 
 # 创作动机
-近二十年的技术工作, 发现自己并没有太多的积累,所以, 我开始了这个项目, 
-认认真真的做一个工具库出来, 一来技术有积累有进步, 二来方便大家一起使用, 三来一旦被离职也有底气. 
-请大家重视开源工作的原因也在此三点. 
+近二十年的技术工作, 发现自己并没有太多的积累,所以, 我开始了这个项目,
+认认真真的做一个工具库出来, 一来技术有积累有进步, 二来方便大家一起使用, 三来一旦被离职也有底气.
+请大家重视开源工作的原因也在此三点.
 江湖路远, 各位珍重
 
 ## 目标:
@@ -88,7 +88,7 @@
         func SubNetMaskToLen(netmask string) (int, error) // 获取子网掩码位数
         func LenToSubNetMask(subnet int) string // 从掩码位数转换为点十分制的子网掩码
         func GetCidrIpRange(cidr string) (first string, broadcast string) // 获得子网第一个IP地址和广播地址
-        
+
 ### util/check
     用途: 数据合法性检查
     测试用例:  go test -v valiad_test.go checkValiad.go
@@ -175,45 +175,6 @@
 
 
 ## 下一步计划:
-    1. 完成英文文档
-    2. 所有对外函数都加上swagger格式的注释
+    1. 完成英文文档(完成)
+    2. 所有对外函数都加上swagger格式的注释(进行中)
     3. 把mock做上
-
-
-
-
-
-
-
-
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

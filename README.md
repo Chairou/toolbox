@@ -1,6 +1,9 @@
 # toolbox
-[English version](https://github.com/Chairou/toolbox/wiki#toolbox)
-一个简单, 尽量少依赖的golang工具箱和开发库
+[English version](https://github.com/Chairou/toolbox/wiki#toolbox) 
+
+A simple and minimally dependent Golang toolbox and development library. Contact email <chair.ou#gmail.com>.
+
+一个简单, 尽量少依赖的golang工具箱和开发库,联系email <chair.ou#gmail.com>
  
 
 # 创作动机

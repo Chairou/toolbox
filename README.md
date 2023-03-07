@@ -178,6 +178,23 @@ A simple and minimally dependent Golang toolbox and development library. Contact
         func TestSortSample(t *testing.T) // 对struct排序的例子
         func TestRankByWordCount(t *testing.T) // 对map排序的例子
 
+### util/bitmap
+    用途: 实现bitmap做状态记录
+    测试用例: go test -v bitmap_test.go
+    主要函数:
+        func NewBitMap(name string, n uint64) *BitMapStruct // 生成bitmap对象
+        func GetBitMap(name string) *BitMapStruct // 获取bitmap实例
+        func (bt *BitMapStruct) Set(n uint64) error // 设置对应位置的bit为1
+        func (bt *BitMapStruct) MSet(n ...uint64) // 批量设置bits
+        func (bt *BitMapStruct) Del(n uint64) error // 设置对应bit为0
+        func (bt *BitMapStruct) MDel(elements ...uint64) //批量设置对应bit为0
+        func (bt *BitMapStruct) IsExist(n uint64) bool // 返回是否置位
+        func (bt *BitMapStruct) MExist(elements ...uint64) map[uint64]bool // 批量判断是否置位
+        func (bt *BitMapStruct) PrintAllBits() // 打印整个bitmap
+        func (bt *BitMapStruct) Clean() // 清零整个bitmap
+        func (bt *BitMapStruct) Destroy() // Destroy 删除当前bitmap
+
+
 
 ## 下一步计划:
     1. 完成英文文档(完成)

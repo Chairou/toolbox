@@ -86,57 +86,61 @@ A simple and minimally dependent Golang toolbox and development library. Contact
      Purpose: Calculate date and IP range
      Test cases: go test -v calDate_test.go calDate.go calIP_test.go calIP.go
      main function:
-        // Get the days, hours, minutes, and seconds of the difference between two times, see function comments and test cases for usage
+        // Get the days, hours, minutes, and seconds of the difference between two times, 
+        // see function comments and test cases for usage
         func GetDiffTime(previousTime, laterTime interface{}, flag int) (int64, error) {
         func GetFirstAndLastDateOfWeek(date time.Time) // Get the Monday and Sunday time of the current week
         func SubNetMaskToLen(netmask string) (int, error) // Get the number of subnet mask bits
-        func LenToSubNetMask(subnet int) string // Convert from the number of mask digits to the subnet mask of dot-ten system
+        // Convert from the number of mask digits to the subnet mask of dot-ten system
+        func LenToSubNetMask(subnet int) string 
         // Get the first IP address and broadcast address of the subnet
         func GetCidrIpRange(cidr string) (first string, broadcast string) 
 
 
-###util/check
-Purpose: data legality check
-Test case: go test -v valiad_test.go checkValiad.go
-main function:
-func FilteredSQLInject(toMatchStr string) bool // determine whether there is SQL injection
-func IsNumeric(val interface{}) bool // determine whether it is a number
-func CheckEmail(email string) (err error) // Check if the email address is valid
-func CheckMobile(mobile string) bool // Check if the mobile number
-func IsValidIDCardCheckSum(idCard string) bool // Check whether the ID card number is valid
-func CheckField(field string) (err error) // Check legal input, whitelist, Chinese characters, numbers, letters, underscores, dots
-func CheckIP(ip string) bool // Check whether the IPV4 and IPV6 addresses are legal
+### util/check
+    Purpose: data legality check
+    Test case: go test -v valiad_test.go checkValiad.go
+    main function:
+        func FilteredSQLInject(toMatchStr string) bool // determine whether there is SQL injection
+        func IsNumeric(val interface{}) bool // determine whether it is a number
+        func CheckEmail(email string) (err error) // Check if the email address is valid
+        func CheckMobile(mobile string) bool // Check if the mobile number
+        func IsValidIDCardCheckSum(idCard string) bool // Check whether the ID card number is valid
+        // Check legal input, whitelist, Chinese characters, numbers, letters, underscores, dots    
+        func CheckField(field string) (err error) 
+        func CheckIP(ip string) bool // Check whether the IPV4 and IPV6 addresses are legal
 
-##util/conv
-Purpose: type conversion
-Test example: go test -v conv_test.go conv.go
-main function:
-func GbkToUtf8(s []byte) ([]byte, error) // GBK to UTF-8
-func Utf8ToGbk(s []byte) ([]byte, error) // UTF-8 to GBK
-func String(val interface{}) string // convert all types to string
-func Int64(val interface{}) (int64, bool) // convert to int64
-func Uint64(val interface{}) (uint64, bool) // convert to uint64
-func Int(val interface{}) (int, bool) // convert to int
-func Uint(val interface{}) (uint, bool) // convert to uint
-func Float64(val interface{}) (float64, bool) // convert to float64
-func Bool(val interface{}) (bool, bool) // convert to bool
-func IsNil(val interface{}) bool // determine whether it is nil
-func Time(val interface{}) (time.Time, bool) // put 20060102, 2006-01-02, 2006-01-02 15:04:05
-These three types of strings are converted to time types
-func TimePtr(val interface{}) *time.Time // convert the above 3 types into time pointers
-func StringToArray(ext string) (array []string, err error) //"-a 123 -b hello" ---> ["-a","123","-b","hello"]
-func StringToMap(ext string) (map[string]string, error) // "-a 123 -b hello" ---> {"-a":"123","-b":"hello"}
-func JsonToArray(ext string) ([]string, error) // "{\"-a\":\"123\",\"-b\":\"hello\"}" ---> ["-a", "123", "-b", "hello"]
-func JsonToString(ext string) (string, error) // "{\"-a\":\"123\",\"-b\":\"hello\"}" ---> "-a 123 -b hello"
-func StructToMap(in interface{}, tagName string) (map[string]interface{}, error) // Convert structure to Map
+## util/conv
+    Purpose: type conversion
+    Test example: go test -v conv_test.go conv.go
+    main function:
+        func GbkToUtf8(s []byte) ([]byte, error) // GBK to UTF-8
+        func Utf8ToGbk(s []byte) ([]byte, error) // UTF-8 to GBK
+        func String(val interface{}) string // convert all types to string
+        func Int64(val interface{}) (int64, bool) // convert to int64
+        func Uint64(val interface{}) (uint64, bool) // convert to uint64
+        func Int(val interface{}) (int, bool) // convert to int
+        func Uint(val interface{}) (uint, bool) // convert to uint
+        func Float64(val interface{}) (float64, bool) // convert to float64
+        func Bool(val interface{}) (bool, bool) // convert to bool
+        func IsNil(val interface{}) bool // determine whether it is nil
+        func Time(val interface{}) (time.Time, bool) // put 20060102, 2006-01-02, 2006-01-02 15:04:05
+        These three types of strings are converted to time types
+        func TimePtr(val interface{}) *time.Time // convert the above 3 types into time pointers
+        func StringToArray(ext string) (array []string, err error) //"-a 123 -b hello" ---> ["-a","123","-b","hello"]
+        func StringToMap(ext string) (map[string]string, error) // "-a 123 -b hello" ---> {"-a":"123","-b":"hello"}
+        // "{\"-a\":\"123\",\"-b\":\"hello\"}" ---> ["-a", "123", "-b", "hello"]        
+        func JsonToArray(ext string) ([]string, error) 
+        func JsonToString(ext string) (string, error) // "{\"-a\":\"123\",\"-b\":\"hello\"}" ---> "-a 123 -b hello"
+        func StructToMap(in interface{}, tagName string) (map[string]interface{}, error) // Convert structure to Map
 
 
-###util/crypt
-Purpose: encryption
-Test case: go test -v crypt_test.go crypt.go
-main function:
-func AesEncrypt2(orig string, key string) (string, error) // encryption
-func AesDecrypt2(cryted string, key string) (string, error) // Decrypt
+### util/crypt
+    Purpose: encryption
+    Test case: go test -v crypt_test.go crypt.go
+    main function:
+        func AesEncrypt2(orig string, key string) (string, error) // encryption
+        func AesDecrypt2(cryted string, key string) (string, error) // Decrypt
 
 ### util/encode
      Usage: Coding
@@ -179,6 +183,22 @@ func AesDecrypt2(cryted string, key string) (string, error) // Decrypt
     main function:
         func TestSortSample(t *testing.T) // example of sorting struct
         func TestRankByWordCount(t *testing.T) // example of sorting map
+
+### util/bitmap
+    Purpose: Realize bitmap for status record
+    Test case: go test -v bitmap_test.go
+    main function:
+        func NewBitMap(name string, n uint64) *BitMapStruct // generate bitmap object
+        func GetBitMap(name string) *BitMapStruct // Get bitmap instance
+        func (bt *BitMapStruct) Set(n uint64) error // set the corresponding bit to 1
+        func (bt *BitMapStruct) MSet(n ...uint64) // set bits in batches
+        func (bt *BitMapStruct) Del(n uint64) error // set the corresponding bit to 0
+        func (bt *BitMapStruct) MDel(elements ...uint64) //Batch setting corresponding bit to 0
+        func (bt *BitMapStruct) IsExist(n uint64) bool // return whether set
+        func (bt *BitMapStruct) MExist(elements ...uint64) map[uint64]bool // Batch judgment whether set
+        func (bt *BitMapStruct) PrintAllBits() // print the whole bitmap
+        func (bt *BitMapStruct) Clean() // clear the entire bitmap
+        func (bt *BitMapStruct) Destroy() // Destroy deletes the current bitmap
 
 
 ## Next steps:

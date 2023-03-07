@@ -128,7 +128,8 @@ After nearly 20 years of technical work, I found that I didn't have much accumul
         func Float64(val interface{}) (float64, bool) // convert to float64
         func Bool(val interface{}) (bool, bool) // convert to bool
         func IsNil(val interface{}) bool // determine whether it is nil
-        // put 20060102, 2006-01-02, 2006-01-02 15:04:05 These three types of strings are converted to time types    
+        // put 20060102, 2006-01-02, 2006-01-02 15:04:05 These three types of 
+        // strings are converted to time types    
         func Time(val interface{}) (time.Time, bool)
         func TimePtr(val interface{}) *time.Time // convert the above 3 types into time pointers
         //"-a 123 -b hello" ---> ["-a","123","-b","hello"]

@@ -4,7 +4,7 @@ A simple and minimally dependent Golang toolbox and development library. Contact
 [中文版本](https://github.com/Chairou/toolbox#readme)
 
 # Motivation
-    After nearly 20 years of technical work, I found that I didn't have much accumulation. Therefore, I started this project to create a tool library seriously. First, I can accumulate and improve my skills. Second, it's convenient for everyone to use together. Third, once I leave the job, I have confidence. Please also focus on the three reasons for open source work. The road ahead is long, and take care.
+After nearly 20 years of technical work, I found that I didn't have much accumulation. Therefore, I started this project to create a tool library seriously. First, I can accumulate and improve my skills. Second, it's convenient for everyone to use together. Third, once I leave the job, I have confidence. Please also focus on the three reasons for open source work. The road ahead is long, and take care.
 
 ## Goals:
     Simple, easy to use out of the box
@@ -15,12 +15,14 @@ A simple and minimally dependent Golang toolbox and development library. Contact
 
 ### httphelper
     Purpose: Encapsulate HTTP's GET and POST, encapsulate common escape and process returned JSON strings.
-    Test Case: go test -v http_test.go http.go helper.go result.go (note that mock has not been done yet, change it to an available IP yourself)
+    Test Case: go test -v http_test.go http.go helper.go result.go 
+    (note that mock has not been done yet, change it to an available IP yourself)
     Main Function:
     func GET(url string) Helper //send GET request
     func PostJSON(url string, body interface{}) Helper //send POST request, with JSON format body
     func UrlPathEscape(url string) string //escape URL
-    func (p *baseResult) BaseResult() *baseResult // BaseResult returns the basic result of the Http request, including Status and Body
+    // BaseResult returns the basic result of the Http request, including Status and Body
+    func (p *baseResult) BaseResult() *baseResult 
     func (p *jsonResult) Bind(object interface{}, path ...interface{}) error
     //Bind stores the return value in Object
     Note that there are methods for processing return strings and JSON strings in the test case.
@@ -41,7 +43,8 @@ A simple and minimally dependent Golang toolbox and development library. Contact
 
 ### util/redis
     Purpose: operate multiple redis pools
-    Test case: go test -v redis_test.go redis.go (Note,you need to build a redis service yourself, and then make a mock)
+    Test case: go test -v redis_test.go redis.go 
+    (Note,you need to build a redis service yourself, and then make a mock)
     main function:
         //Generate a new redis instance and put it in the Pool
         func NewRedis(name string, addr string, passwd string) *RedisPool 
@@ -49,15 +52,15 @@ A simple and minimally dependent Golang toolbox and development library. Contact
         func GetRedisPool(name string) (*RedisPool, error)
         // get redis instance, ignore errors
         func GetRedisByName(name string) *RedisPool
-        // Get kv silently, no error will be returned, if there is a problem, only an empty string will be returned
+        // Get kv silently, no error will be returned but empty string, if there is a problem.
         func (c *RedisPool) SilenceGet(key string) string
-
         func (c *RedisPool) Get(key string) (string, error) // redis GET
         func (c *RedisPool) HGet(key string, subKey string) (string, error) // redis HGET
         func (c *RedisPool) Set(key string, val string) (string, error) // redis SET
         func (c *RedisPool) HSet(key string, subKey string, val string) (int64, error) // redis HSET
         func (c *RedisPool) Del(key string) (int64, error) // redis DEL
-        func (c *RedisPool) Do(commandName string, args ...interface{}) (interface{}, error) // redis DO 通用接口
+        // redis DO generic interface
+        func (c *RedisPool) Do(commandName string, args ...interface{}) (interface{}, error) 
         func (c *RedisPool) ClosePool() error // close the connection pool, release sync.Map
         func (c *RedisPool) Expired(key string, seconds int) (int64, error) // redis expire
         func (c *RedisPool) Ttl(key string) (int64, error) // redis TTL
@@ -88,8 +91,9 @@ A simple and minimally dependent Golang toolbox and development library. Contact
      main function:
         // Get the days, hours, minutes, and seconds of the difference between two times, 
         // see function comments and test cases for usage
-        func GetDiffTime(previousTime, laterTime interface{}, flag int) (int64, error) {
-        func GetFirstAndLastDateOfWeek(date time.Time) // Get the Monday and Sunday time of the current week
+        func GetDiffTime(previousTime, laterTime interface{}, flag int) (int64, error) 
+        // Get the Monday and Sunday time of the current week
+        func GetFirstAndLastDateOfWeek(date time.Time) 
         func SubNetMaskToLen(netmask string) (int, error) // Get the number of subnet mask bits
         // Convert from the number of mask digits to the subnet mask of dot-ten system
         func LenToSubNetMask(subnet int) string 
@@ -124,15 +128,19 @@ A simple and minimally dependent Golang toolbox and development library. Contact
         func Float64(val interface{}) (float64, bool) // convert to float64
         func Bool(val interface{}) (bool, bool) // convert to bool
         func IsNil(val interface{}) bool // determine whether it is nil
-        func Time(val interface{}) (time.Time, bool) // put 20060102, 2006-01-02, 2006-01-02 15:04:05
-        These three types of strings are converted to time types
+        // put 20060102, 2006-01-02, 2006-01-02 15:04:05 These three types of strings are converted to time types    
+        func Time(val interface{}) (time.Time, bool)
         func TimePtr(val interface{}) *time.Time // convert the above 3 types into time pointers
-        func StringToArray(ext string) (array []string, err error) //"-a 123 -b hello" ---> ["-a","123","-b","hello"]
-        func StringToMap(ext string) (map[string]string, error) // "-a 123 -b hello" ---> {"-a":"123","-b":"hello"}
+        //"-a 123 -b hello" ---> ["-a","123","-b","hello"]
+        func StringToArray(ext string) (array []string, err error) 
+        // "-a 123 -b hello" ---> {"-a":"123","-b":"hello"}
+        func StringToMap(ext string) (map[string]string, error) 
         // "{\"-a\":\"123\",\"-b\":\"hello\"}" ---> ["-a", "123", "-b", "hello"]        
-        func JsonToArray(ext string) ([]string, error) 
-        func JsonToString(ext string) (string, error) // "{\"-a\":\"123\",\"-b\":\"hello\"}" ---> "-a 123 -b hello"
-        func StructToMap(in interface{}, tagName string) (map[string]interface{}, error) // Convert structure to Map
+        func JsonToArray(ext string) ([]string, error)
+        // "{\"-a\":\"123\",\"-b\":\"hello\"}" ---> "-a 123 -b hello"
+        func JsonToString(ext string) (string, error) 
+        // Convert structure to Map
+        func StructToMap(in interface{}, tagName string) (map[string]interface{}, error) 
 
 
 ### util/crypt

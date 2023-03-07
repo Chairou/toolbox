@@ -1,5 +1,7 @@
 # toolbox
-    A simple and minimally dependent Golang toolbox and development library. Contact email <chair.ou#gmail.com>.
+A simple and minimally dependent Golang toolbox and development library. Contact email <chair.ou#gmail.com>.
+
+[中文版本](https://github.com/Chairou/toolbox#readme)
 
 # Motivation
     After nearly 20 years of technical work, I found that I didn't have much accumulation. Therefore, I started this project to create a tool library seriously. First, I can accumulate and improve my skills. Second, it's convenient for everyone to use together. Third, once I leave the job, I have confidence. Please also focus on the three reasons for open source work. The road ahead is long, and take care.

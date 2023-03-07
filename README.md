@@ -120,14 +120,17 @@ A simple and minimally dependent Golang toolbox and development library. Contact
         func Float64(val interface{}) (float64, bool) // 转为float64
         func Bool(val interface{}) (bool, bool) // 转为bool
         func IsNil(val interface{}) bool // 判断是否为nil
-        func Time(val interface{}) (time.Time, bool) // 把20060102, 2006-01-02, 2006-01-02 15:04:05
-        这三种类型的string转为time类型
+        // 把20060102, 2006-01-02, 2006-01-02 15:04:05这三种类型的string转为time类型
+        func Time(val interface{}) (time.Time, bool)
         func TimePtr(val interface{}) *time.Time // 把上述3种类型转为time指针
-        func StringToArray(ext string) (array []string, err error) //"-a 123 -b hello" ---> ["-a","123","-b","hello"]
-        func StringToMap(ext string) (map[string]string, error) // "-a 123 -b hello" ---> {"-a":"123","-b":"hello"}
-        func JsonToArray(ext string) ([]string, error) 
+        //"-a 123 -b hello" ---> ["-a","123","-b","hello"]
+        func StringToArray(ext string) (array []string, err error)
+        // "-a 123 -b hello" ---> {"-a":"123","-b":"hello"}
+        func StringToMap(ext string) (map[string]string, error)
         // "{\"-a\":\"123\",\"-b\":\"hello\"}" ---> ["-a","123","-b","hello"]
-        func JsonToString(ext string) (string, error) // "{\"-a\":\"123\",\"-b\":\"hello\"}" ---> "-a 123 -b hello"
+        func JsonToArray(ext string) ([]string, error) 
+        // "{\"-a\":\"123\",\"-b\":\"hello\"}" ---> "-a 123 -b hello"
+        func JsonToString(ext string) (string, error) 
         func StructToMap(in interface{}, tagName string) (map[string]interface{}, error) // 结构体转为Map
 
 ### util/crypt

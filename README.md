@@ -26,7 +26,8 @@ A simple and minimally dependent Golang toolbox and development library. Contact
         func GET(url string) Helper //发送GET请求
         func PostJSON(url string, body interface{}) Helper //发送POST请求, 内容为JSON格式的body
         func UrlPathEscape(url string) string //对URL进行转义
-        func (p *baseResult) BaseResult() *baseResult // BaseResult 返回Http请求的基本结果，包含Status和Body
+        // BaseResult 返回Http请求的基本结果，包含Status和Body
+        func (p *baseResult) BaseResult() *baseResult 
         func (p *jsonResult) Bind(object interface{}, path ...interface{}) error 
         // Bind 将返回值存储到Object中
         注意, 测试用例中有对返回字串和JSON串的处理方法
@@ -58,7 +59,8 @@ A simple and minimally dependent Golang toolbox and development library. Contact
         func (c *RedisPool) Set(key string, val string) (string, error) // redis SET
         func (c *RedisPool) HSet(key string, subKey string, val string) (int64, error) // redis HSET
         func (c *RedisPool) Del(key string) (int64, error) // redis DEL
-        func (c *RedisPool) Do(commandName string, args ...interface{}) (interface{}, error) // redis DO 通用接口
+        // redis DO 通用接口
+        func (c *RedisPool) Do(commandName string, args ...interface{}) (interface{}, error) 
         func (c *RedisPool) ClosePool() error // 关闭连接池, 释放sync.Map
         func (c *RedisPool) Expired(key string, seconds int) (int64, error) // redis expire
         func (c *RedisPool) Ttl(key string) (int64, error) // redis TTL
@@ -79,9 +81,12 @@ A simple and minimally dependent Golang toolbox and development library. Contact
         func (c *RedisPool) MGet(keys ...string) ([]string, error) // REDIS MGET
         func (c *RedisPool) MSet(pairs ...interface{}) (string, error) / REDIS MSET
         func (c *RedisPool) Ping() (string, error) // REDIS PING
-        func (c *RedisPool) SetEX(key string, value interface{}, expire int) (string, error) // REDIS SETEX
-        func (c *RedisPool) SetNX(key string, value interface{}, expire int) (int64, error) // REDIS SETNX
-        func (c *RedisPool) LRange(key string, start, stop int64) ([]string, error) // REDIS LRANGE
+        // REDIS SETEX
+        func (c *RedisPool) SetEX(key string, value interface{}, expire int) (string, error)
+        // REDIS SETNX
+        func (c *RedisPool) SetNX(key string, value interface{}, expire int) (int64, error)
+        // REDIS LRANGE
+        func (c *RedisPool) LRange(key string, start, stop int64) ([]string, error)
 
 ### util/cal
     用途: 计算日期和IP范围
@@ -92,7 +97,8 @@ A simple and minimally dependent Golang toolbox and development library. Contact
         func GetFirstAndLastDateOfWeek(date time.Time) // 获取当天所在周的周一和周日时间
         func SubNetMaskToLen(netmask string) (int, error) // 获取子网掩码位数
         func LenToSubNetMask(subnet int) string // 从掩码位数转换为点十分制的子网掩码
-        func GetCidrIpRange(cidr string) (first string, broadcast string) // 获得子网第一个IP地址和广播地址
+        // 获得子网第一个IP地址和广播地址
+        func GetCidrIpRange(cidr string) (first string, broadcast string)
 
 ### util/check
     用途: 数据合法性检查
@@ -131,7 +137,8 @@ A simple and minimally dependent Golang toolbox and development library. Contact
         func JsonToArray(ext string) ([]string, error) 
         // "{\"-a\":\"123\",\"-b\":\"hello\"}" ---> "-a 123 -b hello"
         func JsonToString(ext string) (string, error) 
-        func StructToMap(in interface{}, tagName string) (map[string]interface{}, error) // 结构体转为Map
+        // 结构体转为Map
+        func StructToMap(in interface{}, tagName string) (map[string]interface{}, error) 
 
 ### util/crypt
     用途: 加密

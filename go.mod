@@ -1,4 +1,4 @@
-module toolbox
+module github.com/Chairou/toolbox
 
 go 1.19
 

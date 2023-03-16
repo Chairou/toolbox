@@ -9,7 +9,7 @@ import (
 
 const (
 	TIME_DATE      string = "2006-01-02"
-	TIME_NORMAL    string = "2006-01-02 15:04:05"
+	TIME_COMMON    string = "2006-01-02 15:04:05"
 	TIME_SHORTDATE string = "20060102"
 
 	TIME_TO_DAYS    int = 1
@@ -92,7 +92,7 @@ func getDiffStr(previous, later string, flag int) (int64, error) {
 	case 10:
 		previousTime, err1 = time.ParseInLocation(TIME_DATE, previous, time.Local)
 	case 19:
-		previousTime, err1 = time.ParseInLocation(TIME_NORMAL, previous, time.Local)
+		previousTime, err1 = time.ParseInLocation(TIME_COMMON, previous, time.Local)
 	default:
 		err1 = errors.New("previous format not supported")
 	}
@@ -103,7 +103,7 @@ func getDiffStr(previous, later string, flag int) (int64, error) {
 	case 10:
 		laterTime, err2 = time.ParseInLocation(TIME_DATE, later, time.Local)
 	case 19:
-		laterTime, err2 = time.ParseInLocation(TIME_NORMAL, later, time.Local)
+		laterTime, err2 = time.ParseInLocation(TIME_COMMON, later, time.Local)
 	default:
 		err2 = errors.New("later format not supported")
 	}
@@ -120,5 +120,23 @@ func getDiffStr(previous, later string, flag int) (int64, error) {
 }
 
 func UnixTimeStamp2TimeStr(sec int64) string {
-	return time.Unix(sec, 0).Format(TIME_NORMAL)
+	return time.Unix(sec, 0).Format(TIME_COMMON)
+}
+
+func DayListBetweenStartEnd(start, end string) ([]string, error) {
+	dayList := make([]string, 0)
+	days, err := getDiffStr(start, end, TIME_TO_DAYS)
+	if err != nil {
+		return nil, err
+	}
+	t1, err := time.ParseInLocation(TIME_DATE, start, time.Local)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < int(days)+1; i++ {
+		tmpDate := t1.AddDate(0, 0, i)
+		dayList = append(dayList, tmpDate.Format(TIME_DATE))
+	}
+	return dayList, nil
 }

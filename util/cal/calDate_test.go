@@ -130,9 +130,20 @@ func TestGetDiffSeconds(t *testing.T) {
 func TestLocation(t *testing.T) {
 	loc, _ := time.LoadLocation("Cuba")
 	now := time.Now()
-	t1, err := time.ParseInLocation(TIME_NORMAL, now.Format(TIME_NORMAL), loc)
+	t1, err := time.ParseInLocation(TIME_COMMON, now.Format(TIME_COMMON), loc)
 	if err != nil {
 		return
 	}
 	t.Log(t1)
+}
+
+func TestDayListBetweenStartEnd(t *testing.T) {
+	startDate := "2023-02-25"
+	endDate := "2023-03-10"
+	list, err := DayListBetweenStartEnd(startDate, endDate)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(list)
+
 }

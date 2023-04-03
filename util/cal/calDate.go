@@ -140,3 +140,35 @@ func DayListBetweenStartEnd(start, end string) ([]string, error) {
 	}
 	return dayList, nil
 }
+
+func Yesterday(today string) (string, error) {
+	var nTime = time.Time{}
+	var err error
+	if today == "" {
+		nTime = time.Now()
+	} else {
+		nTime, err = time.ParseInLocation(TIME_DATE, today, time.Local)
+		if err != nil {
+			return "", err
+		}
+	}
+	yesterdayTime := nTime.AddDate(0, 0, -1)
+	logDay := yesterdayTime.Format(TIME_DATE)
+	return logDay, nil
+}
+
+func Tomorrow(today string) (string, error) {
+	var nTime = time.Time{}
+	var err error
+	if today == "" {
+		nTime = time.Now()
+	} else {
+		nTime, err = time.ParseInLocation(TIME_DATE, today, time.Local)
+		if err != nil {
+			return "", err
+		}
+	}
+	tomorrowTime := nTime.AddDate(0, 0, 1)
+	logDay := tomorrowTime.Format(TIME_DATE)
+	return logDay, nil
+}

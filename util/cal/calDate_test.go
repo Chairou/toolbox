@@ -145,5 +145,22 @@ func TestDayListBetweenStartEnd(t *testing.T) {
 		t.Error(err)
 	}
 	t.Log(list)
+}
 
+func TestYesterday(t *testing.T) {
+	today := "2023-04-01"
+	yesterday, err := Yesterday(today)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(yesterday)
+}
+
+func TestTomorrow(t *testing.T) {
+	today := "2023-04-01"
+	tomorrow, err := Tomorrow(today)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(tomorrow)
 }

@@ -172,3 +172,13 @@ func Tomorrow(today string) (string, error) {
 	logDay := tomorrowTime.Format(TIME_DATE)
 	return logDay, nil
 }
+
+func GetCurrentAndNextHour(timeStr string) (string, string, error) {
+	now, err := time.ParseInLocation(TIME_COMMON, timeStr, time.Local)
+	if err != nil {
+		return "", "", err
+	}
+	currentHour := now.Truncate(time.Hour).Format(TIME_COMMON)
+	nextHour := now.Truncate(time.Hour).Add(time.Hour).Format(TIME_COMMON)
+	return currentHour, nextHour, nil
+}

@@ -1,0 +1,27 @@
+package cal
+
+import "testing"
+
+func TestCeilFloat(t *testing.T) {
+	pai := 3.1415926
+	result := CeilFloat(pai, 4)
+	t.Log(result)
+}
+
+func TestRoundFloat(t *testing.T) {
+	pai := 3.1415926
+	result := RoundFloat(pai, 4)
+	t.Log(result)
+}
+
+func TestFloorFloat(t *testing.T) {
+	pai := 3.1415926
+	result := FloorFloat(pai, 4)
+	t.Log(result)
+}
+
+func TestPercent(t *testing.T) {
+	pai := 0.1415926
+	result := Percent(pai, 2, CUT_OFF_ROUND)
+	t.Log(result)
+}

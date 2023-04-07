@@ -1,8 +1,8 @@
 package cal
 
 import (
-	"fmt"
 	"math"
+	"strconv"
 )
 
 var (
@@ -36,21 +36,26 @@ func FloorFloat(num float64, places int) float64 {
 	return math.Floor(num*multiplier) / multiplier
 }
 
-func Percent(num float64, places int, cutoff int) string {
+func PercentVal(num float64, places int, cutoff int) string {
 	if places < 0 {
 		panic("places must be a non-negative integer")
 	}
-	places += 2
+	precision := places + 2
 	var tmp float64
 	switch cutoff {
 	case CUT_OFF_CEIL:
-		tmp = CeilFloat(num, places)
+		tmp = CeilFloat(num, precision)
 	case CUT_OFF_ROUND:
-		tmp = RoundFloat(num, places)
+		tmp = RoundFloat(num, precision)
 	case CUT_OFF_FLOOR:
-		tmp = FloorFloat(num, places)
+		tmp = FloorFloat(num, precision)
 	default:
 		panic("invaild cutoff")
 	}
-	return fmt.Sprintf("%.2f%%", tmp*100)
+	//return fmt.Sprintf("%.2f%%", tmp*100)
+	return strconv.FormatFloat(tmp*100, 'f', places, 64)
+}
+
+func Percent(num float64, places int, cutoff int) string {
+	return PercentVal(num, places, cutoff) + "%"
 }

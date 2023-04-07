@@ -25,3 +25,9 @@ func TestPercent(t *testing.T) {
 	result := Percent(pai, 4, CUT_OFF_ROUND)
 	t.Log(result)
 }
+
+func TestPercentVal(t *testing.T) {
+	pai := 0.1415926
+	result := PercentVal(pai, 4, CUT_OFF_ROUND)
+	t.Log(result)
+}

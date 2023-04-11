@@ -1,6 +1,7 @@
 package cal
 
 import (
+	"github.com/Chairou/toolbox/util/conv"
 	"math"
 	"strconv"
 )
@@ -58,4 +59,12 @@ func PercentVal(num float64, places int, cutoff int) string {
 
 func Percent(num float64, places int, cutoff int) string {
 	return PercentVal(num, places, cutoff) + "%"
+}
+
+func AnyPercent(num interface{}, places int, cutoff int) string {
+	numFloat, ok := conv.Float64(num)
+	if ok == false {
+		panic("AnyPercent err: num cann't turn into float64")
+	}
+	return Percent(numFloat, places, cutoff)
 }

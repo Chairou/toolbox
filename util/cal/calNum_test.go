@@ -31,3 +31,9 @@ func TestPercentVal(t *testing.T) {
 	result := PercentVal(pai, 4, CUT_OFF_ROUND)
 	t.Log(result)
 }
+
+func TestAnyPercent(t *testing.T) {
+	pai := "0.1415926"
+	result := AnyPercent(pai, 4, CUT_OFF_CEIL)
+	t.Log(result)
+}

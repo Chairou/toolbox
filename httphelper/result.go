@@ -3,9 +3,8 @@ package httphelper
 import (
 	"errors"
 	"fmt"
-	"net/http"
-
 	jsoniter "github.com/json-iterator/go"
+	"net/http"
 )
 
 // NilValueErr 空值错误
@@ -33,8 +32,16 @@ type Result interface {
 }
 
 type baseResult struct {
-	Status int
-	Body   string
+	Status    int
+	Url       string
+	ReqHeader http.Header
+	ReqCookie []*http.Cookie
+	ReqBody   string
+	RetHeader http.Header
+	RetCookie []*http.Cookie
+	RetBody   string
+	Elapsed   string
+	BodyLen   int
 }
 
 // BaseResult 返回Http请求的基本结果，包含Status和Body
@@ -72,7 +79,7 @@ func (p *jsonResult) Jsoniter() jsoniter.Any {
 func (p *jsonResult) Get(path ...interface{}) Result {
 	return &jsonResult{
 		baseResult: p.baseResult,
-		body:       jsoniter.Get([]byte(p.Body), path...),
+		body:       jsoniter.Get([]byte(p.RetBody), path...),
 	}
 }
 
@@ -81,7 +88,7 @@ func (p *jsonResult) StdCheck() Result {
 	if p.Status != http.StatusOK {
 		return p.error(fmt.Errorf("response status:%d", p.Status))
 	}
-	resp := jsoniter.Get([]byte(p.Body))
+	resp := jsoniter.Get([]byte(p.RetBody))
 	if code := resp.Get("code").ToInt(); code != 0 {
 		return p.error(fmt.Errorf("resp code:%d, meeesage:%s", code, resp.Get("message").ToString()))
 	}
@@ -90,9 +97,9 @@ func (p *jsonResult) StdCheck() Result {
 
 // Bind 将返回值存储到Object中
 func (p *jsonResult) Bind(object interface{}, path ...interface{}) error {
-	res := jsoniter.Get([]byte(p.Body), path...)
+	res := jsoniter.Get([]byte(p.RetBody), path...)
 	if err := res.LastError(); err != nil {
-		return fmt.Errorf("parse response body err:%w, body:%s", err, p.Body)
+		return fmt.Errorf("parse response body err:%w, body:%s", err, p.RetBody)
 	}
 	if res.ValueType() == jsoniter.NilValue {
 		return NilValueErr

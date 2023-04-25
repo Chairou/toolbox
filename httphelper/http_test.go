@@ -45,7 +45,9 @@ func TestPostHttp(t *testing.T) {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	fmt.Printf("%+v", tmp)
+	fmt.Println("####:", ret.BaseResult().ReqBody)
+	fmt.Println("retBody:", ret.BaseResult().RetBody)
+	fmt.Printf("struct: %+v", tmp)
 
 }
 
@@ -59,6 +61,7 @@ func TestGetHttp(t *testing.T) {
 	url := "http://9.135.96.168:8080/get?aa=bb&cc=dd"
 
 	client := GET(url)
+	client.AddQuery("key1", "value1")
 	client.AddHeader("envSelector", "test")
 	cookies := make([]*http.Cookie, 0)
 	c1 := &http.Cookie{Name: "ee", Value: "ff"}
@@ -67,5 +70,16 @@ func TestGetHttp(t *testing.T) {
 	client.AddCookies(cookies)
 	ret := client.Do()
 	// 显示body内容
-	fmt.Println(ret.BaseResult().Body)
+	fmt.Println(ret.BaseResult().RetBody)
+}
+
+func TestPathEscaped(t *testing.T) {
+	url := "http://9.135.96.168:8080/get?aa=bb&cc=dd"
+	client := GET(url)
+	client.AddPathEscapeQuery("key2", "value2;")
+	client.AddPathEscapeQuery("key3", "中文")
+	ret := client.Do()
+	// 显示body内容
+	t.Log(ret.BaseResult().RetBody)
+	t.Log(ret.BaseResult().ReqBody)
 }

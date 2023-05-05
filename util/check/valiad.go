@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Chairou/toolbox/util/color"
+	"github.com/Chairou/toolbox/util/conv"
+	"math"
 	"net"
 	"regexp"
 	"strconv"
@@ -256,5 +258,17 @@ func IsIP(ip string) bool {
 	} else {
 		fmt.Println("正确的ip地址", address.String())
 		return true
+	}
+}
+
+func InNumRange(val interface{}, min, max float64) bool {
+	mid, ok := conv.Float64(val)
+	if !ok {
+		return false
+	}
+	if math.Max(mid, min) == mid && math.Max(min, max) == max {
+		return true
+	} else {
+		return false
 	}
 }

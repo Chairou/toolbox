@@ -4,7 +4,9 @@ import (
 	"crypto/md5"
 	"crypto/sha1"
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"github.com/Chairou/toolbox/util/color"
 	"net"
 	"regexp"
 	"strconv"
@@ -217,6 +219,33 @@ func IsValidField(field string) (err error) {
 		return fmt.Errorf("所传字段[%s]存在注入风险", field)
 	}
 	return nil
+}
+
+func IsValidFields(fields ...string) (err error) {
+	if len(fields) <= 0 {
+		err := errors.New("IsValidFields: field is null")
+		return err
+	}
+	finalErrorBuf := strings.Builder{}
+	finalErrorBuf.WriteString("IsValidFields:{ ")
+	for _, arg := range fields {
+		err := IsValidField(arg)
+		if err != nil {
+			finalErrorBuf.WriteString("【 ")
+
+			finalErrorBuf.WriteString(color.SetColor(color.Red, arg))
+
+			finalErrorBuf.WriteString(" is not Valid 】, ")
+		}
+	}
+	finaStr := strings.TrimRight(finalErrorBuf.String(), ", ")
+
+	finaStr += " }"
+	if len(finalErrorBuf.String()) == len("IsValidFields:{ ") {
+		return nil
+	} else {
+		return errors.New(finaStr)
+	}
 }
 
 func IsIP(ip string) bool {

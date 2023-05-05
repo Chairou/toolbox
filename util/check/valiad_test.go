@@ -134,3 +134,19 @@ func TestHashString(t *testing.T) {
 		t.Error("HashString err:", dig)
 	}
 }
+
+func TestIsValidFields(t *testing.T) {
+	a1 := "我爱我家"
+	b1 := "abc!@#$%^&*"
+	c1 := "-0.2"
+	d1 := "=)("
+	err := IsValidFields(a1, c1)
+	if err != nil {
+		t.Error(err)
+	}
+	err = IsValidFields(a1, b1, c1, d1)
+	if err != nil {
+		t.Log(err)
+	}
+
+}

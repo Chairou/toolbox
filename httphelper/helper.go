@@ -1,19 +1,26 @@
 package httphelper
 
 import (
+	"bytes"
+	"fmt"
 	jsoniter "github.com/json-iterator/go"
 	"io"
 	"net/http"
+	"time"
 )
 
 // Helper http Helper接口的提供的方法
 type Helper interface {
-	// Query 添加Query参数
-	Query(k string, v string) Helper
+	// AddQuery 添加Query参数
+	AddQuery(k string, v string) Helper
 
-	// QueryMap 通过map来添加Query参数
-	QueryMap(m map[string]string) Helper
+	// AddQueryMap 通过map来添加Query参数
+	AddQueryMap(m map[string]string) Helper
 
+	// AddPathEscapeQuery 添加Query参数,并进行PathEscape转义
+	AddPathEscapeQuery(k string, v string) Helper
+
+	AddPathEscapeQueryMap(m map[string]string) Helper
 	// AddHeader 添加HTTP header
 	AddHeader(k string, v string) Helper
 
@@ -39,21 +46,39 @@ type httpHelper struct {
 	req    *http.Request
 }
 
-// Query 添加Query参数
-func (p *httpHelper) Query(k string, v string) Helper {
+// AddQuery 添加Query参数
+func (p *httpHelper) AddQuery(k string, v string) Helper {
 	query := p.req.URL.Query()
 	query.Add(k, v)
 	p.req.URL.RawQuery = query.Encode()
 	return p
 }
 
-// QueryMap 通过map来添加Query参数
-func (p *httpHelper) QueryMap(m map[string]string) Helper {
+// AddQueryMap 通过map来添加Query参数
+func (p *httpHelper) AddQueryMap(m map[string]string) Helper {
 	query := p.req.URL.Query()
 	for k, v := range m {
 		query.Add(k, v)
 	}
 	p.req.URL.RawQuery = query.Encode()
+	return p
+}
+
+// AddPathEscapeQuery 增加query的kv, kv均用PathEscape转义
+func (p *httpHelper) AddPathEscapeQuery(k string, v string) Helper {
+	query := p.req.URL.Query()
+	query.Add(k, v)
+	p.req.URL.RawQuery = PathEscapeEncode(query)
+	return p
+}
+
+// AddPathEscapeQueryMap 通过map来添加Query参数并进行PathEscape 转义
+func (p *httpHelper) AddPathEscapeQueryMap(m map[string]string) Helper {
+	query := p.req.URL.Query()
+	for k, v := range m {
+		query.Add(k, v)
+	}
+	p.req.URL.RawQuery = PathEscapeEncode(query)
 	return p
 }
 
@@ -91,20 +116,45 @@ func (p *httpHelper) AddSimpleCookies(c map[string]string) Helper {
 
 // Do 发送请求
 func (p *httpHelper) Do() Result {
+	startTime := time.Now()
 	result := &baseResult{}
+	byteBody, _ := io.ReadAll(p.req.Body)
+	result.ReqBody = string(byteBody)
+	fmt.Println("string byteBody:", result.ReqBody)
+	newByteBodyReader := bytes.NewReader(byteBody)
+
+	var rc io.ReadCloser
+	if newByteBodyReader != nil {
+		rc = io.NopCloser(newByteBodyReader)
+	}
+	p.req.Body = rc
 	resp, err := http.DefaultClient.Do(p.req)
 	if err != nil {
 		//return nil, err
 		return result.errorf("do http request err: %w", err)
 	}
-	result.Status = resp.StatusCode
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Println("body close err: ", err)
+		}
+	}(resp.Body)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		//return nil, err
 		return result.errorf("read response body err: %w", err)
 	}
-	result.Body = string(body)
+
+	result.Status = resp.StatusCode
+	result.Url = p.req.URL.String()
+	result.ReqHeader = p.req.Header
+	result.ReqCookie = p.req.Cookies()
+	result.RetHeader = resp.Header
+	result.RetCookie = resp.Cookies()
+	result.RetBody = string(body)
+	elapsed := time.Since(startTime)
+	result.Elapsed = fmt.Sprintf("%v", elapsed)
+	result.BodyLen = len(body)
 	Log(p.req.Method, p.req.URL.String(), string(body))
 	return &jsonResult{
 		baseResult: result,
@@ -122,12 +172,20 @@ func errorHelper(err error) Helper {
 }
 
 // Query 添加Query参数
-func (p *errHelper) Query(string, string) Helper {
+func (p *errHelper) AddQuery(string, string) Helper {
 	return p
 }
 
 // QueryMap 通过map来添加Query参数
-func (p *errHelper) QueryMap(map[string]string) Helper {
+func (p *errHelper) AddQueryMap(map[string]string) Helper {
+	return p
+}
+
+func (p *errHelper) AddPathEscapeQuery(k string, v string) Helper {
+	return p
+}
+
+func (p *errHelper) AddPathEscapeQueryMap(m map[string]string) Helper {
 	return p
 }
 

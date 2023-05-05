@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
@@ -18,23 +19,30 @@ var (
 	// Log 日志输出函数，可修改
 	Log = func(v ...interface{}) { fmt.Println(v...) }
 )
+var once sync.Once
 
 // NewRequest 创建新的请求
 func NewRequest(method string, urlStr string, body io.Reader) Helper {
 	var err error
-	http.DefaultClient = &http.Client{
-		Transport: &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			DialContext: (&net.Dialer{
-				Timeout:   5 * time.Second,
-				KeepAlive: 90 * time.Second,
-			}).DialContext,
-			MaxIdleConns:        300,
-			MaxIdleConnsPerHost: 100,
-			IdleConnTimeout:     30 * time.Second,
-		},
-		Timeout: 30 * time.Second,
-	}
+	once.Do(func() {
+		http.DefaultClient = &http.Client{
+			Transport: &http.Transport{
+				Proxy: http.ProxyFromEnvironment,
+				DialContext: (&net.Dialer{
+					Timeout:   5 * time.Second,
+					KeepAlive: 90 * time.Second,
+				}).DialContext,
+				MaxIdleConns:          300,
+				MaxIdleConnsPerHost:   100,
+				IdleConnTimeout:       30 * time.Second,
+				ResponseHeaderTimeout: 5 * time.Second,
+				ForceAttemptHTTP2:     true,
+				ReadBufferSize:        65536,
+				WriteBufferSize:       65536,
+			},
+			Timeout: 30 * time.Second,
+		}
+	})
 	req, err := http.NewRequest(method, urlStr, body)
 	if err != nil {
 		return errorHelper(fmt.Errorf("new request error: %w", err))
@@ -54,15 +62,41 @@ func GET(url string) Helper {
 
 // PostUrlEncode 创建application/x-www-form-urlencoded的POST请求
 func PostUrlEncode(url string, values url.Values) Helper {
-	return NewRequest("POST", url, strings.NewReader(values.Encode())).SetHeader("Content-Type", "application/x-www-form-urlencoded")
+	return NewRequest("POST", url, strings.NewReader(values.Encode())).SetHeader("Content-Type",
+		"application/x-www-form-urlencoded")
 }
 
 // PostJSON 创建application/json的POST请求
 func PostJSON(url string, body interface{}) Helper {
-	b, _ := jsoniter.Marshal(body)
-	return NewRequest("POST", url, bytes.NewReader(b)).SetHeader("Content-Type", "application/json")
+	byteBody, _ := jsoniter.Marshal(body)
+	return NewRequest("POST", url, bytes.NewReader(byteBody)).SetHeader("Content-Type",
+		"application/json")
 }
 
+func PathEscapeEncode(v url.Values) string {
+	if v == nil {
+		return ""
+	}
+	var buf strings.Builder
+	keys := make([]string, 0, len(v))
+	for k := range v {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		vs := v[k]
+		keyEscaped := url.PathEscape(k)
+		for _, v := range vs {
+			if buf.Len() > 0 {
+				buf.WriteByte('&')
+			}
+			buf.WriteString(keyEscaped)
+			buf.WriteByte('=')
+			buf.WriteString(url.PathEscape(v))
+		}
+	}
+	return buf.String()
+}
 func PathEscape(param map[string]string) string {
 	var buf strings.Builder
 	keys := make([]string, 0, len(param))

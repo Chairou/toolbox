@@ -2,6 +2,7 @@ package color
 
 import (
 	"github.com/Chairou/toolbox/util/conv"
+	"regexp"
 	"strings"
 )
 
@@ -69,4 +70,29 @@ func SetFbColor(fontColor, backGroupColor string, v interface{}) string {
 	} else {
 		return str
 	}
+}
+
+func RemoveColor(str string) string {
+	re := regexp.MustCompile(`\033\[[0-9;]*[a-zA-Z]`)
+	cleanStr := re.ReplaceAllString(str, "")
+	text := extractText(cleanStr)
+
+	return text
+}
+
+func extractText(str string) string {
+	var text string
+	inEscape := false
+	for _, ch := range str {
+		if ch == '\033' {
+			inEscape = true
+		} else if inEscape && ch >= 'A' && ch <= 'Z' {
+			inEscape = false
+		} else if inEscape && ch >= 'a' && ch <= 'z' {
+			inEscape = false
+		} else if !inEscape {
+			text += string(ch)
+		}
+	}
+	return text
 }

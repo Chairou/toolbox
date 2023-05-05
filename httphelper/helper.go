@@ -118,7 +118,15 @@ func (p *httpHelper) AddSimpleCookies(c map[string]string) Helper {
 func (p *httpHelper) Do() Result {
 	startTime := time.Now()
 	result := &baseResult{}
-	byteBody, _ := io.ReadAll(p.req.Body)
+	byteBody, err := io.ReadAll(p.req.Body)
+	if err != nil {
+		fmt.Println("io.ReadAll err:", err)
+		result.Err = err
+		return &jsonResult{
+			baseResult: result,
+			body:       jsoniter.Get([]byte{0}),
+		}
+	}
 	result.ReqBody = string(byteBody)
 	fmt.Println("string byteBody:", result.ReqBody)
 	newByteBodyReader := bytes.NewReader(byteBody)

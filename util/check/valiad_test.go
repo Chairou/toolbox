@@ -151,6 +151,6 @@ func TestIsValidFields(t *testing.T) {
 }
 
 func TestInNumRange(t *testing.T) {
-	var a string = "-2"
+	var a string = "1.2"
 	t.Log(InNumRange(a, 0, 19))
 }

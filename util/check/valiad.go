@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/Chairou/toolbox/util/color"
 	"github.com/Chairou/toolbox/util/conv"
 	"math"
 	"net"
@@ -234,9 +233,7 @@ func IsValidFields(fields ...string) (err error) {
 		err := IsValidField(arg)
 		if err != nil {
 			finalErrorBuf.WriteString("【 ")
-
-			finalErrorBuf.WriteString(color.SetColor(color.Red, arg))
-
+			finalErrorBuf.WriteString(arg)
 			finalErrorBuf.WriteString(" is not Valid 】, ")
 		}
 	}

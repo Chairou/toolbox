@@ -42,6 +42,7 @@ type baseResult struct {
 	RetBody   string
 	Elapsed   string
 	BodyLen   int
+	Err       error
 }
 
 // BaseResult 返回Http请求的基本结果，包含Status和Body
@@ -51,7 +52,7 @@ func (p *baseResult) BaseResult() *baseResult {
 
 // Error 返回出现的错误
 func (p *baseResult) Error() error {
-	return nil
+	return p.Err
 }
 
 func (p *baseResult) error(err error) *errResult {

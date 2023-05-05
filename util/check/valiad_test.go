@@ -148,5 +148,9 @@ func TestIsValidFields(t *testing.T) {
 	if err != nil {
 		t.Log(err)
 	}
+}
 
+func TestInNumRange(t *testing.T) {
+	var a string = "1.2"
+	t.Log(InNumRange(a, 0, 19))
 }

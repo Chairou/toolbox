@@ -266,7 +266,7 @@ func InNumRange(val interface{}, min, max float64) bool {
 	if !ok {
 		return false
 	}
-	if math.Max(mid, min) == mid && math.Max(min, max) == max {
+	if math.Max(mid, min) == mid && math.Max(mid, max) == max {
 		return true
 	} else {
 		return false

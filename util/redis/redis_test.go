@@ -7,10 +7,12 @@ import (
 // go test -v redis_test.go redis.go
 
 func TestRedis(t *testing.T) {
-	redispool := NewRedis("redis1", "127.0.0.1:6379", "chairou")
-	//redispool = NewRedis("rc36.perftest.DCMETA.db:50036", "redis@dctest")
+	rediInst := NewRedis("redis1", "127.0.0.1:6379", "chairou")
 
-	set, err := redispool.Set("chairou", "111")
+	// get the redis instance by name
+	rediInst = GetRedisByName("redis1")
+
+	set, err := rediInst.Set("chairou", "111")
 	if err != nil {
 		t.Log(err)
 		t.Error(err)
@@ -18,7 +20,7 @@ func TestRedis(t *testing.T) {
 	}
 	t.Log(set)
 
-	inc, err := redispool.Increment("chairou")
+	inc, err := rediInst.Increment("chairou")
 	if err != nil {
 		t.Log(err)
 		t.Error(err)
@@ -26,7 +28,7 @@ func TestRedis(t *testing.T) {
 	}
 	t.Log("inc:", inc)
 
-	get, err := redispool.Get("chairou")
+	get, err := rediInst.Get("chairou")
 	if err != nil {
 		t.Log(err)
 		t.Error(err)
@@ -34,7 +36,7 @@ func TestRedis(t *testing.T) {
 	}
 	t.Log(get)
 
-	expire, err := redispool.Expired("chairou", 500)
+	expire, err := rediInst.Expired("chairou", 500)
 	if err != nil {
 		t.Log(err)
 		t.Error(err)
@@ -45,7 +47,7 @@ func TestRedis(t *testing.T) {
 	}
 	t.Log(expire)
 
-	ttl, err := redispool.Ttl("chairou")
+	ttl, err := rediInst.Ttl("chairou")
 	if err != nil {
 		t.Log(err)
 		t.Error(err)
@@ -53,14 +55,14 @@ func TestRedis(t *testing.T) {
 	}
 	t.Log("ttl:", ttl)
 
-	hset, err := redispool.HSet("chairou_hset", "test", "222")
+	hset, err := rediInst.HSet("chairou_hset", "test", "222")
 	if err != nil {
 		t.Log("hset", err, hset)
 		t.Error(err)
 		return
 	}
 	t.Log("hset: ", hset)
-	hget, err := redispool.HGet("chairou_hset", "test")
+	hget, err := rediInst.HGet("chairou_hset", "test")
 	if err != nil {
 		t.Log(err)
 		t.Error(err)
@@ -68,7 +70,7 @@ func TestRedis(t *testing.T) {
 	}
 	t.Log(hget)
 
-	hgetall, err := redispool.HGetAll("chairou_hset")
+	hgetall, err := rediInst.HGetAll("chairou_hset")
 	if err != nil {
 		t.Log(err)
 		t.Error(err)
@@ -76,7 +78,7 @@ func TestRedis(t *testing.T) {
 	}
 	t.Log("hgetall:", hgetall)
 
-	hdel, err := redispool.HDel("chair_hset", "test")
+	hdel, err := rediInst.HDel("chair_hset", "test")
 	if err != nil {
 		t.Log(err)
 		t.Error(err)
@@ -84,7 +86,7 @@ func TestRedis(t *testing.T) {
 	}
 	t.Log("hdel:", hdel)
 
-	del, err := redispool.Del("chairou")
+	del, err := rediInst.Del("chairou")
 	if err != nil {
 		t.Log(err)
 		t.Error(err)
@@ -92,7 +94,7 @@ func TestRedis(t *testing.T) {
 	}
 	t.Log("del:", del)
 
-	hsetex, err := redispool.HSetEX("chair", "redisPool2", "111", 10)
+	hsetex, err := rediInst.HSetEX("chair", "redisPool2", "111", 10)
 	if err != nil {
 		t.Log(err)
 		t.Error(err)
@@ -100,31 +102,31 @@ func TestRedis(t *testing.T) {
 	}
 	t.Log("hsetex:", hsetex)
 
-	_, err = redispool.LPush("list1", "1")
-	_, err = redispool.LPush("list1", "abc")
-	llen, err := redispool.LLen("list1")
+	_, err = rediInst.LPush("list1", "1")
+	_, err = rediInst.LPush("list1", "abc")
+	llen, err := rediInst.LLen("list1")
 	if err != nil {
 		t.Error(err)
 	}
 	t.Log("llen:", llen)
 
-	llist, err := redispool.LRange("list1", 0, -1)
+	llist, err := rediInst.LRange("list1", 0, -1)
 	t.Log("llist:", llist)
 
-	lrem, err := redispool.LRem("list1", 0, "abc")
+	lrem, err := rediInst.LRem("list1", 0, "abc")
 	if err != nil {
 		t.Error(err)
 	}
 	t.Log("lrem:", lrem)
 
-	llist2, err := redispool.LRange("list1", 0, -1)
+	llist2, err := rediInst.LRange("list1", 0, -1)
 	t.Log("llist:", llist2)
 
-	lpop, err := redispool.LPop("list1")
+	lpop, err := rediInst.LPop("list1")
 	t.Log("lpop:", lpop)
-	_, err = redispool.Del("list1")
+	_, err = rediInst.Del("list1")
 
-	lpushx, err := redispool.LPushX("asd", "qqqq")
+	lpushx, err := rediInst.LPushX("asd", "qqqq")
 	t.Log("lpushx:", lpushx)
 
 	redisPool2, err := GetRedisPool("redis1")

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package routinepool
+package workpool
 
 import (
 	"context"
@@ -47,7 +47,7 @@ type FuncResult struct {
 
 // GoRoutineExecutor body
 type GoRoutineExecutor struct {
-	UUID string
+	TaskID string
 	GoRoutineFunc
 	GoRoutineParams []interface{}
 }
@@ -68,10 +68,10 @@ func NewGoRoutinePool(size int, stopCH <-chan struct{}, ctx context.Context, qps
 
 // Submit task
 func (p *GoRoutinePool) Submit(executor GoRoutineExecutor) {
-	p.queue.AddRateLimited(executor.UUID)
-	p.entry.Store(executor.UUID, executor)
+	p.queue.AddRateLimited(executor.TaskID)
+	p.entry.Store(executor.TaskID, executor)
 	p.wg.Add(1)
-	klog.Infof("submit task %v to goroutine pool", executor.UUID)
+	klog.Infof("submit task %v to goroutine pool", executor.TaskID)
 }
 
 // Run pool

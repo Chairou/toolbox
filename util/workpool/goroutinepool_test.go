@@ -1,4 +1,4 @@
-package routinepool
+package workpool
 
 import (
 	"context"
@@ -34,14 +34,14 @@ func work() []interface{} {
 	ctx := context.Background()
 	stop := make(chan struct{})
 	poolSize := 10
-	qps := 10
-	bucketNuw := 10
+	qps := 15
+	bucketNuw := 1
 
 	p := NewGoRoutinePool(poolSize, stop, ctx, qps, bucketNuw)
 
 	for i := 0; i < totalTaskNum; i++ {
 		task := GoRoutineExecutor{
-			UUID:            "taskID-" + conv.String(i),
+			TaskID:          "taskID-" + conv.String(i),
 			GoRoutineFunc:   getConstValue,
 			GoRoutineParams: []interface{}{"123"},
 		}

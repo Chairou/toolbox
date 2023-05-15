@@ -28,7 +28,7 @@ func TestGoroutineRateLimit(t *testing.T) {
 }
 
 func getConstValue(param ...interface{}) (interface{}, error) {
-	klog.Infoln(param[0])
+	klog.Infoln(param[0].(string), param[1].(int))
 	return 1, nil
 }
 
@@ -45,7 +45,7 @@ func work() []interface{} {
 		task := GoRoutineExecutor{
 			TaskID:          "taskID-" + conv.String(i),
 			GoRoutineFunc:   getConstValue,
-			GoRoutineParams: []interface{}{"123"},
+			GoRoutineParams: []interface{}{"123", 456},
 		}
 		p.Submit(task)
 	}

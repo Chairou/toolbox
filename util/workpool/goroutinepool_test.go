@@ -35,9 +35,9 @@ func work() []interface{} {
 	stop := make(chan struct{})
 	poolSize := 10
 	qps := 15
-	bucketNuw := 1
+	bucketNum := 1
 
-	p := NewGoRoutinePool(poolSize, stop, ctx, qps, bucketNuw)
+	p := NewRateLimitedGoRoutinePool(poolSize, stop, ctx, qps, bucketNum)
 
 	for i := 0; i < totalTaskNum; i++ {
 		task := GoRoutineExecutor{

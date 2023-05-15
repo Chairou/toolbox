@@ -52,8 +52,8 @@ type GoRoutineExecutor struct {
 	GoRoutineParams []interface{}
 }
 
-// NewGoRoutinePool new pool
-func NewGoRoutinePool(size int, stopCH <-chan struct{}, ctx context.Context, qps int, bucketNum int) *GoRoutinePool {
+// NewRateLimitedGoRoutinePool bucketNum 默认最好为1, 这样qps才会准确
+func NewRateLimitedGoRoutinePool(size int, stopCH <-chan struct{}, ctx context.Context, qps int, bucketNum int) *GoRoutinePool {
 	buff := make(chan struct{}, size)
 	return &GoRoutinePool{
 		size:   size,

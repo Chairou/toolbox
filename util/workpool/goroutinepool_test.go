@@ -1,8 +1,10 @@
-package routinepool
+package workpool
 
 import (
 	"context"
 	"fmt"
+	"github.com/Chairou/toolbox/util/conv"
+	"k8s.io/klog/v2"
 	"testing"
 	"time"
 )
@@ -26,6 +28,7 @@ func TestGoroutineRateLimit(t *testing.T) {
 }
 
 func getConstValue(param ...interface{}) (interface{}, error) {
+	klog.Infoln(param[0].(string), param[1].(int))
 	return 1, nil
 }
 
@@ -33,16 +36,16 @@ func work() []interface{} {
 	ctx := context.Background()
 	stop := make(chan struct{})
 	poolSize := 10
-	qps := 10
-	bucketNuw := 10
+	qps := 15
+	bucketNum := 1
 
-	p := NewGoRoutinePool(poolSize, stop, ctx, qps, bucketNuw)
+	p := NewRateLimitedGoRoutinePool(poolSize, stop, ctx, qps, bucketNum)
 
 	for i := 0; i < totalTaskNum; i++ {
 		task := GoRoutineExecutor{
-			UUID:            GetUUIDString(),
+			TaskID:          "taskID-" + conv.String(i),
 			GoRoutineFunc:   getConstValue,
-			GoRoutineParams: []interface{}{"123"},
+			GoRoutineParams: []interface{}{"123", 456},
 		}
 		p.Submit(task)
 	}

@@ -18,7 +18,6 @@ package workqueue
 
 import (
 	"container/heap"
-	"k8s.io/utils/clock"
 	"sync"
 	"time"
 )
@@ -234,7 +233,7 @@ func (q *delayingType) waitingLoop() {
 	never := make(<-chan time.Time)
 
 	// Make a timer that expires when the item at the head of the waiting queue is ready
-	var nextReadyAtTimer clock.Timer
+	var nextReadyAtTimer Timer
 
 	waitingForQueue := &waitForPriorityQueue{}
 	heap.Init(waitingForQueue)

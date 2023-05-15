@@ -3,6 +3,7 @@ package routinepool
 import (
 	"context"
 	"fmt"
+	"github.com/Chairou/toolbox/util/conv"
 	"testing"
 	"time"
 )
@@ -40,7 +41,7 @@ func work() []interface{} {
 
 	for i := 0; i < totalTaskNum; i++ {
 		task := GoRoutineExecutor{
-			UUID:            GetUUIDString(),
+			UUID:            "taskID-" + conv.String(i),
 			GoRoutineFunc:   getConstValue,
 			GoRoutineParams: []interface{}{"123"},
 		}

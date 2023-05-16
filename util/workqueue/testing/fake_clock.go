@@ -14,17 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package workqueue
+package testing
 
 import (
 	"sync"
 	"time"
+
+	"github.com/Chairou/toolbox/util/workqueue/clock"
 )
 
 var (
-	_ = PassiveClock(&FakePassiveClock{})
-	_ = WithTicker(&FakeClock{})
-	_ = Clock(&IntervalClock{})
+	_ = clock.PassiveClock(&FakePassiveClock{})
+	_ = clock.WithTicker(&FakeClock{})
+	_ = clock.Clock(&IntervalClock{})
 )
 
 // FakePassiveClock implements PassiveClock, but returns an arbitrary time.
@@ -99,7 +101,7 @@ func (f *FakeClock) After(d time.Duration) <-chan time.Time {
 }
 
 // NewTimer constructs a fake timer, akin to time.NewTimer(d).
-func (f *FakeClock) NewTimer(d time.Duration) Timer {
+func (f *FakeClock) NewTimer(d time.Duration) clock.Timer {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	stopTime := f.time.Add(d)
@@ -116,7 +118,7 @@ func (f *FakeClock) NewTimer(d time.Duration) Timer {
 }
 
 // AfterFunc is the Fake version of time.AfterFunc(d, cb).
-func (f *FakeClock) AfterFunc(d time.Duration, cb func()) Timer {
+func (f *FakeClock) AfterFunc(d time.Duration, cb func()) clock.Timer {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	stopTime := f.time.Add(d)
@@ -154,7 +156,7 @@ func (f *FakeClock) Tick(d time.Duration) <-chan time.Time {
 }
 
 // NewTicker returns a new Ticker.
-func (f *FakeClock) NewTicker(d time.Duration) Ticker {
+func (f *FakeClock) NewTicker(d time.Duration) clock.Ticker {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	tickTime := f.time.Add(d)
@@ -263,13 +265,13 @@ func (*IntervalClock) After(d time.Duration) <-chan time.Time {
 
 // NewTimer is unimplemented, will panic.
 // TODO: make interval clock use FakeClock so this can be implemented.
-func (*IntervalClock) NewTimer(d time.Duration) Timer {
+func (*IntervalClock) NewTimer(d time.Duration) clock.Timer {
 	panic("IntervalClock doesn't implement NewTimer")
 }
 
 // AfterFunc is unimplemented, will panic.
 // TODO: make interval clock use FakeClock so this can be implemented.
-func (*IntervalClock) AfterFunc(d time.Duration, f func()) Timer {
+func (*IntervalClock) AfterFunc(d time.Duration, f func()) clock.Timer {
 	panic("IntervalClock doesn't implement AfterFunc")
 }
 
@@ -281,7 +283,7 @@ func (*IntervalClock) Tick(d time.Duration) <-chan time.Time {
 
 // NewTicker has no implementation yet and is omitted.
 // TODO: make interval clock use FakeClock so this can be implemented.
-func (*IntervalClock) NewTicker(d time.Duration) Ticker {
+func (*IntervalClock) NewTicker(d time.Duration) clock.Ticker {
 	panic("IntervalClock doesn't implement NewTicker")
 }
 
@@ -290,7 +292,7 @@ func (*IntervalClock) Sleep(d time.Duration) {
 	panic("IntervalClock doesn't implement Sleep")
 }
 
-var _ = Timer(&fakeTimer{})
+var _ = clock.Timer(&fakeTimer{})
 
 // fakeTimer implements clock.Timer based on a FakeClock.
 type fakeTimer struct {

@@ -20,6 +20,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	testingclock "github.com/Chairou/toolbox/util/workqueue/clock/testing"
 )
 
 type testMetrics struct {
@@ -38,7 +40,7 @@ func TestMetricShutdown(t *testing.T) {
 	m := &testMetrics{
 		updateCalled: ch,
 	}
-	c := NewFakeClock(time.Now())
+	c := testingclock.NewFakeClock(time.Now())
 	q := newQueue(c, m, time.Millisecond)
 	for !c.HasWaiters() {
 		// Wait for the go routine to call NewTicker()
@@ -168,13 +170,10 @@ func (m *testMetricsProvider) NewRetriesMetric(name string) CounterMetric {
 func TestMetrics(t *testing.T) {
 	mp := testMetricsProvider{}
 	t0 := time.Unix(0, 0)
-	c := NewFakeClock(t0)
-	config := QueueConfig{
-		Name:            "test",
-		Clock:           c,
-		MetricsProvider: &mp,
-	}
-	q := newQueueWithConfig(config, time.Millisecond)
+	c := testingclock.NewFakeClock(t0)
+	mf := queueMetricsFactory{metricsProvider: &mp}
+	m := mf.newQueueMetrics("test", c)
+	q := newQueue(c, m, time.Millisecond)
 	defer q.ShutDown()
 	for !c.HasWaiters() {
 		// Wait for the go routine to call NewTicker()

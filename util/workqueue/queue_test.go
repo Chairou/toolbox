@@ -17,7 +17,6 @@ limitations under the License.
 package workqueue_test
 
 import (
-	"github.com/Chairou/toolbox/util/workqueue"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -25,6 +24,7 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/workqueue"
 )
 
 func TestBasic(t *testing.T) {

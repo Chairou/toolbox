@@ -20,6 +20,9 @@ import (
 	"container/heap"
 	"sync"
 	"time"
+
+	"github.com/Chairou/toolbox/util/workqueue/clock"
+	utilruntime "github.com/Chairou/toolbox/util/workqueue/runtime"
 )
 
 // DelayingInterface is an Interface that can Add an item at a later time. This makes it easier to
@@ -30,81 +33,36 @@ type DelayingInterface interface {
 	AddAfter(item interface{}, duration time.Duration)
 }
 
-// DelayingQueueConfig specifies optional configurations to customize a DelayingInterface.
-type DelayingQueueConfig struct {
-	// Name for the queue. If unnamed, the metrics will not be registered.
-	Name string
-
-	// MetricsProvider optionally allows specifying a metrics provider to use for the queue
-	// instead of the global provider.
-	MetricsProvider MetricsProvider
-
-	// Clock optionally allows injecting a real or fake clock for testing purposes.
-	Clock WithTicker
-
-	// Queue optionally allows injecting custom queue Interface instead of the default one.
-	Queue Interface
-}
-
-// NewDelayingQueue constructs a new workqueue with delayed queuing ability.
-// NewDelayingQueue does not emit metrics. For use with a MetricsProvider, please use
-// NewDelayingQueueWithConfig instead and specify a name.
+// NewDelayingQueue constructs a new workqueue with delayed queuing ability
 func NewDelayingQueue() DelayingInterface {
-	return NewDelayingQueueWithConfig(DelayingQueueConfig{})
-}
-
-// NewDelayingQueueWithConfig constructs a new workqueue with options to
-// customize different properties.
-func NewDelayingQueueWithConfig(config DelayingQueueConfig) DelayingInterface {
-	if config.Clock == nil {
-		config.Clock = RealClock{}
-	}
-
-	if config.Queue == nil {
-		config.Queue = NewWithConfig(QueueConfig{
-			Name:            config.Name,
-			MetricsProvider: config.MetricsProvider,
-			Clock:           config.Clock,
-		})
-	}
-
-	return newDelayingQueue(config.Clock, config.Queue, config.Name, config.MetricsProvider)
+	return NewDelayingQueueWithCustomClock(clock.RealClock{}, "")
 }
 
 // NewDelayingQueueWithCustomQueue constructs a new workqueue with ability to
 // inject custom queue Interface instead of the default one
-// Deprecated: Use NewDelayingQueueWithConfig instead.
 func NewDelayingQueueWithCustomQueue(q Interface, name string) DelayingInterface {
-	return NewDelayingQueueWithConfig(DelayingQueueConfig{
-		Name:  name,
-		Queue: q,
-	})
+	return newDelayingQueue(clock.RealClock{}, q, name)
 }
 
-// NewNamedDelayingQueue constructs a new named workqueue with delayed queuing ability.
-// Deprecated: Use NewDelayingQueueWithConfig instead.
+// NewNamedDelayingQueue constructs a new named workqueue with delayed queuing ability
 func NewNamedDelayingQueue(name string) DelayingInterface {
-	return NewDelayingQueueWithConfig(DelayingQueueConfig{Name: name})
+	return NewDelayingQueueWithCustomClock(clock.RealClock{}, name)
 }
 
 // NewDelayingQueueWithCustomClock constructs a new named workqueue
-// with ability to inject real or fake clock for testing purposes.
-// Deprecated: Use NewDelayingQueueWithConfig instead.
-func NewDelayingQueueWithCustomClock(clock WithTicker, name string) DelayingInterface {
-	return NewDelayingQueueWithConfig(DelayingQueueConfig{
-		Name:  name,
-		Clock: clock,
-	})
+// with ability to inject real or fake clock for testing purposes
+func NewDelayingQueueWithCustomClock(clock clock.WithTicker, name string) DelayingInterface {
+	return newDelayingQueue(clock, NewNamed(name), name)
 }
 
-func newDelayingQueue(clock WithTicker, q Interface, name string, provider MetricsProvider) *delayingType {
+func newDelayingQueue(clock clock.WithTicker, q Interface, name string) *delayingType {
 	ret := &delayingType{
 		Interface:       q,
 		clock:           clock,
 		heartbeat:       clock.NewTicker(maxWait),
 		stopCh:          make(chan struct{}),
 		waitingForAddCh: make(chan *waitFor, 1000),
-		metrics:         newRetryMetrics(name, provider),
+		metrics:         newRetryMetrics(name),
 	}
 
 	go ret.waitingLoop()
@@ -116,7 +74,7 @@ type delayingType struct {
 	Interface
 
 	// clock tracks time for delayed firing
-	clock Clock
+	clock clock.Clock
 
 	// stopCh lets us signal a shutdown to the waiting loop
 	stopCh chan struct{}
@@ -124,7 +82,7 @@ type delayingType struct {
 	stopOnce sync.Once
 
 	// heartbeat ensures we wait no more than maxWait before firing
-	heartbeat Ticker
+	heartbeat clock.Ticker
 
 	// waitingForAddCh is a buffered channel that feeds waitingForAdd
 	waitingForAddCh chan *waitFor
@@ -227,13 +185,13 @@ const maxWait = 10 * time.Second
 
 // waitingLoop runs until the workqueue is shutdown and keeps a check on the list of items to be added.
 func (q *delayingType) waitingLoop() {
-	defer HandleCrash()
+	defer utilruntime.HandleCrash()
 
 	// Make a placeholder channel to use when there are no items in our list
 	never := make(<-chan time.Time)
 
 	// Make a timer that expires when the item at the head of the waiting queue is ready
-	var nextReadyAtTimer Timer
+	var nextReadyAtTimer clock.Timer
 
 	waitingForQueue := &waitForPriorityQueue{}
 	heap.Init(waitingForQueue)

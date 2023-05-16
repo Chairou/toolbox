@@ -19,6 +19,8 @@ package workqueue
 import (
 	"sync"
 	"time"
+
+	"github.com/Chairou/toolbox/util/workqueue/clock"
 )
 
 // This file provides abstractions for setting the provider (e.g., prometheus)
@@ -69,7 +71,7 @@ func (noopMetric) Observe(float64) {}
 
 // defaultQueueMetrics expects the caller to lock before setting any metrics.
 type defaultQueueMetrics struct {
-	clock Clock
+	clock clock.Clock
 
 	// current depth of a workqueue
 	depth GaugeMetric
@@ -224,7 +226,7 @@ func (f *queueMetricsFactory) setProvider(mp MetricsProvider) {
 	})
 }
 
-func (f *queueMetricsFactory) newQueueMetrics(name string, clock Clock) queueMetrics {
+func (f *queueMetricsFactory) newQueueMetrics(name string, clock clock.Clock) queueMetrics {
 	mp := f.metricsProvider
 	if len(name) == 0 || mp == (noopMetricsProvider{}) {
 		return noMetrics{}
@@ -242,18 +244,13 @@ func (f *queueMetricsFactory) newQueueMetrics(name string, clock Clock) queueMet
 	}
 }
 
-func newRetryMetrics(name string, provider MetricsProvider) retryMetrics {
+func newRetryMetrics(name string) retryMetrics {
 	var ret *defaultRetryMetrics
 	if len(name) == 0 {
 		return ret
 	}
-
-	if provider == nil {
-		provider = globalMetricsFactory.metricsProvider
-	}
-
 	return &defaultRetryMetrics{
-		retries: provider.NewRetriesMetric(name),
+		retries: globalMetricsFactory.metricsProvider.NewRetriesMetric(name),
 	}
 }
 

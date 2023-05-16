@@ -22,7 +22,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/Chairou/toolbox/util/workqueue/cmp"
 )
 
 type testCase struct {

@@ -19,6 +19,8 @@ package workqueue
 import (
 	"context"
 	"sync"
+
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 )
 
 type DoWorkPieceFunc func(piece int)
@@ -72,7 +74,7 @@ func ParallelizeUntil(ctx context.Context, workers, pieces int, doWorkPiece DoWo
 	wg.Add(workers)
 	for i := 0; i < workers; i++ {
 		go func() {
-			defer HandleCrash()
+			defer utilruntime.HandleCrash()
 			defer wg.Done()
 			for chunk := range toProcess {
 				start := chunk * chunkSize

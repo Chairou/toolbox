@@ -17,6 +17,7 @@ package workpool
 import (
 	"context"
 	"github.com/Chairou/toolbox/util/workqueue"
+	"github.com/Chairou/toolbox/util/workqueue/runtime"
 	"golang.org/x/time/rate"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog/v2"
@@ -76,7 +77,7 @@ func (p *GoRoutinePool) Submit(executor GoRoutineExecutor) {
 
 // Run pool
 func (p *GoRoutinePool) Run() []interface{} {
-	defer workqueue.HandleCrash()
+	defer runtime.HandleCrash()
 	defer p.queue.ShutDown()
 
 	for i := 0; i < p.size; i++ {

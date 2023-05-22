@@ -2,7 +2,7 @@ package listopt
 
 import "sort"
 
-// splitArray 平均分割一个list到num个list里
+// SplitList 平均分割一个list到num个list里
 func SplitList(arr []string, num int64) [][]string {
 	max := int64(len(arr))
 	if max < num {

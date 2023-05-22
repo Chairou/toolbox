@@ -109,6 +109,13 @@ func (p *jsonResult) Bind(object interface{}, path ...interface{}) error {
 	return nil
 }
 
+func (p *jsonResult) UnmarshalFromBody(v interface{}) error {
+	if err := jsoniter.UnmarshalFromString(p.RetBody, v); err != nil {
+		return err
+	}
+	return nil
+}
+
 type errResult struct {
 	*baseResult
 	error

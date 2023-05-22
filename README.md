@@ -62,32 +62,7 @@ A simple and minimally dependent Golang toolbox and development library. Contact
         // redis DO 通用接口
         func (c *RedisPool) Do(commandName string, args ...interface{}) (interface{}, error) 
         func (c *RedisPool) ClosePool() error // 关闭连接池, 释放sync.Map
-        func (c *RedisPool) Expired(key string, seconds int) (int64, error) // redis expire
-        func (c *RedisPool) Ttl(key string) (int64, error) // redis TTL
-        func (c *RedisPool) HMGet(key string, values ...string) ([]string, error) // redis HMGET
-        func (c *RedisPool) HMSet(key string, kv map[string]string) (string, error) // redis HMSET
-        func (c *RedisPool) HGetAll(key string) (map[string]string, error) // redis HGETALL
-        func (c *RedisPool) HSetEX(key, field string, value interface{}, expire int) (int64, error) 
-        // redis HSET and expire
-        func (c *RedisPool) Increment(key string) (int64, error) // redis INCR
-        func (c *RedisPool) LIndex(key string, index int) (string, error) // redis LINDEX
-        func (c *RedisPool) LLen(key string) (int64, error) //redis LLEN
-        func (c *RedisPool) LPop(key string) (string, error) // redis LPOP
-        func (c *RedisPool) LPush(key string, values ...interface{}) (int64, error) // redis LPUSH
-        func (c *RedisPool) LPushX(key string, values ...interface{}) (int64, error) // redis LPUSHX
-        func (c *RedisPool) LRem(key string, count int, value string) (int64, error) // redis LREM
-        func (c *RedisPool) LSet(key, value string, index int) (int64, error) // redis LSET
-        func (c *RedisPool) LTrim(key string, start, stop int) (string, error) // redis LTRIM
-        func (c *RedisPool) MGet(keys ...string) ([]string, error) // REDIS MGET
-        func (c *RedisPool) MSet(pairs ...interface{}) (string, error) / REDIS MSET
-        func (c *RedisPool) Ping() (string, error) // REDIS PING
-        // REDIS SETEX
-        func (c *RedisPool) SetEX(key string, value interface{}, expire int) (string, error)
-        // REDIS SETNX
-        func (c *RedisPool) SetNX(key string, value interface{}, expire int) (int64, error)
-        // REDIS LRANGE
-        func (c *RedisPool) LRange(key string, start, stop int64) ([]string, error)
-
+      
 ### util/cal
     用途: 计算日期和IP范围
     测试用例: go test -v calDate_test.go calDate.go calIP_test.go calIP.go
@@ -129,14 +104,6 @@ A simple and minimally dependent Golang toolbox and development library. Contact
         // 把20060102, 2006-01-02, 2006-01-02 15:04:05这三种类型的string转为time类型
         func Time(val interface{}) (time.Time, bool)
         func TimePtr(val interface{}) *time.Time // 把上述3种类型转为time指针
-        //"-a 123 -b hello" ---> ["-a","123","-b","hello"]
-        func StringToArray(ext string) (array []string, err error)
-        // "-a 123 -b hello" ---> {"-a":"123","-b":"hello"}
-        func StringToMap(ext string) (map[string]string, error)
-        // "{\"-a\":\"123\",\"-b\":\"hello\"}" ---> ["-a","123","-b","hello"]
-        func JsonToArray(ext string) ([]string, error) 
-        // "{\"-a\":\"123\",\"-b\":\"hello\"}" ---> "-a 123 -b hello"
-        func JsonToString(ext string) (string, error) 
         // 结构体转为Map
         func StructToMap(in interface{}, tagName string) (map[string]interface{}, error) 
 
@@ -204,6 +171,20 @@ A simple and minimally dependent Golang toolbox and development library. Contact
         func (bt *BitMapStruct) Clean() // 清零整个bitmap
         func (bt *BitMapStruct) Destroy() // Destroy 删除当前bitmap
 
+### 协程池
+    用途: 实现轻量级协程池,带有速率控制和返回值处理
+    测试用例: go test -v goroutinepool_test.go
+    主要函数:
+        func NewRateLimitedGoRoutinePool(poolSize, stop, ctx, qps, bucketNum) // 初始化一个协程池 
+        func (p *GoRoutinePool) Submit(executor GoRoutineExecutor) // 提交每一个任务
+        func (p *GoRoutinePool) Run() []interface{} // 启动协程池
+
+### 彩色输出
+    用途: 实现彩色的标准输出字符串, 提高分辨能力
+    测试用例: go test -v color_test.go
+    主要函数:
+        func SetColor(color string, v interface{}) string
+        func RemoveColor(str string) string
 
 
 ## 下一步计划:

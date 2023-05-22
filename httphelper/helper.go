@@ -44,6 +44,7 @@ type httpHelper struct {
 	body   io.Reader
 	client http.Client
 	req    *http.Request
+	debug  bool
 }
 
 // AddQuery 添加Query参数
@@ -114,6 +115,14 @@ func (p *httpHelper) AddSimpleCookies(c map[string]string) Helper {
 	return p
 }
 
+func (p *httpHelper) EnableDebug() {
+	p.debug = true
+}
+
+func (p *httpHelper) DisableDebug() {
+	p.debug = false
+}
+
 // Do 发送请求
 func (p *httpHelper) Do() Result {
 	startTime := time.Now()
@@ -128,7 +137,9 @@ func (p *httpHelper) Do() Result {
 	}
 
 	result.ReqBody = string(byteBody)
-	fmt.Println("string byteBody:", result.ReqBody)
+	if p.debug == true {
+		fmt.Println("httpHelper.Do() Body:", result.ReqBody)
+	}
 	newByteBodyReader := bytes.NewReader(byteBody)
 
 	var rc io.ReadCloser

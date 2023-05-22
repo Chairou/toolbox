@@ -164,3 +164,9 @@ func TestTomorrow(t *testing.T) {
 	}
 	t.Log(tomorrow)
 }
+
+func TestCalBefore(t *testing.T) {
+	endTime := time.Now()
+	startTime := endTime.AddDate(0, 0, -7)
+	t.Log(startTime)
+}

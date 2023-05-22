@@ -4,6 +4,7 @@ package httphelper
 
 import (
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"net/http"
 	"testing"
 	"time"
@@ -82,4 +83,21 @@ func TestPathEscaped(t *testing.T) {
 	// 显示body内容
 	t.Log(ret.BaseResult().RetBody)
 	t.Log(ret.BaseResult().ReqBody)
+}
+
+func TestJsoniter(t *testing.T) {
+	aaa := baseResult{}
+	aaa.RetBody = "{\"code\":0,\"message\":\"hello\",\"data\":{}}"
+	bbb := jsonResult{
+		baseResult: &aaa,
+		body:       jsoniter.Get([]byte{}),
+	}
+	ret := &Ret{}
+	err := bbb.UnmarshalFromBody(ret)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	t.Log(ret)
+
 }

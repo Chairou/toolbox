@@ -17,8 +17,8 @@ package workpool
 import (
 	"context"
 	"github.com/Chairou/toolbox/util/workqueue"
-	"github.com/Chairou/toolbox/util/workqueue/runtime"
 	"golang.org/x/time/rate"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog/v2"
 

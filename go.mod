@@ -1,20 +1,20 @@
 module github.com/Chairou/toolbox
 
-go 1.17
+go 1.19
 
 require (
 	github.com/dop251/goja v0.0.0-20230427124612-428fc442ff5f
-	github.com/gomodule/redigo v1.8.8
+	github.com/gomodule/redigo v1.8.9
 	github.com/jinzhu/copier v0.3.5
 	github.com/json-iterator/go v1.1.12
 	github.com/natefinch/lumberjack v2.0.0+incompatible
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing v1.0.600
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.600
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing v1.0.661
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.661
 	golang.org/x/text v0.9.0
 	golang.org/x/time v0.3.0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/apimachinery v0.27.1
-	k8s.io/client-go v0.27.1
+	k8s.io/apimachinery v0.27.2
+	k8s.io/client-go v0.27.2
 	k8s.io/klog/v2 v2.100.1
 )
 

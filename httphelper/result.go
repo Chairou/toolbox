@@ -29,6 +29,9 @@ type Result interface {
 
 	// Jsoniter 返回body的json迭代器
 	Jsoniter() jsoniter.Any
+
+	// UnmarshalFromBody json UnmarshalFromBody
+	UnmarshalFromBody(v interface{}) error
 }
 
 type baseResult struct {
@@ -144,4 +147,9 @@ func (p *errResult) Error() error {
 // Jsoniter 返回body的json迭代器
 func (p *errResult) Jsoniter() jsoniter.Any {
 	return jsoniter.Wrap(nil)
+}
+
+// UnmarshalFromBody 返回出现的错误
+func (p *errResult) UnmarshalFromBody(v interface{}) error {
+	return p.error
 }

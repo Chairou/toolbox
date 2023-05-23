@@ -2,8 +2,8 @@ package redis
 
 import (
 	"errors"
-	"fmt"
 	redigo "github.com/gomodule/redigo/redis"
+	"k8s.io/klog/v2"
 	"sync"
 	"time"
 )
@@ -46,7 +46,7 @@ func GetRedisByName(name string) *RdPool {
 	if ok {
 		return inst.(*RdPool)
 	} else {
-		fmt.Println("GetRedisByName err:", name)
+		klog.Errorln("GetRedisByName err:", name)
 		return nil
 	}
 }
@@ -59,7 +59,7 @@ func (c *RdPool) newRedisPool(addr string, passwd string) {
 		Dial: func() (redigo.Conn, error) {
 			conn, err := redigo.Dial("tcp", addr, setPasswd)
 			if err != nil {
-				return nil, fmt.Errorf("failed to connect to Redis: %w", err)
+				return nil, errors.New("failed to connect to Redis: " + err.Error())
 			}
 			return conn, nil
 		},

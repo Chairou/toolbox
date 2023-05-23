@@ -38,6 +38,7 @@ var time1 time.Time = time.Now()
 func TestPostHttp(t *testing.T) {
 	tmp := &TmpPost{}
 	client := PostJSON("http://9.135.96.168:8080/post", "{\"qq\":\"win\"}")
+	client.SetDebug(DEBUG_DETAIL)
 	client.AddHeader("aa", "bb").AddHeader("cc", "dd")
 	client.AddSimpleCookies(map[string]string{"ee": "ff"})
 	ret := client.Do()

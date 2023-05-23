@@ -2,9 +2,11 @@ package httphelper
 
 import (
 	"bytes"
-	"fmt"
+	"github.com/Chairou/toolbox/util/conv"
+	uuid2 "github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
 	"io"
+	"k8s.io/klog/v2"
 	"net/http"
 	"time"
 )
@@ -36,15 +38,23 @@ type Helper interface {
 	// AddSimpleCookies 设置只有简单name和value的cookies
 	AddSimpleCookies(c map[string]string) Helper
 
+	SetDebug(mode int)
+
 	// Do 发送请求
 	Do() Result
 }
+
+const (
+	DEBUG_DISABLED = 2
+	DEBUG_NORMAL   = 3
+	DEBUG_DETAIL   = 4
+)
 
 type httpHelper struct {
 	body   io.Reader
 	client http.Client
 	req    *http.Request
-	debug  bool
+	debug  int
 }
 
 // AddQuery 添加Query参数
@@ -115,12 +125,10 @@ func (p *httpHelper) AddSimpleCookies(c map[string]string) Helper {
 	return p
 }
 
-func (p *httpHelper) EnableDebug() {
-	p.debug = true
-}
-
-func (p *httpHelper) DisableDebug() {
-	p.debug = false
+func (p *httpHelper) SetDebug(mode int) {
+	if mode == DEBUG_DISABLED || mode == DEBUG_NORMAL || mode == DEBUG_DETAIL {
+		p.debug = mode
+	}
 }
 
 // Do 发送请求
@@ -136,10 +144,23 @@ func (p *httpHelper) Do() Result {
 		}
 	}
 
+	uuid := uuid2.New()
 	result.ReqBody = string(byteBody)
-	if p.debug == true {
-		fmt.Println("httpHelper.Do() Body:", result.ReqBody)
+	switch p.debug {
+	case DEBUG_NORMAL:
+		if p.req.Method == "POST" {
+			klog.Infoln(uuid.String(), p.req.Method, p.req.URL.String(), "BODY :", result.ReqBody)
+		} else {
+			klog.Infoln(uuid.String(), p.req.Method, p.req.URL.String())
+		}
+	case DEBUG_DETAIL:
+		if p.req.Method == "POST" {
+			klog.Infoln(uuid.String(), p.req.Method, p.req.Header, p.req.Cookies(), p.req.URL.String(), "BODY :", result.ReqBody)
+		} else {
+			klog.Infoln(uuid.String(), p.req.Method, p.req.URL.String())
+		}
 	}
+
 	newByteBodyReader := bytes.NewReader(byteBody)
 
 	var rc io.ReadCloser
@@ -155,7 +176,7 @@ func (p *httpHelper) Do() Result {
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-			fmt.Println("body close err: ", err)
+			klog.Errorln("body close err: ", err)
 		}
 	}(resp.Body)
 	body, err := io.ReadAll(resp.Body)
@@ -172,9 +193,16 @@ func (p *httpHelper) Do() Result {
 	result.RetCookie = resp.Cookies()
 	result.RetBody = string(body)
 	elapsed := time.Since(startTime)
-	result.Elapsed = fmt.Sprintf("%v", elapsed)
+	result.Elapsed = conv.String(elapsed)
 	result.BodyLen = len(body)
-	Log(p.req.Method, p.req.URL.String(), string(body))
+	result.Uuid = uuid.String()
+	switch p.debug {
+	case DEBUG_NORMAL:
+		klog.Infoln(uuid.String(), "retBody:", result.RetBody, "elapsed :", elapsed)
+	case DEBUG_DETAIL:
+		klog.Infoln(uuid.String(), result.RetHeader, result.RetCookie, "retBody:", result.RetBody, "elapsed :", elapsed)
+	}
+
 	return &jsonResult{
 		baseResult: result,
 		body:       jsoniter.Get(body),
@@ -229,6 +257,9 @@ func (p *errHelper) AddSimpleCookies(c map[string]string) Helper {
 // SetTransport 设置RoundTripper，可用于添加中间件
 func (p *errHelper) SetTransport(http.RoundTripper) Helper {
 	return p
+}
+
+func (p *errHelper) SetDebug(mode int) {
 }
 
 // Do 发送请求

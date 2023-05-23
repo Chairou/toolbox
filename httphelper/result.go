@@ -45,6 +45,7 @@ type baseResult struct {
 	RetBody   string
 	Elapsed   string
 	BodyLen   int
+	Uuid      string
 	Err       error
 }
 

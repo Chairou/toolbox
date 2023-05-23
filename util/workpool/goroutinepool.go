@@ -2,11 +2,11 @@ package workpool
 
 import (
 	"context"
-	"fmt"
 	"golang.org/x/time/rate"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog/v2"
 
 	"sync"
 	"time"
@@ -59,7 +59,7 @@ func (p *GoRoutinePool) Submit(executor GoRoutineExecutor) {
 	p.queue.AddRateLimited(executor.TaskID)
 	p.entry.Store(executor.TaskID, executor)
 	p.wg.Add(1)
-	fmt.Printf("submit task %v to goroutine pool", executor.TaskID)
+	klog.Infof("submit task %v to goroutine pool", executor.TaskID)
 }
 
 // Run pool
@@ -99,7 +99,7 @@ func (p *GoRoutinePool) processNextItem() bool {
 	if quit {
 		return false
 	}
-	fmt.Printf("goroutine pool exec task: %v", name)
+	klog.Infof("goroutine pool exec task: %v", name)
 	p.buff <- struct{}{}
 	entry, ok := p.entry.Load(name)
 	defer func() {
@@ -110,7 +110,7 @@ func (p *GoRoutinePool) processNextItem() bool {
 	}()
 
 	if !ok {
-		fmt.Errorf("processNextItem not found key %v", name)
+		klog.Errorf("processNextItem not found key %v", name)
 		return true
 	}
 	executor := entry.(GoRoutineExecutor)
@@ -119,7 +119,7 @@ func (p *GoRoutinePool) processNextItem() bool {
 
 	result.Result, result.Err = _fc(_params...)
 	if result.Err != nil {
-		fmt.Errorf("processNextItem %v error: %v", name, result.Err)
+		klog.Errorf("processNextItem %v error: %v", name, result.Err)
 	}
 
 	return true

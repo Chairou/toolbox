@@ -2,11 +2,11 @@ package httphelper
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/Chairou/toolbox/util/conv"
 	uuid2 "github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
 	"io"
+	"k8s.io/klog/v2"
 	"net/http"
 	"time"
 )
@@ -149,15 +149,15 @@ func (p *httpHelper) Do() Result {
 	switch p.debug {
 	case DEBUG_NORMAL:
 		if p.req.Method == "POST" {
-			fmt.Println(uuid.String(), p.req.Method, p.req.URL.String(), "BODY :", result.ReqBody)
+			klog.Infoln(uuid.String(), p.req.Method, p.req.URL.String(), "BODY :", result.ReqBody)
 		} else {
-			fmt.Println(uuid.String(), p.req.Method, p.req.URL.String())
+			klog.Infoln(uuid.String(), p.req.Method, p.req.URL.String())
 		}
 	case DEBUG_DETAIL:
 		if p.req.Method == "POST" {
-			fmt.Println(uuid.String(), p.req.Method, p.req.Header, p.req.Cookies(), p.req.URL.String(), "BODY :", result.ReqBody)
+			klog.Infoln(uuid.String(), p.req.Method, p.req.Header, p.req.Cookies(), p.req.URL.String(), "BODY :", result.ReqBody)
 		} else {
-			fmt.Println(uuid.String(), p.req.Method, p.req.URL.String())
+			klog.Infoln(uuid.String(), p.req.Method, p.req.URL.String())
 		}
 	}
 
@@ -176,7 +176,7 @@ func (p *httpHelper) Do() Result {
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-			fmt.Errorf("body close err: %v", err)
+			klog.Errorln("body close err: ", err)
 		}
 	}(resp.Body)
 	body, err := io.ReadAll(resp.Body)
@@ -198,9 +198,9 @@ func (p *httpHelper) Do() Result {
 	result.Uuid = uuid.String()
 	switch p.debug {
 	case DEBUG_NORMAL:
-		fmt.Println(uuid.String(), "retBody:", result.RetBody, "elapsed :", elapsed)
+		klog.Infoln(uuid.String(), "retBody:", result.RetBody, "elapsed :", elapsed)
 	case DEBUG_DETAIL:
-		fmt.Println(uuid.String(), result.RetHeader, result.RetCookie, "retBody:", result.RetBody, "elapsed :", elapsed)
+		klog.Infoln(uuid.String(), result.RetHeader, result.RetCookie, "retBody:", result.RetBody, "elapsed :", elapsed)
 	}
 
 	return &jsonResult{

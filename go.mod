@@ -5,10 +5,10 @@ go 1.19
 require (
 	github.com/dop251/goja v0.0.0-20230427124612-428fc442ff5f
 	github.com/gomodule/redigo v1.8.9
+	github.com/google/uuid v1.3.0
 	github.com/jinzhu/copier v0.3.5
 	github.com/json-iterator/go v1.1.12
 	github.com/natefinch/lumberjack v2.0.0+incompatible
-	github.com/panjf2000/ants/v2 v2.5.0
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing v1.0.600
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.600
 	golang.org/x/text v0.8.0

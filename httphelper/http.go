@@ -51,7 +51,7 @@ func NewRequest(method string, urlStr string, body io.Reader) Helper {
 	helper := &httpHelper{
 		client: *http.DefaultClient,
 		req:    req,
-		debug:  true,
+		debug:  DEBUG_NORMAL,
 	}
 	return helper
 }

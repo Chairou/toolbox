@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/Chairou/toolbox/util/conv"
-	"k8s.io/klog/v2"
 	"testing"
 	"time"
 )
@@ -28,7 +27,7 @@ func TestGoroutineRateLimit(t *testing.T) {
 }
 
 func getConstValue(param ...interface{}) (interface{}, error) {
-	klog.Infoln(param[0].(string), param[1].(int))
+	fmt.Println(param[0].(string), param[1].(int))
 	return 1, nil
 }
 

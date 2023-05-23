@@ -16,7 +16,6 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/apimachinery v0.26.2
 	k8s.io/client-go v0.23.12
-	k8s.io/klog/v2 v2.80.1
 )
 
 require (
@@ -28,5 +27,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
+	k8s.io/klog/v2 v2.80.1 // indirect
 	k8s.io/utils v0.0.0-20230209194617-a36077c30491 // indirect
 )

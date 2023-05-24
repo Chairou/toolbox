@@ -2,6 +2,7 @@ package httphelper
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -20,6 +21,7 @@ var (
 	Log = func(v ...interface{}) { fmt.Println(v...) }
 )
 var once sync.Once
+var gCookies sync.Map
 
 // NewRequest 创建新的请求
 func NewRequest(method string, urlStr string, body io.Reader) Helper {
@@ -137,4 +139,23 @@ func UrlPathEscape(url string) string {
 	encodeStr := PathEscape(UrlToMap(urlParam))
 	return urlHeader + encodeStr
 
+}
+
+func SetGlobalCookie(key string, c []*http.Cookie) error {
+	if key == "" {
+		return errors.New("key is required")
+	}
+	gCookies.Store(key, c)
+	return nil
+}
+
+func GetGlobalCookie(key string) ([]*http.Cookie, error) {
+	if key == "" {
+		return nil, errors.New("key is required")
+	}
+	cookies, ok := gCookies.Load(key)
+	if !ok {
+		return nil, errors.New("gCookies.Load() is failed")
+	}
+	return cookies.([]*http.Cookie), nil
 }

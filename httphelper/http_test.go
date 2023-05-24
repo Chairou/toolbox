@@ -100,5 +100,26 @@ func TestJsoniter(t *testing.T) {
 		return
 	}
 	t.Log(ret)
+}
+
+func TestGlobalCookie(t *testing.T) {
+	cookie1 := http.Cookie{}
+	cookie1.Name = "auth"
+	cookie1.Value = "chair"
+	cookie2 := http.Cookie{}
+	cookie2.Name = "passwd"
+	cookie2.Value = "bbb"
+	cookies := make([]*http.Cookie, 0)
+	cookies = append(cookies, &cookie1)
+	cookies = append(cookies, &cookie2)
+	err := SetGlobalCookie("test1", cookies)
+	if err != nil {
+		t.Error(err)
+	}
+	cookieback, err := GetGlobalCookie("test1")
+	if err != nil {
+		t.Error("GetGlobalCookie failed :", err)
+	}
+	t.Log(cookieback[0].Name)
 
 }

@@ -17,9 +17,10 @@ limitations under the License.
 package workqueue
 
 import (
-	testingclock "github.com/Chairou/toolbox/util/workqueue/clock/testing"
 	"testing"
 	"time"
+
+	testingclock "github.com/Chairou/toolbox/util/workqueue/clock/testing"
 )
 
 func TestRateLimitingQueue(t *testing.T) {
@@ -32,7 +33,7 @@ func TestRateLimitingQueue(t *testing.T) {
 		heartbeat:       fakeClock.NewTicker(maxWait),
 		stopCh:          make(chan struct{}),
 		waitingForAddCh: make(chan *waitFor, 1000),
-		metrics:         newRetryMetrics(""),
+		metrics:         newRetryMetrics("", nil),
 	}
 	queue.DelayingInterface = delayingQueue
 

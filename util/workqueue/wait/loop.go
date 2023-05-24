@@ -20,7 +20,7 @@ import (
 	"context"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/runtime"
+	"github.com/Chairou/toolbox/util/workqueue/runtime"
 )
 
 // loopConditionUntilContext executes the provided condition at intervals defined by

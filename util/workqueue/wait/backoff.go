@@ -22,8 +22,8 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/utils/clock"
+	"github.com/Chairou/toolbox/util/workqueue/clock"
+	"github.com/Chairou/toolbox/util/workqueue/runtime"
 )
 
 // Backoff holds parameters applied to a Backoff function.

@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/utils/clock"
+	"github.com/Chairou/toolbox/util/workqueue/clock"
 )
 
 // DelayFunc returns the next time interval to wait.

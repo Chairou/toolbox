@@ -16,9 +16,7 @@ limitations under the License.
 
 package clock
 
-import (
-	"time"
-)
+import "time"
 
 // PassiveClock allows for injecting fake or real clocks into code
 // that needs to read the current time but does not support scheduling

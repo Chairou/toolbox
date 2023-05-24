@@ -16,7 +16,7 @@ func TestGoroutineRateLimit(t *testing.T) {
 	cnt := 0
 	result := work()
 	for _, v := range result {
-		cnt += v.(*FuncResult).Result.(int)
+		cnt += v.(FuncResult).Result.(int)
 	}
 	if cnt == totalTaskNum {
 		t.Log(cnt)

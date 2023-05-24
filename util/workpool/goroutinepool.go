@@ -94,8 +94,8 @@ func (p *GoRoutinePool) worker() {
 
 // do process
 func (p *GoRoutinePool) processNextItem() bool {
-	//result := FuncResult{}
-	result := new(FuncResult)
+	result := FuncResult{}
+	//result := new(FuncResult) 这里是个陷阱
 	name, quit := p.queue.Get()
 	if quit {
 		return false

@@ -71,7 +71,10 @@ func PostUrlEncode(url string, values url.Values) Helper {
 
 // PostJSON 创建application/json的POST请求
 func PostJSON(url string, body interface{}) Helper {
-	byteBody, _ := jsoniter.Marshal(body)
+	byteBody, err := jsoniter.Marshal(body)
+	if err != nil {
+		return errorHelper(fmt.Errorf("PostJSON|Marshal err:", err))
+	}
 	return NewRequest("POST", url, bytes.NewReader(byteBody)).SetHeader("Content-Type",
 		"application/json")
 }

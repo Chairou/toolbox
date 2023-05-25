@@ -73,7 +73,7 @@ func PostUrlEncode(url string, values url.Values) Helper {
 func PostJSON(url string, body interface{}) Helper {
 	byteBody, err := jsoniter.Marshal(body)
 	if err != nil {
-		return errorHelper(fmt.Errorf("PostJSON|Marshal err:", err))
+		return errorHelper(fmt.Errorf("PostJSON|Marshal err: %w", err))
 	}
 	return NewRequest("POST", url, bytes.NewReader(byteBody)).SetHeader("Content-Type",
 		"application/json")

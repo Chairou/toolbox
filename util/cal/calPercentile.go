@@ -4,30 +4,30 @@ import (
 	"container/heap"
 )
 
-// 定义一个最小堆类型
+// MinHeap 定义一个最小堆类型
 type MinHeap []float64
 
-// 实现 heap.Interface 接口的 Len 方法
+// Len 实现 heap.Interface 接口的 Len 方法
 func (h MinHeap) Len() int {
 	return len(h)
 }
 
-// 实现 heap.Interface 接口的 Less 方法
+// Less 实现 heap.Interface 接口的 Less 方法
 func (h MinHeap) Less(i, j int) bool {
 	return h[i] < h[j]
 }
 
-// 实现 heap.Interface 接口的 Swap 方法
+// Swap 实现 heap.Interface 接口的 Swap 方法
 func (h MinHeap) Swap(i, j int) {
 	h[i], h[j] = h[j], h[i]
 }
 
-// 实现 heap.Interface 接口的 Push 方法
+// Push 实现 heap.Interface 接口的 Push 方法
 func (h *MinHeap) Push(x interface{}) {
 	*h = append(*h, x.(float64))
 }
 
-// 实现 heap.Interface 接口的 Pop 方法
+// Pop 实现 heap.Interface 接口的 Pop 方法
 func (h *MinHeap) Pop() interface{} {
 	old := *h
 	n := len(old)
@@ -36,6 +36,7 @@ func (h *MinHeap) Pop() interface{} {
 	return x
 }
 
+// Percentile 输出中位数
 func (h *MinHeap) Percentile() float64 {
 	popNum := 0
 	var Percentile float64

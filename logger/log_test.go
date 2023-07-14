@@ -47,3 +47,11 @@ func TestLogPool_SetLevel(t *testing.T) {
 	log.Infoln("write INFO in INFO_LEVEL")
 
 }
+
+func TestSetPrefix(t *testing.T) {
+	log, err := NewLogPool("test1.log")
+	if err != nil {
+		t.Error("NewLogPool err:", err)
+	}
+	log.infoLogger.Printf("[%s] %s: %s\n", "WARN", "2021-10-01 10:01:00", "This is a warning message.")
+}

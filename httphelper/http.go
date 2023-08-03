@@ -25,7 +25,6 @@ var gCookies sync.Map
 
 // NewRequest 创建新的请求
 func NewRequest(method string, urlStr string, body io.Reader) Helper {
-	var err error
 	once.Do(func() {
 		http.DefaultClient = &http.Client{
 			Transport: &http.Transport{
@@ -48,12 +47,19 @@ func NewRequest(method string, urlStr string, body io.Reader) Helper {
 	req, err := http.NewRequest(method, urlStr, body)
 	if err != nil {
 		return errorHelper(fmt.Errorf("new request error: %w", err))
+		//return &httpHelper{
+		//	client: *http.DefaultClient,
+		//	req:    req,
+		//	debug:  DEBUG_NORMAL,
+		//	Err:    err,
+		//}
 	}
 
 	helper := &httpHelper{
 		client: *http.DefaultClient,
 		req:    req,
 		debug:  DEBUG_NORMAL,
+		Err:    nil,
 	}
 	return helper
 }
@@ -73,7 +79,7 @@ func PostUrlEncode(url string, values url.Values) Helper {
 func PostJSON(url string, body interface{}) Helper {
 	byteBody, err := jsoniter.Marshal(body)
 	if err != nil {
-		return errorHelper(fmt.Errorf("PostJSON|Marshal err:", err))
+		return errorHelper(fmt.Errorf("new request error: %w", err))
 	}
 	return NewRequest("POST", url, bytes.NewReader(byteBody)).SetHeader("Content-Type",
 		"application/json")

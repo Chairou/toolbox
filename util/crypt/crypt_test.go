@@ -9,13 +9,8 @@ func TestCrypt(t *testing.T) {
 	key := "12345678901234567890123456789012"
 	//key := "asdasd"
 	orig := "hand in hand we stand."
-	cryptContent, err := AesEncrypt2(orig, key)
-	if err != nil {
-		t.Error(err)
-	}
-	output, err := AesDecrypt2(cryptContent, key)
-	if err != nil {
-		t.Error(err)
-	}
+	cryptContent := AesEncrypt2(orig, key)
+
+	output := AesDecrypt2(cryptContent, key)
 	t.Logf(output)
 }

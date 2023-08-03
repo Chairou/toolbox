@@ -37,7 +37,21 @@ var time1 time.Time = time.Now()
 
 func TestPostHttp(t *testing.T) {
 	tmp := &TmpPost{}
-	client := PostJSON("http://9.135.96.168:8080/post", "{\"qq\":\"win\"}")
+	type MyType func(int) int
+	var f MyType = func(x int) int { return x * x }
+	//client := PostJSON("http://9.135.96.168:8080/post", "{\"qq\":\"win\"}")
+	client := PostJSON("http://9.135.96.168:8080/post", f)
+	if client.error() != nil {
+		t.Log(client.error())
+	}
+	val, ok := client.(*errHelper)
+	if ok {
+		t.Log(*val)
+	}
+	client = PostJSON("http://9.135.96.168:8080/post", "{\"qq\":\"win\"}")
+	if client.error() != nil {
+		t.Error(client.error())
+	}
 	client.SetDebug(DEBUG_DETAIL)
 	client.AddHeader("aa", "bb").AddHeader("cc", "dd")
 	client.AddSimpleCookies(map[string]string{"ee": "ff"})
@@ -61,7 +75,6 @@ func TestUrlPathEscape(t *testing.T) {
 
 func TestGetHttp(t *testing.T) {
 	url := "http://9.135.96.168:8080/get?aa=bb&cc=dd"
-
 	client := GET(url)
 	client.AddQuery("key1", "value1")
 	client.AddHeader("envSelector", "test")

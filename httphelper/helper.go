@@ -42,6 +42,8 @@ type Helper interface {
 
 	// Do 发送请求
 	Do() Result
+
+	error() error
 }
 
 const (
@@ -55,6 +57,7 @@ type httpHelper struct {
 	client http.Client
 	req    *http.Request
 	debug  int
+	Err    error
 }
 
 // AddQuery 添加Query参数
@@ -210,12 +213,21 @@ func (p *httpHelper) Do() Result {
 	//},nil
 }
 
+func (p *httpHelper) error() error {
+	return p.Err
+}
+
 type errHelper struct {
-	error
+	Err error
 }
 
 func errorHelper(err error) Helper {
-	return &errHelper{error: err}
+	return &errHelper{Err: err}
+}
+
+// Query 添加Query参数
+func (p *errHelper) error() error {
+	return p.Err
 }
 
 // Query 添加Query参数
@@ -268,5 +280,5 @@ func (p *errHelper) SetDebug(mode int) {
 //}
 
 func (p *errHelper) Do() Result {
-	return &errResult{error: p.error}
+	return &errResult{error: p.error()}
 }

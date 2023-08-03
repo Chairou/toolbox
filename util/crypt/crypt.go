@@ -5,21 +5,20 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
-	"errors"
 	"fmt"
 )
 
 var DefaultKey string = "0987654321!@#$%^&*()tyKfqngDfg,."
 
-func AesEncrypt2(orig string, key string) (string, error) {
-	if len(key) != 32 {
-		return "", errors.New("key must be 32 bytes")
-	}
+func AesEncrypt2(orig string, key string) string {
+	tmpKey := key + "12345678901234567890123456789012"
+	realKey := tmpKey[:32]
+
 	// 转成字节数组
 	origData := []byte(orig)
 	var k []byte
 	if key != "" {
-		k = []byte(key)
+		k = []byte(realKey)
 	} else {
 		k = []byte(DefaultKey)
 	}
@@ -37,19 +36,18 @@ func AesEncrypt2(orig string, key string) (string, error) {
 	// 加密
 	blockMode.CryptBlocks(cryted, origData)
 
-	return base64.StdEncoding.EncodeToString(cryted), nil
+	return base64.StdEncoding.EncodeToString(cryted)
 
 }
 
-func AesDecrypt2(cryted string, key string) (string, error) {
-	if len(key) != 32 {
-		return "", errors.New("key must be 32 bytes")
-	}
+func AesDecrypt2(cryted string, key string) string {
+	tmpKey := key + "12345678901234567890123456789012"
+	realKey := tmpKey[:32]
 	// 转成字节数组
 	crytedByte, _ := base64.StdEncoding.DecodeString(cryted)
 	var k []byte
 	if key != "" {
-		k = []byte(key)
+		k = []byte(realKey)
 	} else {
 		k = []byte(DefaultKey)
 	}
@@ -68,7 +66,7 @@ func AesDecrypt2(cryted string, key string) (string, error) {
 	blockMode.CryptBlocks(orig, crytedByte)
 	// 去补全码
 	orig = PKCS7UnPadding(orig)
-	return string(orig), nil
+	return string(orig)
 }
 
 // PKCS7Padding 补码

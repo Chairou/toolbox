@@ -12,6 +12,7 @@ var (
 	CUT_OFF_FLOOR = 4
 )
 
+// CeilFloat 向上取整，保留多少位小数
 func CeilFloat(f float64, places int) float64 {
 	if places < 0 {
 		panic("places must be a non-negative integer")
@@ -20,6 +21,7 @@ func CeilFloat(f float64, places int) float64 {
 	return math.Ceil(f*scale) / scale
 }
 
+// RoundFloat 四舍五入， 保留places位小数
 func RoundFloat(num float64, places int) float64 {
 	if places < 0 {
 		panic("places must be a non-negative integer")
@@ -29,6 +31,7 @@ func RoundFloat(num float64, places int) float64 {
 	return rounded
 }
 
+// FloorFloat 向下取整，保留places位小数
 func FloorFloat(num float64, places int) float64 {
 	if places < 0 {
 		panic("places must be a non-negative integer")
@@ -37,6 +40,7 @@ func FloorFloat(num float64, places int) float64 {
 	return math.Floor(num*multiplier) / multiplier
 }
 
+// PercentVal 输出百分比。 保留places位小数， 采用cutoff的取整方法
 func PercentVal(num float64, places int, cutoff int) string {
 	if places < 0 {
 		panic("places must be a non-negative integer")
@@ -61,6 +65,7 @@ func Percent(num float64, places int, cutoff int) string {
 	return PercentVal(num, places, cutoff) + "%"
 }
 
+// AnyPercent 任意类型转换为百分比，不过实话意义不是特别大，就是方便一点
 func AnyPercent(num interface{}, places int, cutoff int) string {
 	numFloat, ok := conv.Float64(num)
 	if ok == false {

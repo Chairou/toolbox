@@ -174,3 +174,7 @@ func TestCalBefore(t *testing.T) {
 func TestWeekNum(t *testing.T) {
 	t.Log(GetWeekNumByDate("2023-08-01"))
 }
+
+func TestGetCalDataStr(t *testing.T) {
+	t.Log(GetCalDataStr("2023-02-28", 1))
+}

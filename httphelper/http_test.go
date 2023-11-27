@@ -3,9 +3,13 @@ package httphelper
 //go test -v http_test.go http.go helper.go
 
 import (
+	"encoding/base64"
 	"fmt"
 	jsoniter "github.com/json-iterator/go"
+	"k8s.io/klog/v2"
 	"net/http"
+	"net/url"
+
 	"testing"
 	"time"
 )
@@ -134,5 +138,36 @@ func TestGlobalCookie(t *testing.T) {
 		t.Error("GetGlobalCookie failed :", err)
 	}
 	t.Log(cookieback[0].Name)
+}
 
+func TestPostUrlEncode(t *testing.T) {
+	url1 := "http://9.135.96.168:8080/get?aa=bb&cc=dd"
+	data := url.Values{}
+	data.Set("workspace_id", "123")
+	data.Set("name", "test1")
+	data.Set("description", "test all method")
+	client := PostUrlEncode(url1, data)
+	// 设置 Basic 认证头
+	username := "nofight"   // 替换为您的用户名
+	password := "F-4-1-E-A" // 替换为您的密码
+	auth := username + ":" + password
+	basicAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
+	client.AddHeader("Authorization", basicAuth)
+	ret := client.Do()
+	if ret.Error() != nil {
+		klog.Errorln("sendRtxOversea err: ", ret.Error())
+	}
+	t.Log(ret.BaseResult().RetBody)
+	t.Log(ret.BaseResult().ReqBody)
+}
+
+func TestBasicAuth(t *testing.T) {
+	url1 := "http://9.135.96.168:8080/get?aa=bb&cc=dd"
+	username := "nofight"   // 替换为您的用户名
+	password := "F-4-1-E-A" //}
+	client := GET(url1)
+	client.AddBasicAuth(username, password)
+	ret := client.Do()
+	t.Log(ret.BaseResult().RetBody)
+	t.Log(ret.BaseResult().ReqBody)
 }

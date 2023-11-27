@@ -18,7 +18,7 @@ import (
 *******************************
 */
 func TestGetFirstAndLastDateOfWeek(t *testing.T) {
-	t1 := time.Date(2023, 2, 14, 1, 1, 1, 1, time.Local)
+	t1 := time.Date(2022, 1, 1, 1, 1, 1, 1, time.Local)
 	monday, sunday := GetFirstAndLastDateOfWeek(t1)
 	t.Log(monday, sunday)
 	if monday != "2023-02-13" || sunday != "2023-02-19" {
@@ -169,4 +169,8 @@ func TestCalBefore(t *testing.T) {
 	endTime := time.Now()
 	startTime := endTime.AddDate(0, 0, -7)
 	t.Log(startTime)
+}
+
+func TestWeekNum(t *testing.T) {
+	t.Log(GetWeekNumByDate("2023-08-01"))
 }

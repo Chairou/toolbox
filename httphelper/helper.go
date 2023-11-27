@@ -2,6 +2,7 @@ package httphelper
 
 import (
 	"bytes"
+	"encoding/base64"
 	"github.com/Chairou/toolbox/util/conv"
 	uuid2 "github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
@@ -37,6 +38,12 @@ type Helper interface {
 
 	// AddSimpleCookies 设置只有简单name和value的cookies
 	AddSimpleCookies(c map[string]string) Helper
+
+	// AddBasicAuth 设置简单认证
+	AddBasicAuth(id string, key string) Helper
+
+	// AddOAuthAccessToken 设置OAuth认证
+	AddOAuthAccessToken(token string) Helper
 
 	SetDebug(mode int)
 
@@ -125,6 +132,19 @@ func (p *httpHelper) AddSimpleCookies(c map[string]string) Helper {
 	for k, v := range c {
 		p.req.AddCookie(&http.Cookie{Name: k, Value: v})
 	}
+	return p
+}
+
+func (p *httpHelper) AddBasicAuth(username string, password string) Helper {
+	// 设置 Basic 认证头
+	auth := username + ":" + password
+	basicAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
+	p.req.Header.Add("Authorization", basicAuth)
+	return p
+}
+
+func (p *httpHelper) AddOAuthAccessToken(token string) Helper {
+	p.req.Header.Add("Authorization", "Bearer "+token)
 	return p
 }
 
@@ -263,6 +283,14 @@ func (p *errHelper) AddCookies(c []*http.Cookie) Helper {
 }
 
 func (p *errHelper) AddSimpleCookies(c map[string]string) Helper {
+	return p
+}
+
+func (p *errHelper) AddBasicAuth(username string, password string) Helper {
+	return p
+}
+
+func (p *errHelper) AddOAuthAccessToken(token string) Helper {
 	return p
 }
 

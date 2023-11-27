@@ -182,3 +182,40 @@ func GetCurrentAndNextHour(timeStr string) (string, string, error) {
 	nextHour := now.Truncate(time.Hour).Add(time.Hour).Format(TIME_COMMON)
 	return currentHour, nextHour, nil
 }
+
+// GetWeekendDates 获取指定年份的第几周的周日和周六
+func GetWeekendDates(year, week int) (time.Time, time.Time) {
+	// 获取指定年份的第一天
+	firstDay := time.Date(year, time.January, 1, 0, 0, 0, 0, time.Local)
+
+	// 计算第一天是周几
+	weekday := int(firstDay.Weekday())
+
+	// 计算第一周的第一个周日的日期
+	firstSunday := firstDay.AddDate(0, 0, 7-weekday)
+
+	// 计算指定周的周日和周六的日期
+	sunday := firstSunday.AddDate(0, 0, (week-1)*7)
+	saturday := sunday.AddDate(0, 0, 6)
+
+	return sunday, saturday
+}
+
+// GetLastDayOfMonth 获取指定年月的最后一天
+func GetLastDayOfMonth(year, month int) time.Time {
+	// 获取下个月的第一天
+	nextMonth := time.Date(year, time.Month(month)+1, 1, 0, 0, 0, 0, time.Local)
+
+	// 减去一天得到当前月份的最后一天
+	lastDay := nextMonth.AddDate(0, 0, -1)
+
+	return lastDay
+}
+
+// GetWeekNumByDate 获取第几周
+func GetWeekNumByDate(date string) int {
+	d, _ := time.Parse(time.DateOnly, date)
+	// 计算第几周
+	_, weekNum := d.ISOWeek()
+	return weekNum
+}

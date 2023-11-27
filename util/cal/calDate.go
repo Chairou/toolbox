@@ -219,3 +219,12 @@ func GetWeekNumByDate(date string) int {
 	_, weekNum := d.ISOWeek()
 	return weekNum
 }
+
+// GetCalDataStr 计算日期加减后的string
+func GetCalDataStr(date string, delta int) string {
+	d, err := time.Parse(TIME_DATE, date)
+	if err != nil {
+		return ""
+	}
+	return d.AddDate(0, 0, delta).Format(TIME_DATE)
+}

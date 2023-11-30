@@ -8,7 +8,9 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"io"
 	"k8s.io/klog/v2"
+	"net"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -66,6 +68,8 @@ type httpHelper struct {
 	debug  int
 	Err    error
 }
+
+var Once sync.Once
 
 // AddQuery 添加Query参数
 func (p *httpHelper) AddQuery(k string, v string) Helper {
@@ -191,6 +195,23 @@ func (p *httpHelper) Do() Result {
 		rc = io.NopCloser(newByteBodyReader)
 	}
 	p.req.Body = rc
+	Once.Do(func() {
+		http.DefaultClient.Transport = &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   5 * time.Second,
+				KeepAlive: 60 * time.Second,
+				DualStack: true,
+			}).DialContext,
+			MaxIdleConns:          60,
+			IdleConnTimeout:       60 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			MaxConnsPerHost:       100,
+			ResponseHeaderTimeout: 10 * time.Second,
+		}
+	})
+
 	resp, err := http.DefaultClient.Do(p.req)
 	if err != nil {
 		//return nil, err

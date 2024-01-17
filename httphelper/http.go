@@ -129,7 +129,7 @@ func PathEscape(param map[string]string) string {
 }
 
 func UrlToMap(url string) map[string]string {
-	argMap := make(map[string]string, 0)
+	argMap := make(map[string]string)
 	pos := strings.Index(url, "?")
 	argLine := url[pos+1:]
 	argList := strings.Split(argLine, "&")

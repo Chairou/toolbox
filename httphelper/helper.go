@@ -167,7 +167,7 @@ func (p *httpHelper) Do() Result {
 		var err error
 		byteBody, err = io.ReadAll(p.req.Body)
 		if err != nil {
-			return result.errorf("do http request err: %w", err)
+			return result.Errorf("do http request err: %w", err)
 		}
 	}
 
@@ -215,7 +215,7 @@ func (p *httpHelper) Do() Result {
 	resp, err := http.DefaultClient.Do(p.req)
 	if err != nil {
 		//return nil, err
-		return result.errorf("do http request err: %w", err)
+		return result.Errorf("do http request err: %w", err)
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -226,7 +226,7 @@ func (p *httpHelper) Do() Result {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		//return nil, err
-		return result.errorf("read response body err: %w", err)
+		return result.Errorf("read response body err: %w", err)
 	}
 
 	result.Status = resp.StatusCode

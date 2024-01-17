@@ -103,7 +103,7 @@ func TestPathEscaped(t *testing.T) {
 	t.Log(ret.BaseResult().ReqBody)
 }
 
-func TestJsoniter(t *testing.T) {
+func TestJsonIter(t *testing.T) {
 	aaa := baseResult{}
 	aaa.RetBody = "{\"code\":0,\"message\":\"hello\",\"data\":{}}"
 	bbb := jsonResult{

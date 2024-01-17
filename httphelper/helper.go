@@ -176,15 +176,16 @@ func (p *httpHelper) Do() Result {
 	switch p.debug {
 	case DEBUG_NORMAL:
 		if p.req.Method == "POST" {
-			klog.Infoln(uuid.String(), p.req.Method, p.req.URL.String(), "BODY :", result.ReqBody)
+			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.URL.String(), "BODY :", result.ReqBody)
 		} else {
-			klog.Infoln(uuid.String(), p.req.Method, p.req.URL.String())
+			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.URL.String())
 		}
 	case DEBUG_DETAIL:
 		if p.req.Method == "POST" {
-			klog.Infoln(uuid.String(), p.req.Method, p.req.Header, p.req.Cookies(), p.req.URL.String(), "BODY :", result.ReqBody)
+			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.Header, p.req.Cookies(),
+				p.req.URL.String(), "BODY :", result.ReqBody)
 		} else {
-			klog.Infoln(uuid.String(), p.req.Method, p.req.URL.String())
+			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.URL.String())
 		}
 	}
 
@@ -242,9 +243,10 @@ func (p *httpHelper) Do() Result {
 	result.Uuid = uuid.String()
 	switch p.debug {
 	case DEBUG_NORMAL:
-		klog.Infoln(uuid.String(), "retBody:", result.RetBody, "elapsed :", elapsed)
+		klog.Infoln("HTTP RESP:", uuid.String(), "retBody:", result.RetBody, "elapsed :", elapsed)
 	case DEBUG_DETAIL:
-		klog.Infoln(uuid.String(), result.RetHeader, result.RetCookie, "retBody:", result.RetBody, "elapsed :", elapsed)
+		klog.Infoln("HTTP RESP:", uuid.String(), result.RetHeader, result.RetCookie, "retBody:", result.RetBody,
+			"elapsed :", elapsed)
 	}
 
 	return &jsonResult{

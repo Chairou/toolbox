@@ -25,7 +25,7 @@ type LogIntFileName struct {
 
 var logIntFileName LogIntFileName
 
-type logPool struct {
+type LogPool struct {
 	Fd          *os.File
 	FileName    string
 	Level       int
@@ -42,10 +42,10 @@ func init() {
 	logIntFileName.IntFileName = make(map[int]string)
 }
 
-func NewLogPool(fileName string) (*logPool, error) {
+func NewLogPool(fileName string) (*LogPool, error) {
 	inst, ok := logMap.Load(fileName)
 	if ok {
-		return inst.(*logPool), nil
+		return inst.(*LogPool), nil
 	} else {
 		SaveLogNameToInt(fileName)
 		fd, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0664)
@@ -57,7 +57,7 @@ func NewLogPool(fileName string) (*logPool, error) {
 		debugLog := log.New(fd, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
 		errorLog := log.New(fd, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 
-		inst := &logPool{}
+		inst := &LogPool{}
 		inst.Path, _ = os.Getwd()
 		inst.Fd = fd
 		inst.FileName = fileName
@@ -84,10 +84,10 @@ func NewLogPool(fileName string) (*logPool, error) {
 	}
 }
 
-func GetLogPool(fileName string) (*logPool, error) {
+func GetLogPool(fileName string) (*LogPool, error) {
 	inst, ok := logMap.Load(fileName)
 	if ok {
-		return inst.(*logPool), nil
+		return inst.(*LogPool), nil
 	} else {
 		return nil, errors.New("get logger from logMap failed")
 	}
@@ -100,7 +100,7 @@ func SaveLogNameToInt(fileName string) {
 	logIntFileName.Lock.Unlock()
 }
 
-func GetLogNum(logNumber int) (*logPool, error) {
+func GetLogNum(logNumber int) (*LogPool, error) {
 	logIntFileName.Lock.RLock()
 	fileName, ok := logIntFileName.IntFileName[logNumber]
 	logIntFileName.Lock.RUnlock()
@@ -111,45 +111,53 @@ func GetLogNum(logNumber int) (*logPool, error) {
 	}
 }
 
-func (c *logPool) Debugf(format string, v ...any) {
+func GetDefault() *LogPool {
+	inst, err := GetLogNum(1)
+	if err != nil {
+		fmt.Errorf("GetLogNum| get logger from logIntFileName failed")
+	}
+	return inst
+}
+
+func (c *LogPool) Debugf(format string, v ...any) {
 	if c.Level <= DEBUG_LEVEL {
 		s := fmt.Sprintf(format, v...)
 		c.debugLogger.Output(2, s)
 	}
 }
 
-func (c *logPool) Debugln(v ...any) {
+func (c *LogPool) Debugln(v ...any) {
 	if c.Level <= DEBUG_LEVEL {
 		s := fmt.Sprintln(v...)
 		c.debugLogger.Output(2, s)
 	}
 }
 
-func (c *logPool) Infof(format string, v ...any) {
+func (c *LogPool) Infof(format string, v ...any) {
 	if c.Level <= INFO_LEVEL {
 		s := fmt.Sprintf(format, v...)
 		c.infoLogger.Output(2, s)
 	}
 }
 
-func (c *logPool) Infoln(v ...any) {
+func (c *LogPool) Infoln(v ...any) {
 	if c.Level <= INFO_LEVEL {
 		s := fmt.Sprintln(v...)
 		c.infoLogger.Output(2, s)
 	}
 }
 
-func (c *logPool) Errorf(format string, v ...any) {
+func (c *LogPool) Errorf(format string, v ...any) {
 	s := fmt.Sprintf(format, v...)
 	c.errorLogger.Output(2, s)
 }
 
-func (c *logPool) Errorln(v ...any) {
+func (c *LogPool) Errorln(v ...any) {
 	s := fmt.Sprintln(v...)
 	c.errorLogger.Output(2, s)
 }
 
-func (c *logPool) SetLevel(level int) error {
+func (c *LogPool) SetLevel(level int) error {
 	if level >= DEBUG_LEVEL && level <= ERROR_LEVEL {
 		c.Level = level
 		logMap.Store(c.FileName, c)

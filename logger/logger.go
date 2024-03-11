@@ -114,39 +114,39 @@ func GetLogNum(logNumber int) (*logPool, error) {
 func (c *logPool) Debugf(format string, v ...any) {
 	if c.Level <= DEBUG_LEVEL {
 		s := fmt.Sprintf(format, v...)
-		c.debugLogger.Output(1, s)
+		c.debugLogger.Output(2, s)
 	}
 }
 
 func (c *logPool) Debugln(v ...any) {
 	if c.Level <= DEBUG_LEVEL {
 		s := fmt.Sprintln(v...)
-		c.debugLogger.Output(1, s)
+		c.debugLogger.Output(2, s)
 	}
 }
 
 func (c *logPool) Infof(format string, v ...any) {
 	if c.Level <= INFO_LEVEL {
 		s := fmt.Sprintf(format, v...)
-		c.infoLogger.Output(1, s)
+		c.infoLogger.Output(2, s)
 	}
 }
 
 func (c *logPool) Infoln(v ...any) {
 	if c.Level <= INFO_LEVEL {
 		s := fmt.Sprintln(v...)
-		c.infoLogger.Output(1, s)
+		c.infoLogger.Output(2, s)
 	}
 }
 
 func (c *logPool) Errorf(format string, v ...any) {
 	s := fmt.Sprintf(format, v...)
-	c.errorLogger.Output(1, s)
+	c.errorLogger.Output(2, s)
 }
 
 func (c *logPool) Errorln(v ...any) {
 	s := fmt.Sprintln(v...)
-	c.errorLogger.Output(1, s)
+	c.errorLogger.Output(2, s)
 }
 
 func (c *logPool) SetLevel(level int) error {

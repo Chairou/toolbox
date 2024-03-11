@@ -115,6 +115,7 @@ func GetDefault() *LogPool {
 	inst, err := GetLogNum(1)
 	if err != nil {
 		fmt.Errorf("GetLogNum| get logger from logIntFileName failed")
+		return nil
 	}
 	return inst
 }

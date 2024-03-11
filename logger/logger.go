@@ -2,6 +2,7 @@ package logger
 
 import (
 	"errors"
+	"fmt"
 	"github.com/natefinch/lumberjack"
 	"log"
 	"os"
@@ -52,9 +53,9 @@ func NewLogPool(fileName string) (*logPool, error) {
 			return nil, err
 		}
 
-		infoLog := log.New(fd, "INFO: ", log.Ldate|log.Ltime|log.Llongfile)
-		debugLog := log.New(fd, "DEBUG: ", log.Ldate|log.Ltime|log.Llongfile)
-		errorLog := log.New(fd, "ERROR: ", log.Ldate|log.Ltime|log.Llongfile)
+		infoLog := log.New(fd, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+		debugLog := log.New(fd, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
+		errorLog := log.New(fd, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 		inst := &logPool{}
 		inst.Path, _ = os.Getwd()
@@ -112,34 +113,40 @@ func GetLogNum(logNumber int) (*logPool, error) {
 
 func (c *logPool) Debugf(format string, v ...any) {
 	if c.Level <= DEBUG_LEVEL {
-		c.debugLogger.Printf(format, v...)
+		s := fmt.Sprintf(format, v...)
+		c.debugLogger.Output(1, s)
 	}
 }
 
 func (c *logPool) Debugln(v ...any) {
 	if c.Level <= DEBUG_LEVEL {
-		c.debugLogger.Println(v...)
+		s := fmt.Sprintln(v...)
+		c.debugLogger.Output(1, s)
 	}
 }
 
 func (c *logPool) Infof(format string, v ...any) {
 	if c.Level <= INFO_LEVEL {
-		c.infoLogger.Printf(format, v...)
+		s := fmt.Sprintf(format, v...)
+		c.infoLogger.Output(1, s)
 	}
 }
 
 func (c *logPool) Infoln(v ...any) {
 	if c.Level <= INFO_LEVEL {
-		c.infoLogger.Println(v...)
+		s := fmt.Sprintln(v...)
+		c.infoLogger.Output(1, s)
 	}
 }
 
 func (c *logPool) Errorf(format string, v ...any) {
-	c.errorLogger.Printf(format, v...)
+	s := fmt.Sprintf(format, v...)
+	c.errorLogger.Output(1, s)
 }
 
 func (c *logPool) Errorln(v ...any) {
-	c.errorLogger.Println(v...)
+	s := fmt.Sprintln(v...)
+	c.errorLogger.Output(1, s)
 }
 
 func (c *logPool) SetLevel(level int) error {

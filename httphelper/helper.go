@@ -8,7 +8,9 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"io"
 	"k8s.io/klog/v2"
+	"net"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -66,6 +68,8 @@ type httpHelper struct {
 	debug  int
 	Err    error
 }
+
+var Once sync.Once
 
 // AddQuery 添加Query参数
 func (p *httpHelper) AddQuery(k string, v string) Helper {
@@ -163,7 +167,7 @@ func (p *httpHelper) Do() Result {
 		var err error
 		byteBody, err = io.ReadAll(p.req.Body)
 		if err != nil {
-			return result.errorf("do http request err: %w", err)
+			return result.Errorf("do http request err: %w", err)
 		}
 	}
 
@@ -172,15 +176,16 @@ func (p *httpHelper) Do() Result {
 	switch p.debug {
 	case DEBUG_NORMAL:
 		if p.req.Method == "POST" {
-			klog.Infoln(uuid.String(), p.req.Method, p.req.URL.String(), "BODY :", result.ReqBody)
+			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.URL.String(), "\nBODY :", result.ReqBody)
 		} else {
-			klog.Infoln(uuid.String(), p.req.Method, p.req.URL.String())
+			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.URL.String())
 		}
 	case DEBUG_DETAIL:
 		if p.req.Method == "POST" {
-			klog.Infoln(uuid.String(), p.req.Method, p.req.Header, p.req.Cookies(), p.req.URL.String(), "BODY :", result.ReqBody)
+			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.Header, p.req.Cookies(),
+				p.req.URL.String(), "\nBODY :", result.ReqBody)
 		} else {
-			klog.Infoln(uuid.String(), p.req.Method, p.req.URL.String())
+			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.URL.String())
 		}
 	}
 
@@ -191,10 +196,27 @@ func (p *httpHelper) Do() Result {
 		rc = io.NopCloser(newByteBodyReader)
 	}
 	p.req.Body = rc
+	Once.Do(func() {
+		http.DefaultClient.Transport = &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   5 * time.Second,
+				KeepAlive: 60 * time.Second,
+				DualStack: true,
+			}).DialContext,
+			MaxIdleConns:          60,
+			IdleConnTimeout:       60 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			MaxConnsPerHost:       100,
+			ResponseHeaderTimeout: 10 * time.Second,
+		}
+	})
+
 	resp, err := http.DefaultClient.Do(p.req)
 	if err != nil {
 		//return nil, err
-		return result.errorf("do http request err: %w", err)
+		return result.Errorf("do http request err: %w", err)
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -205,7 +227,7 @@ func (p *httpHelper) Do() Result {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		//return nil, err
-		return result.errorf("read response body err: %w", err)
+		return result.Errorf("read response body err: %w", err)
 	}
 
 	result.Status = resp.StatusCode
@@ -221,9 +243,10 @@ func (p *httpHelper) Do() Result {
 	result.Uuid = uuid.String()
 	switch p.debug {
 	case DEBUG_NORMAL:
-		klog.Infoln(uuid.String(), "retBody:", result.RetBody, "elapsed :", elapsed)
+		klog.Infoln("HTTP RESP:", uuid.String(), "\nretBody:", result.RetBody, "elapsed :", elapsed)
 	case DEBUG_DETAIL:
-		klog.Infoln(uuid.String(), result.RetHeader, result.RetCookie, "retBody:", result.RetBody, "elapsed :", elapsed)
+		klog.Infoln("HTTP RESP:", uuid.String(), result.RetHeader, result.RetCookie, "\nretBody:", result.RetBody,
+			"elapsed :", elapsed)
 	}
 
 	return &jsonResult{

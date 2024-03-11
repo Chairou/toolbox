@@ -68,6 +68,13 @@ func String(val interface{}) string {
 	}
 }
 
+func Int64Default(val interface{}, defaultVal int64) int64 {
+	tmp, ok := Int64(val)
+	if !ok {
+		return defaultVal
+	}
+	return tmp
+}
 func Int64(val interface{}) (int64, bool) {
 	if val == nil {
 		return 0, false
@@ -130,6 +137,14 @@ func Int64(val interface{}) (int64, bool) {
 	default:
 		return 0, false
 	}
+}
+
+func Uint64Default(val interface{}, defaultVal uint64) uint64 {
+	tmp, ok := Uint64(val)
+	if !ok {
+		return defaultVal
+	}
+	return tmp
 }
 
 func Uint64(val interface{}) (uint64, bool) {
@@ -196,14 +211,38 @@ func Uint64(val interface{}) (uint64, bool) {
 	}
 }
 
+func IntDefault(val interface{}, defaultVal int) int {
+	tmp, ok := Int(val)
+	if !ok {
+		return defaultVal
+	}
+	return tmp
+}
+
 func Int(val interface{}) (int, bool) {
 	tmpVal, suc := Int64(val)
 	return int(tmpVal), suc
 }
 
+func UintDefault(val interface{}, defaultVal uint) uint {
+	tmp, ok := Uint(val)
+	if !ok {
+		return defaultVal
+	}
+	return tmp
+}
+
 func Uint(val interface{}) (uint, bool) {
 	tmpVal, suc := Uint64(val)
 	return uint(tmpVal), suc
+}
+
+func Float64Default(val interface{}, defaultVal float64) float64 {
+	tmp, ok := Float64(val)
+	if !ok {
+		return defaultVal
+	}
+	return tmp
 }
 
 func Float64(val interface{}) (float64, bool) {
@@ -269,6 +308,14 @@ func Float64(val interface{}) (float64, bool) {
 	}
 }
 
+func BoolDefault(val interface{}, defaultVal bool) bool {
+	tmp, ok := Bool(val)
+	if !ok {
+		return defaultVal
+	}
+	return tmp
+}
+
 func Bool(val interface{}) (bool, bool) {
 	tmpVal, suc := Int64(val)
 	return tmpVal != 0, suc
@@ -287,6 +334,18 @@ func IsNil(val interface{}) bool {
 		reValue = reflect.ValueOf(reValue.Interface())
 	}
 	return false
+}
+
+func TimeDefault(val interface{}, defaultVal string) time.Time {
+	tmp, ok := Time(val)
+	if !ok {
+		t, err := time.ParseInLocation(TIME_NORMAL, defaultVal, time.Local)
+		if err != nil {
+			t, _ = time.ParseInLocation(TIME_NORMAL, "1970-01-01 00:00:00", time.Local)
+		}
+		return t
+	}
+	return tmp
 }
 
 func Time(val interface{}) (time.Time, bool) {
@@ -553,4 +612,32 @@ func StructToMap(in interface{}, tagName string) (map[string]interface{}, error)
 		}
 	}
 	return out, nil
+}
+
+func MapToStruct(m map[string]interface{}, targetType interface{}) error {
+	targetValue := reflect.ValueOf(targetType)
+	if targetValue.Kind() != reflect.Ptr || targetValue.IsNil() {
+		return fmt.Errorf("targetType must be a non-nil pointer")
+	}
+
+	targetValue = targetValue.Elem()
+	if targetValue.Kind() != reflect.Struct {
+		return fmt.Errorf("targetType must be a pointer to a struct")
+	}
+
+	for key, value := range m {
+		field := targetValue.FieldByName(key)
+		if !field.IsValid() {
+			continue
+		}
+
+		fieldValue := reflect.ValueOf(value)
+		if field.Type() != fieldValue.Type() {
+			return fmt.Errorf("type mismatch for field %s: expected %v, got %v", key, field.Type(), fieldValue.Type())
+		}
+
+		field.Set(fieldValue)
+	}
+
+	return nil
 }

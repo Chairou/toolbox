@@ -154,3 +154,25 @@ func TestJsonToString(t *testing.T) {
 		t.Error("JsonToArray expected err")
 	}
 }
+
+func TestMapToStruct(t *testing.T) {
+	type ExampleStruct struct {
+		Name   string
+		Age    int
+		Gender string
+	}
+
+	m := map[string]interface{}{
+		"Name":   "John",
+		"Age":    30,
+		"Gender": "Male",
+	}
+
+	var s ExampleStruct
+	err := MapToStruct(m, &s)
+	if err != nil {
+		t.Error("Error:", err)
+		return
+	}
+	t.Logf("Result: %+v\n", s)
+}

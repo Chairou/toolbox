@@ -16,6 +16,14 @@ var (
 	ERROR_LEVEL int = 2
 )
 
+type LogIntFileName struct {
+	Lock        sync.RWMutex
+	orderNum    int
+	IntFileName map[int]string
+}
+
+var logIntFileName LogIntFileName
+
 type logPool struct {
 	Fd          *os.File
 	FileName    string
@@ -26,11 +34,19 @@ type logPool struct {
 	errorLogger *log.Logger
 }
 
+func init() {
+	logIntFileName.Lock.Lock()
+	defer logIntFileName.Lock.Unlock()
+	logIntFileName.orderNum = 1
+	logIntFileName.IntFileName = make(map[int]string)
+}
+
 func NewLogPool(fileName string) (*logPool, error) {
 	inst, ok := logMap.Load(fileName)
 	if ok {
 		return inst.(*logPool), nil
 	} else {
+		SaveLogNameToInt(fileName)
 		fd, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0664)
 		if err != nil {
 			return nil, err
@@ -73,6 +89,24 @@ func GetLogPool(fileName string) (*logPool, error) {
 		return inst.(*logPool), nil
 	} else {
 		return nil, errors.New("get logger from logMap failed")
+	}
+}
+
+func SaveLogNameToInt(fileName string) {
+	logIntFileName.Lock.Lock()
+	logIntFileName.IntFileName[logIntFileName.orderNum] = fileName
+	logIntFileName.orderNum += 1
+	logIntFileName.Lock.Unlock()
+}
+
+func GetLogNum(logNumber int) (*logPool, error) {
+	logIntFileName.Lock.RLock()
+	fileName, ok := logIntFileName.IntFileName[logNumber]
+	logIntFileName.Lock.RUnlock()
+	if ok {
+		return GetLogPool(fileName)
+	} else {
+		return nil, errors.New("GetLogNum| get logger from logIntFileName failed")
 	}
 }
 

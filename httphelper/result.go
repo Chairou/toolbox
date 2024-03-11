@@ -66,7 +66,7 @@ func (p *baseResult) error(err error) *errResult {
 	}
 }
 
-func (p *baseResult) errorf(format string, a ...interface{}) *errResult {
+func (p *baseResult) Errorf(format string, a ...interface{}) *errResult {
 	return p.error(fmt.Errorf(format, a...))
 }
 

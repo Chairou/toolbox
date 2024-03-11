@@ -28,6 +28,12 @@ func TestLogger(t *testing.T) {
 	}
 	log2.Debugln("b", 2)
 	log2.Debugf("%+v", sample)
+	log3, err := GetLogNum(1)
+	if err != nil {
+		t.Error("GetLogPool err:", err)
+	}
+	log3.Debugln("log3", 3)
+
 }
 
 func TestLogPool_SetLevel(t *testing.T) {

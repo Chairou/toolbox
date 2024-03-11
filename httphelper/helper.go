@@ -176,14 +176,14 @@ func (p *httpHelper) Do() Result {
 	switch p.debug {
 	case DEBUG_NORMAL:
 		if p.req.Method == "POST" {
-			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.URL.String(), "BODY :", result.ReqBody)
+			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.URL.String(), "\nBODY :", result.ReqBody)
 		} else {
 			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.URL.String())
 		}
 	case DEBUG_DETAIL:
 		if p.req.Method == "POST" {
 			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.Header, p.req.Cookies(),
-				p.req.URL.String(), "BODY :", result.ReqBody)
+				p.req.URL.String(), "\nBODY :", result.ReqBody)
 		} else {
 			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.URL.String())
 		}
@@ -243,9 +243,9 @@ func (p *httpHelper) Do() Result {
 	result.Uuid = uuid.String()
 	switch p.debug {
 	case DEBUG_NORMAL:
-		klog.Infoln("HTTP RESP:", uuid.String(), "retBody:", result.RetBody, "elapsed :", elapsed)
+		klog.Infoln("HTTP RESP:", uuid.String(), "\nretBody:", result.RetBody, "elapsed :", elapsed)
 	case DEBUG_DETAIL:
-		klog.Infoln("HTTP RESP:", uuid.String(), result.RetHeader, result.RetCookie, "retBody:", result.RetBody,
+		klog.Infoln("HTTP RESP:", uuid.String(), result.RetHeader, result.RetCookie, "\nretBody:", result.RetBody,
 			"elapsed :", elapsed)
 	}
 

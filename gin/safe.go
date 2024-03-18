@@ -1,8 +1,10 @@
 package gin
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"net/http"
 	"regexp"
 )
@@ -24,7 +26,9 @@ func SafeCheck() gin.HandlerFunc {
 					}
 				}
 			}
-			// 检查通过，退出
+			// 检查通过，设置seq，退出
+			seq := uuid.New()
+			c.Set("seq", seq)
 			c.Next()
 		}
 	}
@@ -52,6 +56,35 @@ func detectSQLInjection(input string) bool {
 			return true
 		}
 	}
-
 	return false
+}
+
+// ResponseRecorder 中间件用于记录响应数据
+func ResponseRecorder() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// 创建一个新的响应体
+		blw := &bodyLogWriter{
+			body:           bytes.NewBufferString(""),
+			ResponseWriter: c.Writer,
+		}
+		c.Writer = blw
+
+		// 处理请求
+		c.Next()
+
+		// 请求处理完成后，记录响应体
+		fmt.Println("Response body: " + blw.body.String())
+	}
+}
+
+// bodyLogWriter 是一个包装了响应体的结构体
+type bodyLogWriter struct {
+	gin.ResponseWriter
+	body *bytes.Buffer
+}
+
+// Write 重写Write方法以捕获响应体数据
+func (w bodyLogWriter) Write(b []byte) (int, error) {
+	w.body.Write(b)
+	return w.ResponseWriter.Write(b)
 }

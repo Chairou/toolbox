@@ -58,6 +58,7 @@ func WriteRetJson(c *gin.Context, code int, data interface{}, args ...interface{
 			msg += fmt.Sprintf(" %v", v)
 		}
 	}
+	ret.Msg = msg
 	c.JSON(http.StatusOK, ret)
 }
 

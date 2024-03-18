@@ -23,7 +23,7 @@ func WriteRetJson(c *gin.Context, code int, data interface{}, args ...interface{
 
 	seq, ok := c.Get("seq")
 	if ok {
-		ret.Seq = seq.(string)
+		ret.Seq = conv.String(seq)
 	} else {
 		ret.Seq = ""
 	}

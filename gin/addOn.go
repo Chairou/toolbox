@@ -12,6 +12,7 @@ type Ret struct {
 	Code int         `json:"code"`
 	Msg  string      `json:"message"`
 	Data interface{} `json:"data"`
+	Seq  string      `json:"seq"`
 }
 
 func WriteRetJson(c *gin.Context, code int, data interface{}, args ...interface{}) {
@@ -19,6 +20,13 @@ func WriteRetJson(c *gin.Context, code int, data interface{}, args ...interface{
 	var ret Ret
 	ret.Code = code
 	ret.Data = data
+
+	seq, ok := c.Get("seq")
+	if ok {
+		ret.Seq = seq.(string)
+	} else {
+		ret.Seq = ""
+	}
 
 	for _, arg := range args {
 		switch v := arg.(type) {

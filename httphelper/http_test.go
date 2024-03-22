@@ -21,7 +21,7 @@ type Ret struct {
 }
 type TmpPost struct {
 	Sex     string            `json:"sex"`
-	Age     string            `json:"age"`
+	Age     int               `json:"age"`
 	Pairent map[string]string `json:"pairent"`
 	Address []string          `json:"address"`
 	Name    string            `json:"name"`
@@ -40,11 +40,9 @@ func TestUrlToMap(t *testing.T) {
 var time1 time.Time = time.Now()
 
 func TestPostHttp(t *testing.T) {
-	tmp := &TmpPost{}
 	type MyType func(int) int
 	var f MyType = func(x int) int { return x * x }
-	//client := PostJSON("http://9.135.96.168:8080/post", "{\"qq\":\"win\"}")
-	client := PostJSON("http://9.135.96.168:8080/post", f)
+	client := PostJSON("http://127.0.0.1/postBody", f)
 	if client.error() != nil {
 		t.Log(client.error())
 	}
@@ -52,34 +50,34 @@ func TestPostHttp(t *testing.T) {
 	if ok {
 		t.Log(*val)
 	}
-	client = PostJSON("http://9.135.96.168:8080/post", "{\"qq\":\"win\"}")
-	if client.error() != nil {
-		t.Error(client.error())
-	}
-	client.SetDebug(DEBUG_DETAIL)
+	client = PostJSON("http://127.0.0.1/postBody", `{"name":"win"}`)
+	client.SetDebug(DebugDetail)
 	client.AddHeader("aa", "bb").AddHeader("cc", "dd")
 	client.AddSimpleCookies(map[string]string{"ee": "ff"})
 	ret := client.Do()
-	// 把body返回的json串反序列化到结构中去
-	err := ret.Bind(tmp)
-	if err != nil {
-		fmt.Println(err.Error())
+	asd := ret.Get("name")
+	q := asd.JsonIterAny().ToString()
+	t.Log(q)
+	type Simple struct {
+		Name string `json:"name"`
 	}
-	fmt.Println("####:", ret.BaseResult().ReqBody)
-	fmt.Println("retBody:", ret.BaseResult().RetBody)
-	fmt.Printf("struct: %+v", tmp)
-
+	var tmp Simple
+	err := ret.Bind(&tmp)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Logf("simple : %+v", tmp)
 }
 
 func TestUrlPathEscape(t *testing.T) {
-	url := "http://news.qq.com/?a=1&b=吃饭"
-	urlEncode := UrlPathEscape(url)
+	url1 := "http://news.qq.com/?a=1&b=吃饭"
+	urlEncode := UrlPathEscape(url1)
 	fmt.Println(urlEncode)
 }
 
 func TestGetHttp(t *testing.T) {
-	url := "http://9.135.96.168:8080/get?aa=bb&cc=dd"
-	client := GET(url)
+	url1 := "http://9.135.96.168:8080/get?aa=bb&cc=dd"
+	client := GET(url1)
 	client.AddQuery("key1", "value1")
 	client.AddHeader("envSelector", "test")
 	cookies := make([]*http.Cookie, 0)
@@ -93,9 +91,9 @@ func TestGetHttp(t *testing.T) {
 }
 
 func TestPathEscaped(t *testing.T) {
-	url := "http://9.135.96.168:8080/get?aa=bb&cc=dd"
-	client := GET(url)
-	client.AddPathEscapeQuery("key2", "value2;")
+	url1 := "http://127.0.0.1/get?aa=bb&cc=dd"
+	client := GET(url1)
+	client.AddPathEscapeQuery("key2", "value2")
 	client.AddPathEscapeQuery("key3", "中文")
 	ret := client.Do()
 	// 显示body内容
@@ -170,4 +168,24 @@ func TestBasicAuth(t *testing.T) {
 	ret := client.Do()
 	t.Log(ret.BaseResult().RetBody)
 	t.Log(ret.BaseResult().ReqBody)
+}
+
+func TestUploadFile(t *testing.T) {
+	url1 := "http://127.0.0.1/upload"
+	client := PostFile(url1, "/tmp/abc.txt", "test1.txt")
+	ret := client.Do()
+	if ret.Error() != nil {
+		t.Log(ret.Error())
+	}
+	t.Log(ret.BaseResult().RetBody)
+}
+
+func TestJsonGet(t *testing.T) {
+	type Sample struct {
+		Name string `json:"name"`
+	}
+	//var sample = Sample{}
+	body := `{"name":"abc"}`
+	asd := jsoniter.Get([]byte(body), "name")
+	t.Logf("%v", (asd).ToString())
 }

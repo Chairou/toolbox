@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -58,7 +60,7 @@ func NewRequest(method string, urlStr string, body io.Reader) Helper {
 	helper := &httpHelper{
 		client: *http.DefaultClient,
 		req:    req,
-		debug:  DEBUG_NORMAL,
+		debug:  DebugNormal,
 		Err:    nil,
 	}
 	return helper
@@ -77,12 +79,66 @@ func PostUrlEncode(url string, values url.Values) Helper {
 
 // PostJSON 创建application/json的POST请求
 func PostJSON(url string, body interface{}) Helper {
-	byteBody, err := jsoniter.Marshal(body)
-	if err != nil {
-		return errorHelper(fmt.Errorf("new request error: %w", err))
+	switch value := body.(type) {
+	case string:
+		return NewRequest("POST", url, strings.NewReader(value)).SetHeader("Content-Type",
+			"application/json")
+	default:
+		byteBody, err := jsoniter.Marshal(body)
+		if err != nil {
+			return errorHelper(fmt.Errorf("new request error: %w", err))
+		}
+		return NewRequest("POST", url, bytes.NewReader(byteBody)).SetHeader("Content-Type",
+			"application/json")
+
 	}
-	return NewRequest("POST", url, bytes.NewReader(byteBody)).SetHeader("Content-Type",
-		"application/json")
+}
+
+func PostFile(url string, fullPathSourceFileName string, DstFileName string) Helper {
+	// 打开要上传的文件
+	file, err := os.Open(fullPathSourceFileName)
+	if err != nil {
+		fmt.Println("无法打开文件:", err)
+		return errorHelper(fmt.Errorf("无法打开文件: %w", err))
+	}
+	stat, _ := file.Stat()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			fmt.Println("close file err:", err)
+		}
+	}(file)
+
+	// 创建一个缓冲区来存储请求体
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	// 创建一个表单字段，将文件内容写入其中
+	fileField, err := writer.CreateFormFile("file", DstFileName)
+	if err != nil {
+		fmt.Println("创建表单字段失败:", err)
+		return errorHelper(fmt.Errorf("创建表单字段失败: %w", err))
+	}
+	_, err = io.Copy(fileField, file)
+	if err != nil {
+		fmt.Println("写入文件内容失败:", err)
+		return errorHelper(fmt.Errorf("创建表单字段失败: %w", err))
+	}
+
+	// 完成表单写入
+	err = writer.Close()
+	if err != nil {
+		fmt.Println("关闭表单写入失败:", err)
+		return errorHelper(fmt.Errorf("关闭表单写入失败: %w", err))
+	}
+
+	// 创建一个POST请求
+	httpClient := NewRequest("POST", url, body).SetHeader("Content-Type",
+		writer.FormDataContentType())
+	httpClient.SetDebug(DebugUpload)
+	httpClient.SetUploadFile(fullPathSourceFileName, stat.Size())
+
+	return httpClient
 }
 
 func PathEscapeEncode(v url.Values) string {
@@ -109,6 +165,7 @@ func PathEscapeEncode(v url.Values) string {
 	}
 	return buf.String()
 }
+
 func PathEscape(param map[string]string) string {
 	var buf strings.Builder
 	keys := make([]string, 0, len(param))

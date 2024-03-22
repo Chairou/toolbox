@@ -47,26 +47,31 @@ type Helper interface {
 	// AddOAuthAccessToken 设置OAuth认证
 	AddOAuthAccessToken(token string) Helper
 
-	SetDebug(mode int)
+	SetDebug(mode int) Helper
 
 	// Do 发送请求
 	Do() Result
 
 	error() error
+
+	SetUploadFile(fileName string, fileSize int64) Helper
 }
 
 const (
-	DEBUG_DISABLED = 2
-	DEBUG_NORMAL   = 3
-	DEBUG_DETAIL   = 4
+	DebugDisabled = 2
+	DebugNormal   = 3
+	DebugDetail   = 4
+	DebugUpload   = 5
 )
 
 type httpHelper struct {
-	body   io.Reader
-	client http.Client
-	req    *http.Request
-	debug  int
-	Err    error
+	body           io.Reader
+	client         http.Client
+	req            *http.Request
+	debug          int
+	Err            error
+	UploadFileName string
+	UploadFileSize int64
 }
 
 var Once sync.Once
@@ -152,10 +157,17 @@ func (p *httpHelper) AddOAuthAccessToken(token string) Helper {
 	return p
 }
 
-func (p *httpHelper) SetDebug(mode int) {
-	if mode == DEBUG_DISABLED || mode == DEBUG_NORMAL || mode == DEBUG_DETAIL {
+func (p *httpHelper) SetDebug(mode int) Helper {
+	if mode >= DebugDisabled && mode <= DebugUpload {
 		p.debug = mode
 	}
+	return p
+}
+
+func (p *httpHelper) SetUploadFile(fileName string, fileSize int64) Helper {
+	p.UploadFileName = fileName
+	p.UploadFileSize = fileSize
+	return p
 }
 
 // Do 发送请求
@@ -167,26 +179,29 @@ func (p *httpHelper) Do() Result {
 		var err error
 		byteBody, err = io.ReadAll(p.req.Body)
 		if err != nil {
-			return result.Errorf("do http request err: %w", err)
+			return result.Errorf("do http request err: %v", err)
 		}
 	}
 
 	uuid := uuid2.New()
 	result.ReqBody = string(byteBody)
 	switch p.debug {
-	case DEBUG_NORMAL:
+	case DebugNormal:
 		if p.req.Method == "POST" {
-			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.URL.String(), "\nBODY :", result.ReqBody)
+			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.URL.String(), "\n【reqBODY】:", result.ReqBody)
 		} else {
 			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.URL.String())
 		}
-	case DEBUG_DETAIL:
+	case DebugDetail:
 		if p.req.Method == "POST" {
 			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.Header, p.req.Cookies(),
-				p.req.URL.String(), "\nBODY :", result.ReqBody)
+				p.req.URL.String(), "\n【reqBODY】 :", result.ReqBody)
 		} else {
 			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.URL.String())
 		}
+	case DebugUpload:
+		klog.Infoln("HTTP UPLOAD FILE:", uuid.String(), p.req.Method, p.req.URL.String(), ", fileName:",
+			p.UploadFileName, ", fileSize:", p.UploadFileSize)
 	}
 
 	newByteBodyReader := bytes.NewReader(byteBody)
@@ -202,7 +217,6 @@ func (p *httpHelper) Do() Result {
 			DialContext: (&net.Dialer{
 				Timeout:   5 * time.Second,
 				KeepAlive: 60 * time.Second,
-				DualStack: true,
 			}).DialContext,
 			MaxIdleConns:          60,
 			IdleConnTimeout:       60 * time.Second,
@@ -216,7 +230,7 @@ func (p *httpHelper) Do() Result {
 	resp, err := http.DefaultClient.Do(p.req)
 	if err != nil {
 		//return nil, err
-		return result.Errorf("do http request err: %w", err)
+		return result.Errorf("do http request err: %v", err)
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -227,7 +241,7 @@ func (p *httpHelper) Do() Result {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		//return nil, err
-		return result.Errorf("read response body err: %w", err)
+		return result.Errorf("read response body err: %v", err)
 	}
 
 	result.Status = resp.StatusCode
@@ -242,10 +256,10 @@ func (p *httpHelper) Do() Result {
 	result.BodyLen = len(body)
 	result.Uuid = uuid.String()
 	switch p.debug {
-	case DEBUG_NORMAL:
-		klog.Infoln("HTTP RESP:", uuid.String(), "\nretBody:", result.RetBody, "elapsed :", elapsed)
-	case DEBUG_DETAIL:
-		klog.Infoln("HTTP RESP:", uuid.String(), result.RetHeader, result.RetCookie, "\nretBody:", result.RetBody,
+	case DebugNormal:
+		klog.Infoln("HTTP RESP:", uuid.String(), "\n【retBody】:", result.RetBody, "elapsed :", elapsed)
+	case DebugDetail:
+		klog.Infoln("HTTP RESP:", uuid.String(), result.RetHeader, result.RetCookie, "\n【retBody】:", result.RetBody,
 			"elapsed :", elapsed)
 	}
 
@@ -273,12 +287,12 @@ func (p *errHelper) error() error {
 	return p.Err
 }
 
-// Query 添加Query参数
+// AddQuery 添加Query参数
 func (p *errHelper) AddQuery(string, string) Helper {
 	return p
 }
 
-// QueryMap 通过map来添加Query参数
+// AddQueryMap 通过map来添加Query参数
 func (p *errHelper) AddQueryMap(map[string]string) Helper {
 	return p
 }
@@ -322,8 +336,7 @@ func (p *errHelper) SetTransport(http.RoundTripper) Helper {
 	return p
 }
 
-func (p *errHelper) SetDebug(mode int) {
-}
+func (p *errHelper) SetDebug(mode int) Helper { return p }
 
 // Do 发送请求
 //func (p *errHelper) Do() (Result,error) {
@@ -333,3 +346,5 @@ func (p *errHelper) SetDebug(mode int) {
 func (p *errHelper) Do() Result {
 	return &errResult{error: p.error()}
 }
+
+func (p *errHelper) SetUploadFile(fileName string, fileSize int64) Helper { return p }

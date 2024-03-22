@@ -26,11 +26,11 @@ func SafeCheck() gin.HandlerFunc {
 					}
 				}
 			}
-			// 检查通过，设置seq，退出
-			seq := uuid.New()
-			c.Set("seq", seq)
-			c.Next()
 		}
+		// 检查通过，设置seq，退出
+		seq := uuid.New()
+		c.Set("seq", seq)
+		c.Next()
 	}
 }
 

@@ -18,17 +18,16 @@ type Result interface {
 	// StdCheck 检查HTTP响应码和Body中的Code
 	StdCheck() Result
 
-	// Bind 将返回值存储到Object中
-	Bind(object interface{}, path ...interface{}) error
-
 	// Get 通过json path获取子结果
 	Get(path ...interface{}) Result
+
+	Bind(object interface{}, path ...interface{}) error
 
 	// Error 返回出现的错误
 	Error() error
 
-	// Jsoniter 返回body的json迭代器
-	Jsoniter() jsoniter.Any
+	// JsonIterAny 返回body的json迭代器
+	JsonIterAny() jsoniter.Any
 
 	// UnmarshalFromBody json UnmarshalFromBody
 	UnmarshalFromBody(v interface{}) error
@@ -75,8 +74,12 @@ type jsonResult struct {
 	body jsoniter.Any
 }
 
+func (p *jsonResult) JsonIterAny() jsoniter.Any {
+	return p.body
+}
+
 // Jsoniter 返回body的json迭代器
-func (p *jsonResult) Jsoniter() jsoniter.Any {
+func (p *jsonResult) Any() jsoniter.Any {
 	return p.body
 }
 
@@ -125,6 +128,11 @@ type errResult struct {
 	error
 }
 
+func (p *errResult) JsonIterAny() jsoniter.Any {
+	return jsoniter.Wrap(nil)
+
+}
+
 // StdCheck 检查HTTP响应码和Body中的Code
 func (p *errResult) StdCheck() Result {
 	return p
@@ -146,7 +154,7 @@ func (p *errResult) Error() error {
 }
 
 // Jsoniter 返回body的json迭代器
-func (p *errResult) Jsoniter() jsoniter.Any {
+func (p *errResult) Any() jsoniter.Any {
 	return jsoniter.Wrap(nil)
 }
 

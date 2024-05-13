@@ -362,7 +362,7 @@ func (p *errHelper) SetTransport(http.RoundTripper) Helper {
 
 func (p *errHelper) SetDebug(mode int) Helper { return p }
 
-func (p *errHelper) AddSign(mode int) Helper { return p }
+func (p *errHelper) AddSign(appID string, appSecret string) Helper { return p }
 
 // Do 发送请求
 //func (p *errHelper) Do() (Result,error) {

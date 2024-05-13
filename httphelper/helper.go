@@ -2,14 +2,19 @@ package httphelper
 
 import (
 	"bytes"
+	"crypto/md5"
 	"encoding/base64"
+	"encoding/hex"
+	"fmt"
 	"github.com/Chairou/toolbox/util/conv"
 	uuid2 "github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
 	"io"
 	"k8s.io/klog/v2"
+	"math/rand"
 	"net"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -48,6 +53,9 @@ type Helper interface {
 	AddOAuthAccessToken(token string) Helper
 
 	SetDebug(mode int) Helper
+
+	// AddSign 添加datamore_api的签名方法
+	AddSign(appID string, appSecret string) Helper
 
 	// Do 发送请求
 	Do() Result
@@ -154,6 +162,22 @@ func (p *httpHelper) AddBasicAuth(username string, password string) Helper {
 
 func (p *httpHelper) AddOAuthAccessToken(token string) Helper {
 	p.req.Header.Add("Authorization", "Bearer "+token)
+	return p
+}
+
+func (p *httpHelper) AddSign(appID string, appSecret string) Helper {
+	timestamp := strconv.Itoa((int)(time.Now().Unix()))
+	random := fmt.Sprintf("%v%v%v", rand.Uint64(), rand.Uint64(), rand.Uint64())
+	//appID := "tesing"
+	//secert := "testing-1234-1234"
+
+	tokenBytes := md5.Sum([]byte(fmt.Sprintf("%v|%s|%v|!&&@@%%#$!*^|%v", appID, timestamp, appSecret, random)))
+	token := hex.EncodeToString(tokenBytes[:])
+
+	p.req.Header.Add("Timestamp", timestamp)
+	p.req.Header.Add("Random", random)
+	p.req.Header.Add("App-Id", appID)
+	p.req.Header.Add("Access-Token", token)
 	return p
 }
 
@@ -337,6 +361,8 @@ func (p *errHelper) SetTransport(http.RoundTripper) Helper {
 }
 
 func (p *errHelper) SetDebug(mode int) Helper { return p }
+
+func (p *errHelper) AddSign(appID string, appSecret string) Helper { return p }
 
 // Do 发送请求
 //func (p *errHelper) Do() (Result,error) {

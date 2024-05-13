@@ -32,14 +32,14 @@ func TestUrlToMap(t *testing.T) {
 	url2 := "s=3&g=ff"
 	url3 := "https://news.qq.com:8080/main?s=3&g=中文去"
 
-	fmt.Printf("%s\n", UrlPathEscape(url1))
-	fmt.Printf("%s\n", UrlPathEscape(url2))
-	fmt.Printf("%s\n", UrlPathEscape(url3))
+	t.Logf("%s\n", UrlPathEscape(url1))
+	t.Logf("%s\n", UrlPathEscape(url2))
+	t.Logf("%s\n", UrlPathEscape(url3))
 }
 
 var time1 time.Time = time.Now()
 
-func TestPostHttp(t *testing.T) {
+func TestPostFuncHttp(t *testing.T) {
 	type MyType func(int) int
 	var f MyType = func(x int) int { return x * x }
 	client := PostJSON("http://127.0.0.1/postBody", f)
@@ -49,8 +49,13 @@ func TestPostHttp(t *testing.T) {
 	val, ok := client.(*errHelper)
 	if ok {
 		t.Log(*val)
+	} else {
+		t.Error("expected errHelper")
 	}
-	client = PostJSON("http://127.0.0.1/postBody", `{"name":"win"}`)
+}
+
+func TestPostString(t *testing.T) {
+	client := PostJSON("http://127.0.0.1/postBody", `{"name":"win"}`)
 	client.SetDebug(DebugDetail)
 	client.AddHeader("aa", "bb").AddHeader("cc", "dd")
 	client.AddSimpleCookies(map[string]string{"ee": "ff"})
@@ -58,25 +63,32 @@ func TestPostHttp(t *testing.T) {
 	asd := ret.Get("name")
 	q := asd.JsonIterAny().ToString()
 	t.Log(q)
+}
+
+func TestPostSturctInstance(t *testing.T) {
 	type Simple struct {
 		Name string `json:"name"`
 	}
-	var tmp Simple
-	err := ret.Bind(&tmp)
+	var instance Simple
+	instance.Name = "AAAA"
+	client := PostJSON("http://127.0.0.1/postBody", instance)
+	ret := client.Do()
+	instance.Name = "BBBB"
+	err := ret.Bind(&instance)
 	if err != nil {
 		t.Error(err)
 	}
-	t.Logf("simple : %+v", tmp)
+	t.Logf("simple : %+v", instance)
 }
 
 func TestUrlPathEscape(t *testing.T) {
 	url1 := "http://news.qq.com/?a=1&b=吃饭"
 	urlEncode := UrlPathEscape(url1)
-	fmt.Println(urlEncode)
+	t.Log(urlEncode)
 }
 
 func TestGetHttp(t *testing.T) {
-	url1 := "http://9.135.96.168:8080/get?aa=bb&cc=dd"
+	url1 := "http://127.0.0.1/get?aa=bb&cc=dd"
 	client := GET(url1)
 	client.AddQuery("key1", "value1")
 	client.AddHeader("envSelector", "test")
@@ -139,7 +151,7 @@ func TestGlobalCookie(t *testing.T) {
 }
 
 func TestPostUrlEncode(t *testing.T) {
-	url1 := "http://9.135.96.168:8080/get?aa=bb&cc=dd"
+	url1 := "http://127.0.0.1/get?aa=bb&cc=dd"
 	data := url.Values{}
 	data.Set("workspace_id", "123")
 	data.Set("name", "test1")
@@ -160,7 +172,7 @@ func TestPostUrlEncode(t *testing.T) {
 }
 
 func TestBasicAuth(t *testing.T) {
-	url1 := "http://9.135.96.168:8080/get?aa=bb&cc=dd"
+	url1 := "http://127.0.0.1/get?aa=bb&cc=dd"
 	username := "nofight"   // 替换为您的用户名
 	password := "F-4-1-E-A" //}
 	client := GET(url1)

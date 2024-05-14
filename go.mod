@@ -3,7 +3,7 @@ module github.com/Chairou/toolbox
 go 1.19
 
 require (
-	github.com/dop251/goja v0.0.0-20240220182346-e401ed450204
+	github.com/dop251/goja v0.0.0-20190912223329-aa89e6a4c733
 	github.com/gin-gonic/gin v1.9.1
 	github.com/gomodule/redigo v1.9.2
 	github.com/google/go-cmp v0.6.0
@@ -33,7 +33,6 @@ require (
 	github.com/go-playground/validator/v10 v10.19.0 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
-	github.com/google/pprof v0.0.0-20240227163752-401108e1b7e7 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

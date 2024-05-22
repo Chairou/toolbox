@@ -6,14 +6,15 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"github.com/Chairou/toolbox/logger"
+	"github.com/Chairou/toolbox/util/color"
 	"github.com/Chairou/toolbox/util/conv"
 	uuid2 "github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
 	"io"
-	"k8s.io/klog/v2"
 	"math/rand"
-	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -80,9 +81,28 @@ type httpHelper struct {
 	Err            error
 	UploadFileName string
 	UploadFileSize int64
+	Uuid           string
 }
 
 var Once sync.Once
+var log *logger.LogPool
+
+func init() {
+	Once.Do(func() {
+		logFileName := os.Getenv("httpLogFileName")
+		if logFileName == "" {
+			logFileName = "/tmp/http.log"
+		}
+		var err error
+		log, err = logger.NewLogPool("http", logFileName)
+		if err != nil {
+			fmt.Println("Error creating log:", err.Error())
+			return
+		}
+		log.SetLevel(logger.DEBUG_LEVEL)
+		log.Infoln("http log init.")
+	})
+}
 
 // AddQuery 添加Query参数
 func (p *httpHelper) AddQuery(k string, v string) Helper {
@@ -203,28 +223,32 @@ func (p *httpHelper) Do() Result {
 		var err error
 		byteBody, err = io.ReadAll(p.req.Body)
 		if err != nil {
-			return result.Errorf("do http request err: %v", err)
+			redStr := color.SetColor(color.Red, fmt.Sprintf("%v", err))
+			s := fmt.Sprintf("%s  io.ReadAll err: %s", p.Uuid, redStr)
+			log.Errorln(s)
+			return result.Errorf("io.ReadAll err: %v", err)
 		}
 	}
 
-	uuid := uuid2.New()
+	p.Uuid = uuid2.NewString()
 	result.ReqBody = string(byteBody)
 	switch p.debug {
 	case DebugNormal:
 		if p.req.Method == "POST" {
-			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.URL.String(), "\n【reqBODY】:", result.ReqBody)
+			log.Infoln("HTTP REQ:", p.Uuid, p.req.Method, p.req.URL.String(), "\n【reqBODY】:",
+				color.SetColor(color.Green, result.ReqBody))
 		} else {
-			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.URL.String())
+			log.Infoln("HTTP REQ:", p.Uuid, p.req.Method, color.SetColor(color.Green, p.req.URL.String()))
 		}
 	case DebugDetail:
 		if p.req.Method == "POST" {
-			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.Header, p.req.Cookies(),
-				p.req.URL.String(), "\n【reqBODY】 :", result.ReqBody)
+			log.Infoln("HTTP REQ:", p.Uuid, p.req.Method, p.req.URL.String(), p.req.Header, p.req.Cookies(),
+				"\n【reqBODY】 :", color.SetColor(color.Green, result.ReqBody))
 		} else {
-			klog.Infoln("HTTP REQUEST:", uuid.String(), p.req.Method, p.req.URL.String())
+			log.Infoln("HTTP REQ:", p.Uuid, p.req.Method, color.SetColor(color.Green, p.req.URL.String()))
 		}
 	case DebugUpload:
-		klog.Infoln("HTTP UPLOAD FILE:", uuid.String(), p.req.Method, p.req.URL.String(), ", fileName:",
+		log.Infoln("HTTP UPLOAD FILE:", p.Uuid, p.req.Method, p.req.URL.String(), ", fileName:",
 			p.UploadFileName, ", fileSize:", p.UploadFileSize)
 	}
 
@@ -235,36 +259,29 @@ func (p *httpHelper) Do() Result {
 		rc = io.NopCloser(newByteBodyReader)
 	}
 	p.req.Body = rc
-	Once.Do(func() {
-		http.DefaultClient.Transport = &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			DialContext: (&net.Dialer{
-				Timeout:   5 * time.Second,
-				KeepAlive: 60 * time.Second,
-			}).DialContext,
-			MaxIdleConns:          60,
-			IdleConnTimeout:       60 * time.Second,
-			TLSHandshakeTimeout:   10 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
-			MaxConnsPerHost:       100,
-			ResponseHeaderTimeout: 10 * time.Second,
-		}
-	})
 
 	resp, err := http.DefaultClient.Do(p.req)
 	if err != nil {
-		//return nil, err
+		redStr := color.SetColor(color.Red, fmt.Sprintf("%v", err))
+		s := fmt.Sprintf("%s do http request err: %s", p.Uuid, redStr)
+		log.Errorln(s)
 		return result.Errorf("do http request err: %v", err)
 	}
+
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-			klog.Errorln("body close err: ", err)
+			redStr := color.SetColor(color.Red, fmt.Sprintf("%v", err))
+			s := fmt.Sprintf("%s body close err: %s", p.Uuid, redStr)
+			log.Errorln(s)
 		}
 	}(resp.Body)
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		//return nil, err
+		redStr := color.SetColor(color.Red, fmt.Sprintf("%v", err))
+		s := fmt.Sprintf("%s read response body err: %s", p.Uuid, redStr)
+		log.Errorln(s)
 		return result.Errorf("read response body err: %v", err)
 	}
 
@@ -278,20 +295,20 @@ func (p *httpHelper) Do() Result {
 	elapsed := time.Since(startTime)
 	result.Elapsed = conv.String(elapsed)
 	result.BodyLen = len(body)
-	result.Uuid = uuid.String()
+	result.Uuid = p.Uuid
 	switch p.debug {
 	case DebugNormal:
-		klog.Infoln("HTTP RESP:", uuid.String(), "\n【retBody】:", result.RetBody, "elapsed :", elapsed)
-	case DebugDetail:
-		klog.Infoln("HTTP RESP:", uuid.String(), result.RetHeader, result.RetCookie, "\n【retBody】:", result.RetBody,
+		log.Infoln("HTTP RESP:", p.Uuid, "\n【retBody】:", color.SetColor(color.Green, result.RetBody),
 			"elapsed :", elapsed)
+	case DebugDetail:
+		log.Infoln("HTTP RESP:", p.Uuid, "\n【retBody】:", color.SetColor(color.Green, result.RetBody),
+			result.RetHeader, result.RetCookie, "elapsed :", elapsed)
 	}
 
 	return &jsonResult{
 		baseResult: result,
 		body:       jsoniter.Get(body),
 	}
-	//},nil
 }
 
 func (p *httpHelper) error() error {

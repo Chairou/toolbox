@@ -3,9 +3,11 @@ package logger
 import (
 	"errors"
 	"fmt"
+	"github.com/Chairou/toolbox/util/color"
 	"github.com/natefinch/lumberjack"
 	"log"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -42,12 +44,12 @@ func init() {
 	logIntFileName.IntFileName = make(map[int]string)
 }
 
-func NewLogPool(fileName string) (*LogPool, error) {
-	inst, ok := logMap.Load(fileName)
+func NewLogPool(name string, fileName string) (*LogPool, error) {
+	inst, ok := logMap.Load(name)
 	if ok {
 		return inst.(*LogPool), nil
 	} else {
-		SaveLogNameToInt(fileName)
+		SaveLogNameToInt(name)
 		fd, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0664)
 		if err != nil {
 			return nil, err
@@ -67,8 +69,16 @@ func NewLogPool(fileName string) (*LogPool, error) {
 		inst.debugLogger = debugLog
 		inst.errorLogger = errorLog
 
+		dir1 := filepath.Dir(fileName)
+		var logFileName string
+		if dir1 == "." {
+			logFileName = inst.Path + "/" + inst.FileName
+		} else {
+			logFileName = fileName
+		}
+
 		lumberjackLogger := &lumberjack.Logger{
-			Filename:   inst.Path + "/" + inst.FileName,
+			Filename:   logFileName,
 			MaxSize:    500, // megabytes
 			MaxBackups: 10,
 			MaxAge:     31,    //days
@@ -79,13 +89,13 @@ func NewLogPool(fileName string) (*LogPool, error) {
 		infoLog.SetOutput(lumberjackLogger)
 		errorLog.SetOutput(lumberjackLogger)
 
-		logMap.Store(fileName, inst)
+		logMap.Store(name, inst)
 		return inst, nil
 	}
 }
 
-func GetLogPool(fileName string) (*LogPool, error) {
-	inst, ok := logMap.Load(fileName)
+func GetLogPool(name string) (*LogPool, error) {
+	inst, ok := logMap.Load(name)
 	if ok {
 		return inst.(*LogPool), nil
 	} else {
@@ -93,9 +103,9 @@ func GetLogPool(fileName string) (*LogPool, error) {
 	}
 }
 
-func SaveLogNameToInt(fileName string) {
+func SaveLogNameToInt(name string) {
 	logIntFileName.Lock.Lock()
-	logIntFileName.IntFileName[logIntFileName.orderNum] = fileName
+	logIntFileName.IntFileName[logIntFileName.orderNum] = name
 	logIntFileName.orderNum += 1
 	logIntFileName.Lock.Unlock()
 }
@@ -114,7 +124,7 @@ func GetLogNum(logNumber int) (*LogPool, error) {
 func GetDefault() *LogPool {
 	inst, err := GetLogNum(1)
 	if err != nil {
-		fmt.Errorf("GetLogNum| get logger from logIntFileName failed")
+		_ = fmt.Errorf("GetLogNum| get logger from logIntFileName failed")
 		return nil
 	}
 	return inst
@@ -123,6 +133,7 @@ func GetDefault() *LogPool {
 func (c *LogPool) Debugf(format string, v ...any) {
 	if c.Level <= DEBUG_LEVEL {
 		s := fmt.Sprintf(format, v...)
+		log.Println(s)
 		c.debugLogger.Output(2, s)
 	}
 }
@@ -130,6 +141,7 @@ func (c *LogPool) Debugf(format string, v ...any) {
 func (c *LogPool) Debugln(v ...any) {
 	if c.Level <= DEBUG_LEVEL {
 		s := fmt.Sprintln(v...)
+		log.Println(s)
 		c.debugLogger.Output(2, s)
 	}
 }
@@ -137,6 +149,7 @@ func (c *LogPool) Debugln(v ...any) {
 func (c *LogPool) Infof(format string, v ...any) {
 	if c.Level <= INFO_LEVEL {
 		s := fmt.Sprintf(format, v...)
+		log.Println(s)
 		c.infoLogger.Output(2, s)
 	}
 }
@@ -144,17 +157,22 @@ func (c *LogPool) Infof(format string, v ...any) {
 func (c *LogPool) Infoln(v ...any) {
 	if c.Level <= INFO_LEVEL {
 		s := fmt.Sprintln(v...)
+		log.Println(s)
 		c.infoLogger.Output(2, s)
 	}
 }
 
 func (c *LogPool) Errorf(format string, v ...any) {
 	s := fmt.Sprintf(format, v...)
+	color.SetColor(color.Red, s)
+	log.Println(s)
 	c.errorLogger.Output(2, s)
 }
 
 func (c *LogPool) Errorln(v ...any) {
 	s := fmt.Sprintln(v...)
+	color.SetColor(color.Red, s)
+	log.Println(s)
 	c.errorLogger.Output(2, s)
 }
 

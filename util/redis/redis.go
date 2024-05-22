@@ -3,7 +3,7 @@ package redis
 import (
 	"errors"
 	redigo "github.com/gomodule/redigo/redis"
-	"k8s.io/klog/v2"
+	"log"
 	"sync"
 	"time"
 )
@@ -46,7 +46,7 @@ func GetRedisByName(name string) *RdPool {
 	if ok {
 		return inst.(*RdPool)
 	} else {
-		klog.Errorln("GetRedisByName err:", name)
+		log.Println("GetRedisByName err:", name)
 		return nil
 	}
 }

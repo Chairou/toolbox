@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	jsoniter "github.com/json-iterator/go"
-	"k8s.io/klog/v2"
 	"net/http"
 	"net/url"
 
@@ -165,7 +164,7 @@ func TestPostUrlEncode(t *testing.T) {
 	client.AddHeader("Authorization", basicAuth)
 	ret := client.Do()
 	if ret.Error() != nil {
-		klog.Errorln("sendRtxOversea err: ", ret.Error())
+		t.Log("sendRtxOversea err: ", ret.Error())
 	}
 	t.Log(ret.BaseResult().RetBody)
 	t.Log(ret.BaseResult().ReqBody)

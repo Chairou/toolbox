@@ -13,7 +13,8 @@ func main() {
 	r := gin.Default()
 	r.Use(g.SafeCheck())
 	r.Use(g.ResponseRecorder())
-	r.GET("/ping", func(c *gin.Context) {
+	api := r.Group("/api")
+	api.GET("/ping", func(c *gin.Context) {
 		g.WriteRetJson(c, 0, nil, "pong")
 	})
 	r.GET("/get", get)

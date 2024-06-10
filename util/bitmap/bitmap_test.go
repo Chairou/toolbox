@@ -22,6 +22,7 @@ func TestBitmap(t *testing.T) {
 	if bitmap.IsExist(0) != true {
 		t.Error("UNExpected error")
 	}
+	bitmap.PrintAllBits()
 	bitmap.Clean()
 	err = bitmap.Set(15)
 	if err != nil {

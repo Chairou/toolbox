@@ -2,11 +2,9 @@ module github.com/Chairou/toolbox
 
 go 1.19
 
-
 require (
 	github.com/dop251/goja v0.0.0-20190912223329-aa89e6a4c733
 	github.com/ecies/go/v2 v2.0.3
-	github.com/ethereum/go-ethereum v1.9.10
 	github.com/gin-gonic/gin v1.9.1
 	github.com/gomodule/redigo v1.9.2
 	github.com/google/go-cmp v0.6.0
@@ -24,7 +22,7 @@ require (
 )
 
 require (
-	github.com/btcsuite/btcd v0.0.0-20171128150713-2e60448ffcc6 // indirect
+	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/bytedance/sonic v1.11.3 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/chenzhuoyu/iasm v0.9.1 // indirect

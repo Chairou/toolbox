@@ -27,6 +27,7 @@ func process(srv *Server, input []byte) (output []byte, err error) {
 	if srv.UnCompress != nil {
 		// 处理解压工作
 	}
+	if
 	
 }
 

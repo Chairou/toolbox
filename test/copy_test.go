@@ -8,34 +8,34 @@ import (
 )
 
 type point struct {
-	Name string  `copier:"notNilCopy"`
-	Sex  *string
-	Age  *int
+	Name   string `copier:"notNilCopy"`
+	Sex    *string
+	Age    *int
 	Length *int
-	Level int
+	Level  int
 }
 
 type inst struct {
-	Name string
-	Sex  string
-	Age  int
+	Name   string
+	Sex    string
+	Age    int
 	Length int
 }
 
 type G struct {
-	Num int64
+	Num   int64
 	Level string
-	F F
+	F     F
 }
 
 type F struct {
 	Value string
-	C *C
+	C     *C
 }
 
 type C struct {
 	Name string
-	Id int64
+	Id   int64
 }
 
 func TestCopy(t *testing.T) {
@@ -79,14 +79,13 @@ func TestCopy(t *testing.T) {
 
 }
 
-
 func walkField(i interface{}) {
 	getType := reflect.TypeOf(i)
 	getValue := reflect.ValueOf(i)
-	for i:=0; i < getType.NumField(); i++ {
+	for i := 0; i < getType.NumField(); i++ {
 		field := getType.Field(i)
 		value := getValue.Field(i)
-		if field.Type.Kind() == reflect.Struct  {
+		if field.Type.Kind() == reflect.Struct {
 			fmt.Println("=========struct=========")
 			walkField(field)
 		}
@@ -116,3 +115,20 @@ func CopyField(src, dst interface{}) {
 	}
 }
 
+func TestCopyStruct(t *testing.T) {
+	type A struct {
+		Name string
+		Age  int
+	}
+	type B struct {
+		Kill string
+		A
+	}
+	a := A{
+		Name: "a",
+		Age:  1,
+	}
+	b := B{}
+	copier.Copy(&b, &a)
+	fmt.Printf("%+v", b)
+}

@@ -235,20 +235,20 @@ func (p *httpHelper) Do() Result {
 	switch p.debug {
 	case DebugNormal:
 		if p.req.Method == "POST" {
-			log.Infoln("HTTP REQ:", p.Uuid, p.req.Method, p.req.URL.String(), "\n【reqBODY】:",
+			log.Infoln("HTTP REQ:", p.Uuid, "\n", p.req.Method, p.req.URL.String(), "\n【reqBODY】:",
 				color.SetColor(color.Green, result.ReqBody))
 		} else {
-			log.Infoln("HTTP REQ:", p.Uuid, p.req.Method, color.SetColor(color.Green, p.req.URL.String()))
+			log.Infoln("HTTP REQ:", p.Uuid, "\n", p.req.Method, color.SetColor(color.Green, p.req.URL.String()))
 		}
 	case DebugDetail:
 		if p.req.Method == "POST" {
-			log.Infoln("HTTP REQ:", p.Uuid, p.req.Method, p.req.URL.String(), p.req.Header, p.req.Cookies(),
+			log.Infoln("HTTP REQ:", p.Uuid, "\n", p.req.Method, p.req.URL.String(), p.req.Header, p.req.Cookies(),
 				"\n【reqBODY】 :", color.SetColor(color.Green, result.ReqBody))
 		} else {
-			log.Infoln("HTTP REQ:", p.Uuid, p.req.Method, color.SetColor(color.Green, p.req.URL.String()))
+			log.Infoln("HTTP REQ:", p.Uuid, "\n", p.req.Method, color.SetColor(color.Green, p.req.URL.String()))
 		}
 	case DebugUpload:
-		log.Infoln("HTTP UPLOAD FILE:", p.Uuid, p.req.Method, p.req.URL.String(), ", fileName:",
+		log.Infoln("HTTP UPLOAD FILE:", p.Uuid, "\n", p.req.Method, p.req.URL.String(), ", fileName:",
 			p.UploadFileName, ", fileSize:", p.UploadFileSize)
 	}
 

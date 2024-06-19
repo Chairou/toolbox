@@ -1,8 +1,7 @@
 module github.com/Chairou/toolbox
 
-go 1.21
+go 1.19
 
-toolchain go1.21.5
 
 require (
 	github.com/dop251/goja v0.0.0-20190912223329-aa89e6a4c733

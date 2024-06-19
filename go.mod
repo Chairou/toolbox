@@ -5,9 +5,9 @@ go 1.21
 toolchain go1.21.5
 
 require (
-	github.com/dop251/goja v0.0.0-20230806174421-c933cf95e127
-	github.com/ecies/go/v2 v2.0.9
-	github.com/ethereum/go-ethereum v1.14.3
+	github.com/dop251/goja v0.0.0-20190912223329-aa89e6a4c733
+	github.com/ecies/go/v2 v2.0.3
+	github.com/ethereum/go-ethereum v1.9.10
 	github.com/gin-gonic/gin v1.9.1
 	github.com/gomodule/redigo v1.9.2
 	github.com/google/go-cmp v0.6.0
@@ -18,7 +18,7 @@ require (
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing v1.0.879
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.879
 	gitlab.com/elktree/ecc v0.0.0-20190314182556-d86af7b58391
-	golang.org/x/text v0.14.0
+	golang.org/x/text v0.16.0
 	golang.org/x/time v0.5.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/klog/v2 v2.120.1
@@ -50,9 +50,9 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	golang.org/x/arch v0.7.0 // indirect
-	golang.org/x/crypto v0.22.0 // indirect
-	golang.org/x/net v0.24.0 // indirect
-	golang.org/x/sys v0.19.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

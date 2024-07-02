@@ -152,4 +152,24 @@ func TestRedis(t *testing.T) {
 		t.Error("SilenceGet err:", "ffffffffffffffffffffffff")
 	}
 
+	set, err = rediInst.Set("chairou", "")
+	if err != nil {
+		t.Log(err)
+		t.Error(err)
+		return
+	}
+	t.Log(set)
+	get, err = rediInst.Get("chairou0000000000000000")
+	if err != nil {
+		t.Log(err)
+		t.Error(err)
+		return
+	}
+	t.Log(get)
+}
+
+func TestList(t *testing.T) {
+	list := make([]int, 10)
+	list = append(list, 9)
+	t.Log(list)
 }

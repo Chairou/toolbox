@@ -17,28 +17,28 @@ func TestTcpClient(t *testing.T) {
 	}
 	for {
 		time.Sleep(time.Second)
-		conn.Write(makeTlvBuffer("hello world"))
+		conn.Write(makeTlvBuffer("BF", "hello"))
 		read(conn)
 	}
 }
 
-func makeTlvBuffer(content string) []byte {
+func makeTlvBuffer(tag string, content string) []byte {
 	var length uint32
-	length = uint32(len(content))
-	buffer := make([]byte, 4)
-	binary.BigEndian.PutUint32(buffer, length)
+	length = uint32(len(content) + 4 + 2)
+	buffer := make([]byte, 0, 4+2)
+	buffer = append(buffer, []byte(tag)...)
+	fmt.Println("package length:", length)
+	lenBuff := make([]byte, 4)
+	binary.BigEndian.PutUint32(lenBuff, length)
+	buffer = append(buffer, lenBuff...)
 	buffer = append(buffer, []byte(content)...)
+	fmt.Println("package buff:", buffer)
 	return buffer
-	//var buffer bytes.Buffer
-	//binary.Write(&buffer, binary.BigEndian, length)
-	//buffer.Write([]byte(content))
-	//fmt.Println("Tlv buffer : ", buffer.Bytes())
-	//return buffer.Bytes()
 }
 
 func read(conn net.Conn) {
 	// 首先读取长度前缀
-	lengthBuf := make([]byte, 4) // 假设长度字段是4个字节
+	lengthBuf := make([]byte, 4+2) // 假设tag字段长度2字节，长度字段是4个字节
 	_, err := io.ReadFull(conn, lengthBuf)
 	if err != nil {
 		if err != io.EOF {
@@ -48,11 +48,11 @@ func read(conn net.Conn) {
 	}
 	fmt.Println("Tlv buffer header: ", lengthBuf)
 	// 解析长度
-	length := binary.BigEndian.Uint32(lengthBuf)
+	length := binary.BigEndian.Uint32(lengthBuf[2 : 4+2])
 
 	// 根据长度读取数据
-	messageBuf := make([]byte, length)
 	fmt.Println("messageBuf length:", length)
+	messageBuf := make([]byte, length-6)
 	_, err = io.ReadFull(conn, messageBuf)
 	if err != nil {
 		fmt.Println("Error reading message:", err)

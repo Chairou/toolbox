@@ -1,22 +1,34 @@
 package tcp
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
 	"net"
-	"strings"
 	"sync"
 )
 
-type operation func(svr *Server, conn *net.Conn, input []byte) (output []byte, err error)
-type flowControl func([]byte) []byte
+type operation func(svr *Server, conn *net.TCPConn, input *[]byte) (output []byte, err error)
 
-func unPack(svr *Server, conn *net.Conn, input []byte) (output []byte, err error) {
+type Server struct {
+	Listener      net.Listener
+	Connections   map[string]*net.TCPConn
+	RwLock        sync.RWMutex
+	IpPort        string
+	OperationList []operation
+	Tag           string
+	HeaderLength  int
+	TagSize       int
+	LengthSize    int
+	EndMarker     []byte
+}
+
+func unPack(svr *Server, conn *net.TCPConn, input *[]byte) (output []byte, err error) {
 	// 首先读取长度前缀
-	headerBuf := make([]byte, svr.HeaderLength) // 假设长度字段是4个字节
-	_, err = io.ReadFull(*conn, headerBuf)
+	headerBuf := make([]byte, svr.HeaderLength)
+	_, err = io.ReadFull(conn, headerBuf)
 	if err != nil {
 		if err != io.EOF {
 			fmt.Println("Error reading length prefix:", err)
@@ -24,7 +36,7 @@ func unPack(svr *Server, conn *net.Conn, input []byte) (output []byte, err error
 		return
 	}
 	// 通过偏移和长度字段的Size获取长度数据
-	lengthBuf := headerBuf[svr.HeaderOffSet-1 : svr.HeaderOffSet+svr.LengthSize-1]
+	lengthBuf := headerBuf[svr.TagSize : svr.TagSize+svr.LengthSize]
 	// 解析长度
 	var tLength uint64
 	switch svr.LengthSize {
@@ -38,36 +50,54 @@ func unPack(svr *Server, conn *net.Conn, input []byte) (output []byte, err error
 		length := binary.BigEndian.Uint64(lengthBuf)
 		tLength = length
 	}
-	msgBuf := make([]byte, tLength)
-	_, err = io.ReadFull(*conn, msgBuf)
+	msgBuf := make([]byte, tLength-uint64(svr.HeaderLength))
+	_, err = io.ReadFull(conn, msgBuf)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("msgBuf: ", string(msgBuf))
 	return msgBuf, nil
 }
 
-func Pack(svr *Server, conn *net.Conn, input []byte) (output []byte, err error) {
-	totalLength := len(input) + svr.HeaderLength
+func Content(svr *Server, conn *net.TCPConn, input *[]byte) (output []byte, err error) {
+	return append(*input, []byte("Hello, world!")...), nil
+}
 
+func Pack(svr *Server, conn *net.TCPConn, input *[]byte) (output []byte, err error) {
+	// 计算长度
+	totalLength := len(*input) + svr.HeaderLength
 	// 生成tag
-	tag := strings.Repeat("k", svr.HeaderOffSet)
+	tag := "BF"
+	if svr.Tag != "" {
+		tag = svr.Tag
+	}
 	packetBuf := make([]byte, 0, totalLength)
 	packetBuf = append(packetBuf, []byte(tag)...)
 	switch svr.LengthSize {
 	case 2:
-		binary.BigEndian.PutUint16(packetBuf[svr.HeaderOffSet:svr.HeaderOffSet+svr.LengthSize], uint16(totalLength))
+		lenBuf := make([]byte, 2)
+		binary.BigEndian.PutUint16(lenBuf, uint16(totalLength))
+		packetBuf = append(packetBuf, lenBuf...)
 	case 4:
-		binary.BigEndian.PutUint32(packetBuf[svr.HeaderOffSet:svr.HeaderOffSet+svr.LengthSize], uint32(totalLength))
+		lenBuf := make([]byte, 4)
+		binary.BigEndian.PutUint32(lenBuf, uint32(totalLength))
+		packetBuf = append(packetBuf, lenBuf...)
 	case 8:
-		binary.BigEndian.PutUint64(packetBuf[svr.HeaderOffSet:svr.HeaderOffSet+svr.LengthSize], uint64(totalLength))
+		lenBuf := make([]byte, 8)
+		binary.BigEndian.PutUint64(lenBuf, uint64(totalLength))
+		packetBuf = append(packetBuf, lenBuf...)
 	}
+	packetBuf = append(packetBuf, *input...)
+	_, _ = conn.Write(packetBuf)
 	return packetBuf, nil
 }
 
 func NewTcpServer(ipPort string) (*Server, error) {
+	var err error
 	srv := &Server{}
 	srv.IpPort = ipPort
-	err := srv.Listen()
+	srv.Connections = make(map[string]*net.TCPConn)
+	srv.Listener, err = srv.Listen()
 	if err != nil {
 		fmt.Println("NewTcpServer err, ipv4 like 192.168.0.250:8080 ")
 		fmt.Println("NewTcpServer err, ipv6 like [2001:0db8:86a3:08d3:1319:8a2e:0370:7344]:8080")
@@ -78,11 +108,16 @@ func NewTcpServer(ipPort string) (*Server, error) {
 }
 
 // 定义处理过程函数，前一个处理函数的输出是后一个处理函数的输入
-func (s *Server) process(funcs []operation, t *Server, conn *net.Conn, input []byte) error {
+func (s *Server) process(functions []operation, t *Server, conn *net.TCPConn, input *[]byte) error {
 	var err error
-	result := input
-	for _, f := range funcs {
-		result, err = f(t, conn, result)
+	var result []byte
+	if input == nil {
+		result = nil
+	} else {
+		result = *input
+	}
+	for _, f := range functions {
+		result, err = f(t, conn, &result)
 		if err != nil {
 			return err
 		}
@@ -90,163 +125,71 @@ func (s *Server) process(funcs []operation, t *Server, conn *net.Conn, input []b
 	return nil
 }
 
-type Server struct {
-	Listener      net.Listener
-	Connections   map[string]*net.Conn
-	RwLock        sync.RWMutex
-	IpPort        string
-	OperationList []operation
-	HeaderLength  int
-	HeaderOffSet  int
-	LengthSize    int
-	Delimiter     string
-}
-
-func (s *Server) Listen() error {
+func (s *Server) Listen() (net.Listener, error) {
 	var err error
-	s.Listener, err = net.Listen("tcp", s.IpPort)
+	listener, err := net.Listen("tcp", s.IpPort)
 	if err != nil {
-		return errors.New("NewTcpConnection Listen err:" + err.Error())
+		return listener, errors.New("NewTcpConnection Listen err:" + err.Error())
 	}
-	return nil
+	return listener, nil
 }
 
-//func (s *Server) Run() error {
-//	for {
-//		conn, err := s.Listener.Accept()
-//		if err != nil {
-//			return errors.New("NewTcpConnection Accept err:" + err.Error())
-//		}
-//		if s.Process == nil {
-//			return fmt.Errorf("Server.Procces is nil")
-//		}
-//		remoteAddr := conn.RemoteAddr().String()
-//		s.RwLock.Lock()
-//		s.Connections[remoteAddr] = &conn
-//		s.RwLock.Unlock()
-//		go s.HandleConnection(conn)
-//	}
-//}
-
-//func (s *Server) HandleConnection(conn net.Conn) {
-//
-//
-//	defer func(conn net.Conn) {
-//		err := conn.Close()
-//		if err != nil {
-//			fmt.Println("Close Connection, err:" + err.Error())
-//		}
-//	}(conn)
-//
-//	for {
-//		// 首先读取长度前缀
-//		lengthBuf := make([]byte, 4) // 假设长度字段是4个字节
-//		_, err := io.ReadFull(conn, lengthBuf)
-//		if err != nil {
-//			if err != io.EOF {
-//				fmt.Println("Error reading length prefix:", err)
-//			}
-//			return
-//		}
-//
-//		// 解析长度
-//		length := binary.BigEndian.Uint32(lengthBuf)
-//
-//		// 根据长度读取数据
-//		messageBuf := make([]byte, length)
-//		fmt.Println("buffer length is", length)
-//		_, err = io.ReadFull(conn, messageBuf)
-//		if err != nil {
-//			fmt.Println("Error reading message:", err)
-//			return
-//		}
-//
-//		// 处理消息
-//		fmt.Printf("Received message: %s\n", string(messageBuf))
-//		//outBuffer, err := op(s, messageBuf)
-//		if err != nil {
-//			fmt.Println("Error")
-//			return
-//		}
-//
-//		// 响应客户端（可选）
-//		// 这里只是简单地将接收到的消息发送回去
-//		lengthBuf = append(lengthBuf, outBuffer...)
-//		_, err = conn.Write(lengthBuf)
-//		if err != nil {
-//			fmt.Println("Error writing message:", err)
-//			return
-//		}
-//	}
-//}
-
-//func (s *Server) CustomHandleConnection(conn net.Conn, op operation) error {
-//	defer func(conn net.Conn) {
-//		err := conn.Close()
-//		if err != nil {
-//			fmt.Println("Close Connection, err:" + err.Error())
-//		}
-//	}(conn)
-//	for {
-//		unPackBytes, err := s.Unpack(&conn)
-//		if err != nil {
-//			return err
-//		}
-//
-//		outBytes, err := op(s, unPackBytes)
-//		if err != nil {
-//			fmt.Println("op Error, err:", err.Error())
-//			return err
-//		}
-//		err = s.Pack(&conn, outBytes)
-//		if err != nil {
-//			fmt.Println("Unpack Error, err:", err.Error())
-//			return err
-//		}
-//	}
-//}
-
-//func (s *Server) DelimiterHandleConnection(conn net.Conn) {
-//	defer func(conn net.Conn) {
-//		err := conn.Close()
-//		if err != nil {
-//			fmt.Println("Error closing connection:", err)
-//		}
-//	}(conn)
-//
-//	// 使用 bufio.NewReader 来读取数据流
-//	reader := bufio.NewReader(conn)
-//
-//	for {
-//		// 读取直到遇到新的分隔符（在这个例子中是换行符）
-//		message, err := reader.ReadString('\n')
-//		if err != nil {
-//			if err == io.EOF {
-//				fmt.Println("Client closed the connection")
-//			} else {
-//				fmt.Println("Error reading from connection:", err)
-//			}
-//			return
-//		}
-//
-//		// 处理消息
-//		fmt.Printf("Received message: %s", message) // message 包含分隔符
-//
-//		// 响应客户端（可选）
-//		// 这里只是简单地将接收到的消息发送回去
-//		_, err = conn.Write([]byte(message))
-//		if err != nil {
-//			fmt.Println("Error writing to connection:", err)
-//			return
-//		}
-//	}
-//}
-
-func extractIP(ipPort string) string {
-	startIndex := strings.Index(ipPort, "[") + 1
-	endIndex := strings.Index(ipPort, "]")
-	if startIndex == -1 || endIndex == -1 {
-		return ""
+func (s *Server) Run() error {
+	for {
+		conn, err := s.Listener.Accept()
+		if err != nil {
+			return errors.New("NewTcpConnection Accept err:" + err.Error())
+		}
+		remoteAddr := conn.RemoteAddr().String()
+		s.RwLock.Lock()
+		s.Connections[remoteAddr] = conn.(*net.TCPConn)
+		s.RwLock.Unlock()
+		go s.HandleTlvConnection(conn.(*net.TCPConn))
 	}
-	return ipPort[startIndex:endIndex]
+}
+
+func (s *Server) HandleTlvConnection(conn *net.TCPConn) {
+	defer func(conn *net.TCPConn) {
+		err := conn.Close()
+		if err != nil {
+			fmt.Println("Close Connection, err:" + err.Error())
+		}
+	}(conn)
+	for {
+		err := s.process(s.OperationList, s, conn, nil)
+		if err != nil {
+			return
+		}
+	}
+}
+
+func (s *Server) SetTag(tag string) {
+	s.Tag = tag
+	s.TagSize = len(s.Tag)
+}
+
+// 读取以结束符结尾的数据
+func readUntilEndMarker(svr *Server, conn *net.TCPConn, input []byte) (output []byte, err error) {
+	buffer := make([]byte, 0)
+	temp := make([]byte, 1024)
+	endMarkerLen := len(svr.EndMarker)
+
+	for {
+		n, err := conn.Read(temp)
+		if err != nil {
+			return []byte{}, err
+		}
+		buffer = append(buffer, temp[:n]...)
+
+		if len(buffer) >= endMarkerLen && bytes.HasSuffix(buffer, svr.EndMarker) {
+			break
+		}
+	}
+	return buffer, nil
+}
+
+// 写入结束符
+func makeWithEndMark(svr *Server, conn *net.TCPConn, input []byte) (output []byte, err error) {
+	input = append(input, svr.EndMarker...)
+	return input, nil
 }

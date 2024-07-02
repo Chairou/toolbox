@@ -1,11 +1,8 @@
 package test
 
 import (
-	"fmt"
 	"os"
-	"syscall"
 	"testing"
-	"time"
 )
 
 func TestFileOperations(t *testing.T) {
@@ -13,8 +10,8 @@ func TestFileOperations(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
-	linuxFileAttr := fileInfo.Sys().(*syscall.Stat_t)
-	fmt.Println(time.Unix(linuxFileAttr.Ctimespec.Unix()))
-	fmt.Println(fileInfo.ModTime())
+	t.Log(fileInfo)
+	//linuxFileAttr := fileInfo.Sys().(*syscall.Stat_t)
+	//fmt.Println(time.Unix(linuxFileAttr.Ctimespec.Unix()))
+	//fmt.Println(fileInfo.ModTime())
 }

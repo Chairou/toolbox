@@ -1,7 +1,10 @@
 package tcp
 
 import (
+	"bytes"
+	"compress/flate"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -9,7 +12,7 @@ import (
 	"time"
 )
 
-func TestTcpClient(t *testing.T) {
+func TestTcpTlvClient(t *testing.T) {
 	conn, err := net.Dial("tcp", "127.0.0.1:8080")
 	if err != nil {
 		fmt.Println("Failed to connect error: ", err)
@@ -18,7 +21,25 @@ func TestTcpClient(t *testing.T) {
 	for {
 		time.Sleep(time.Second)
 		conn.Write(makeTlvBuffer("BF", "hello"))
-		read(conn)
+		tlvRead(conn)
+	}
+}
+
+func TestTcpEndMarkClient(t *testing.T) {
+	conn, err := net.Dial("tcp", "127.0.0.1:8080")
+	if err != nil {
+		fmt.Println("Failed to connect error: ", err)
+		return
+	}
+	for {
+		raw := []byte("ping")
+		comBytes, _ := com(&raw)
+		comBytes = append(comBytes, []byte("\r\n")...)
+		conn.Write(comBytes)
+		buf, _ := readEndMarker(conn.(*net.TCPConn))
+		unCom(&buf)
+		time.Sleep(time.Second)
+
 	}
 }
 
@@ -36,7 +57,7 @@ func makeTlvBuffer(tag string, content string) []byte {
 	return buffer
 }
 
-func read(conn net.Conn) {
+func tlvRead(conn net.Conn) {
 	// 首先读取长度前缀
 	lengthBuf := make([]byte, 4+2) // 假设tag字段长度2字节，长度字段是4个字节
 	_, err := io.ReadFull(conn, lengthBuf)
@@ -58,7 +79,53 @@ func read(conn net.Conn) {
 		fmt.Println("Error reading message:", err)
 		return
 	}
-
 	// 处理消息
 	fmt.Printf("Received message: %s\n", string(messageBuf))
+}
+
+func readEndMarker(conn *net.TCPConn) (output []byte, err error) {
+	buffer := make([]byte, 0)
+	temp := make([]byte, 65535)
+	endMarkerLen := len([]byte("\r\n"))
+
+	for {
+		n, err := conn.Read(temp)
+		if err != nil {
+			return []byte{}, err
+		}
+		buffer = append(buffer, temp[:n]...)
+
+		if len(buffer) >= endMarkerLen && bytes.HasSuffix(buffer, []byte("\r\n")) {
+			break
+		}
+	}
+	fmt.Println("buffer:", string(buffer))
+	return buffer, nil
+}
+
+func unCom(input *[]byte) (output []byte, err error) {
+	if input == nil {
+		return nil, errors.New("input is nil")
+	}
+	result, err := io.ReadAll(flate.NewReader(bytes.NewReader(*input)))
+	fmt.Println("unCom result:", string(result))
+	return result, err
+}
+
+func com(input *[]byte) (output []byte, err error) {
+	if input == nil {
+		return nil, errors.New("input is nil")
+	}
+	var buf bytes.Buffer
+	w, err := flate.NewWriter(&buf, flate.DefaultCompression)
+	if err != nil {
+		return nil, err
+	}
+	_, err = w.Write(*input)
+	if err != nil {
+		return nil, err
+	}
+	err = w.Close()
+	output = buf.Bytes()
+	return output, err
 }

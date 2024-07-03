@@ -174,5 +174,5 @@ func TestMapToStruct(t *testing.T) {
 		t.Error("Error:", err)
 		return
 	}
-	t.Logf("Result: %+v\n", s)
+	t.Logf("Result: %#v\n", s)
 }

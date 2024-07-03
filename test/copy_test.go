@@ -130,5 +130,5 @@ func TestCopyStruct(t *testing.T) {
 	}
 	b := B{}
 	copier.Copy(&b, &a)
-	fmt.Printf("%+v", b)
+	fmt.Printf("%#v", b)
 }

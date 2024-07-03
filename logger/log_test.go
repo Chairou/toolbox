@@ -16,7 +16,7 @@ func TestLogger(t *testing.T) {
 		t.Error("NewLogPool err:", err)
 	}
 	log.Infoln("a", 1)
-	log.Infof("%+v", sample)
+	log.Infof("%#v", sample)
 
 	sample.Sex = "woman"
 	sample.Age = 20
@@ -27,7 +27,7 @@ func TestLogger(t *testing.T) {
 		t.Error("GetLogPool err:", err)
 	}
 	log2.Debugln("b", 2)
-	log2.Debugf("%+v", sample)
+	log2.Debugf("%#v", sample)
 	log3, err := GetLogNum(1)
 	if err != nil {
 		t.Error("GetLogPool err:", err)

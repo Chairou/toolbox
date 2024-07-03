@@ -77,7 +77,7 @@ func TestPostSturctInstance(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	t.Logf("simple : %+v", instance)
+	t.Logf("simple : %#v", instance)
 }
 
 func TestUrlPathEscape(t *testing.T) {

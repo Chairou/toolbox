@@ -1,101 +1,69 @@
 package tcp
 
 import (
-	"bytes"
-	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"sync"
 )
 
 type operation func(svr *Server, conn *net.TCPConn, input *[]byte) (output []byte, err error)
 
-type Server struct {
-	Listener      net.Listener
-	Connections   map[string]*net.TCPConn
-	RwLock        sync.RWMutex
-	IpPort        string
-	OperationList []operation
-	Tag           string
-	HeaderLength  int
-	TagSize       int
-	LengthSize    int
-	EndMarker     []byte
+const TYPE_TLV = 1
+const TYPE_ENDMARK = 2
+
+type ServerOption struct {
+	Type             int
+	Tag              string
+	PacketLengthSize int
+	EndMarker        []byte
 }
 
-func unPack(svr *Server, conn *net.TCPConn, input *[]byte) (output []byte, err error) {
-	// 首先读取长度前缀
-	headerBuf := make([]byte, svr.HeaderLength)
-	_, err = io.ReadFull(conn, headerBuf)
-	if err != nil {
-		if err != io.EOF {
-			fmt.Println("Error reading length prefix:", err)
-		}
-		return
-	}
-	// 通过偏移和长度字段的Size获取长度数据
-	lengthBuf := headerBuf[svr.TagSize : svr.TagSize+svr.LengthSize]
-	// 解析长度
-	var tLength uint64
-	switch svr.LengthSize {
-	case 2:
-		length := binary.BigEndian.Uint16(lengthBuf)
-		tLength = uint64(length)
-	case 4:
-		length := binary.BigEndian.Uint32(lengthBuf)
-		tLength = uint64(length)
-	case 8:
-		length := binary.BigEndian.Uint64(lengthBuf)
-		tLength = length
-	}
-	msgBuf := make([]byte, tLength-uint64(svr.HeaderLength))
-	_, err = io.ReadFull(conn, msgBuf)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println("msgBuf: ", string(msgBuf))
-	return msgBuf, nil
+type Server struct {
+	Type             int
+	Listener         net.Listener
+	Connections      map[string]*net.TCPConn
+	RwLock           sync.RWMutex
+	IpPort           string
+	OperationList    []operation
+	Tag              string
+	HeaderLength     int
+	TagSize          int
+	PacketLengthSize int
+	EndMarker        []byte
 }
 
 func Content(svr *Server, conn *net.TCPConn, input *[]byte) (output []byte, err error) {
-	return append(*input, []byte("Hello, world!")...), nil
+	return append(*input, []byte(", Hello, world!")...), nil
 }
 
-func Pack(svr *Server, conn *net.TCPConn, input *[]byte) (output []byte, err error) {
-	// 计算长度
-	totalLength := len(*input) + svr.HeaderLength
-	// 生成tag
-	tag := "BF"
-	if svr.Tag != "" {
-		tag = svr.Tag
-	}
-	packetBuf := make([]byte, 0, totalLength)
-	packetBuf = append(packetBuf, []byte(tag)...)
-	switch svr.LengthSize {
-	case 2:
-		lenBuf := make([]byte, 2)
-		binary.BigEndian.PutUint16(lenBuf, uint16(totalLength))
-		packetBuf = append(packetBuf, lenBuf...)
-	case 4:
-		lenBuf := make([]byte, 4)
-		binary.BigEndian.PutUint32(lenBuf, uint32(totalLength))
-		packetBuf = append(packetBuf, lenBuf...)
-	case 8:
-		lenBuf := make([]byte, 8)
-		binary.BigEndian.PutUint64(lenBuf, uint64(totalLength))
-		packetBuf = append(packetBuf, lenBuf...)
-	}
-	packetBuf = append(packetBuf, *input...)
-	_, _ = conn.Write(packetBuf)
-	return packetBuf, nil
-}
-
-func NewTcpServer(ipPort string) (*Server, error) {
+func NewTcpServerOption(ipPort string, option ServerOption) (*Server, error) {
 	var err error
 	srv := &Server{}
 	srv.IpPort = ipPort
+	srv.Type = option.Type
+
+	if option.Type == TYPE_TLV {
+		if option.PacketLengthSize != 2 && option.PacketLengthSize != 4 && option.PacketLengthSize != 8 {
+			return nil, errors.New("PacketLengthSize must be 2, 4 or 8")
+		}
+		if option.Tag != "" {
+			srv.SetTag(option.Tag)
+		} else {
+			srv.SetTag("BF")
+		}
+		srv.PacketLengthSize = option.PacketLengthSize
+		srv.HeaderLength = srv.TagSize + option.PacketLengthSize
+
+	} else if option.Type == TYPE_ENDMARK {
+		if len(option.EndMarker) == 0 {
+			return nil, errors.New("tag is empty")
+		}
+		srv.EndMarker = option.EndMarker
+	} else {
+		return nil, errors.New("type must be TYPE_TLV or TYPE_ENDMARK")
+	}
+
 	srv.Connections = make(map[string]*net.TCPConn)
 	srv.Listener, err = srv.Listen()
 	if err != nil {
@@ -140,15 +108,11 @@ func (s *Server) Run() error {
 		if err != nil {
 			return errors.New("NewTcpConnection Accept err:" + err.Error())
 		}
-		remoteAddr := conn.RemoteAddr().String()
-		s.RwLock.Lock()
-		s.Connections[remoteAddr] = conn.(*net.TCPConn)
-		s.RwLock.Unlock()
-		go s.HandleTlvConnection(conn.(*net.TCPConn))
+		go s.HandleConnection(conn.(*net.TCPConn))
 	}
 }
 
-func (s *Server) HandleTlvConnection(conn *net.TCPConn) {
+func (s *Server) HandleConnection(conn *net.TCPConn) {
 	defer func(conn *net.TCPConn) {
 		err := conn.Close()
 		if err != nil {
@@ -165,31 +129,22 @@ func (s *Server) HandleTlvConnection(conn *net.TCPConn) {
 
 func (s *Server) SetTag(tag string) {
 	s.Tag = tag
-	s.TagSize = len(s.Tag)
+	s.TagSize = len(tag)
 }
 
-// 读取以结束符结尾的数据
-func readUntilEndMarker(svr *Server, conn *net.TCPConn, input []byte) (output []byte, err error) {
-	buffer := make([]byte, 0)
-	temp := make([]byte, 1024)
-	endMarkerLen := len(svr.EndMarker)
+func (s *Server) SetConn(key string, conn *net.TCPConn) {
+	s.RwLock.Lock()
+	s.Connections[key] = conn
+	s.RwLock.Unlock()
+}
 
-	for {
-		n, err := conn.Read(temp)
-		if err != nil {
-			return []byte{}, err
-		}
-		buffer = append(buffer, temp[:n]...)
-
-		if len(buffer) >= endMarkerLen && bytes.HasSuffix(buffer, svr.EndMarker) {
-			break
-		}
+func (s *Server) GetConn(key string) (conn *net.TCPConn, err error) {
+	s.RwLock.Lock()
+	defer s.RwLock.Unlock()
+	conn, ok := s.Connections[key]
+	if ok {
+		return conn, nil
+	} else {
+		return nil, errors.New("Connection not found")
 	}
-	return buffer, nil
-}
-
-// 写入结束符
-func makeWithEndMark(svr *Server, conn *net.TCPConn, input []byte) (output []byte, err error) {
-	input = append(input, svr.EndMarker...)
-	return input, nil
 }

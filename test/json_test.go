@@ -7,8 +7,8 @@ import (
 
 func TestJsonUnmarshal(t *testing.T) {
 	type Sample struct {
-		Name	string	`json:"name"`
-		Age		int		`json:"age"`
+		Name string `json:"name"`
+		Age  int    `json:"age"`
 	}
 	var people Sample
 
@@ -17,7 +17,7 @@ func TestJsonUnmarshal(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		t.Logf("%+v", people)
+		t.Logf("%#v", people)
 	}
 
 }

@@ -15,6 +15,8 @@ type Ret struct {
 	Seq  string      `json:"seq"`
 }
 
+type H map[string]any
+
 func WriteRetJson(c *gin.Context, code int, data interface{}, args ...interface{}) {
 	var msg string
 	var ret Ret

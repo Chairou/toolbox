@@ -11,7 +11,7 @@ func TestLogger(t *testing.T) {
 		Name string
 	}
 	sample := &Sample{Sex: "man", Age: 45, Name: "Roy"}
-	log, err := NewLogPool("test1.log")
+	log, err := NewLogPool("test1", "test1.log")
 	if err != nil {
 		t.Error("NewLogPool err:", err)
 	}
@@ -37,7 +37,7 @@ func TestLogger(t *testing.T) {
 }
 
 func TestLogPool_SetLevel(t *testing.T) {
-	log, err := NewLogPool("test1.log")
+	log, err := NewLogPool("test1", "test1.log")
 	if err != nil {
 		t.Error("NewLogPool err:", err)
 	}
@@ -55,7 +55,7 @@ func TestLogPool_SetLevel(t *testing.T) {
 }
 
 func TestSetPrefix(t *testing.T) {
-	log, err := NewLogPool("test1.log")
+	log, err := NewLogPool("test1", "test1.log")
 	if err != nil {
 		t.Error("NewLogPool err:", err)
 	}

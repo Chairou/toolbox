@@ -11,6 +11,9 @@ type operation func(svr *Server, conn *net.TCPConn, input *[]byte) (output []byt
 
 const TYPE_TLV = 1
 const TYPE_ENDMARK = 2
+const PACKAGE_LENGTH_TWO_BYTE = 2
+const PACKAGE_LENGTH_FOUR_BYTE = 4
+const PACKAGE_LENGTH_EIGHT_BYTE = 8
 
 type ServerOption struct {
 	Type             int
@@ -20,17 +23,18 @@ type ServerOption struct {
 }
 
 type Server struct {
-	Type             int
-	Listener         net.Listener
-	Connections      map[string]*net.TCPConn
-	RwLock           sync.RWMutex
-	IpPort           string
-	OperationList    []operation
-	Tag              string
-	HeaderLength     int
-	TagSize          int
-	PacketLengthSize int
-	EndMarker        []byte
+	Type              int
+	Listener          net.Listener
+	UserConnectionMap map[string]*net.TCPConn
+	ConnectionUserMap map[*net.TCPConn]string
+	RwLock            sync.RWMutex
+	IpPort            string
+	OperationList     []operation
+	Tag               string
+	HeaderLength      int
+	TagSize           int
+	PacketLengthSize  int
+	EndMarker         []byte
 }
 
 func Content(svr *Server, conn *net.TCPConn, input *[]byte) (output []byte, err error) {
@@ -64,7 +68,8 @@ func NewTcpServerOption(ipPort string, option ServerOption) (*Server, error) {
 		return nil, errors.New("type must be TYPE_TLV or TYPE_ENDMARK")
 	}
 
-	srv.Connections = make(map[string]*net.TCPConn)
+	srv.UserConnectionMap = make(map[string]*net.TCPConn, 1024)
+	srv.ConnectionUserMap = make(map[*net.TCPConn]string, 1024)
 	srv.Listener, err = srv.Listen()
 	if err != nil {
 		fmt.Println("NewTcpServer err, ipv4 like 192.168.0.250:8080 ")
@@ -87,6 +92,7 @@ func (s *Server) process(functions []operation, t *Server, conn *net.TCPConn, in
 	for _, f := range functions {
 		result, err = f(t, conn, &result)
 		if err != nil {
+			fmt.Println("主循环错误，退出：", err)
 			return err
 		}
 	}
@@ -121,6 +127,7 @@ func (s *Server) HandleConnection(conn *net.TCPConn) {
 	}(conn)
 	for {
 		err := s.process(s.OperationList, s, conn, nil)
+		// 有严重错误，直接退出，日志记录放模块内处理
 		if err != nil {
 			return
 		}
@@ -134,17 +141,65 @@ func (s *Server) SetTag(tag string) {
 
 func (s *Server) SetConn(key string, conn *net.TCPConn) {
 	s.RwLock.Lock()
-	s.Connections[key] = conn
+	if conn != nil {
+		s.UserConnectionMap[key] = conn
+		s.ConnectionUserMap[conn] = key
+	}
 	s.RwLock.Unlock()
 }
 
 func (s *Server) GetConn(key string) (conn *net.TCPConn, err error) {
 	s.RwLock.Lock()
 	defer s.RwLock.Unlock()
-	conn, ok := s.Connections[key]
+	conn, ok := s.UserConnectionMap[key]
 	if ok {
 		return conn, nil
 	} else {
 		return nil, errors.New("Connection not found")
 	}
+}
+
+func (s *Server) DelUserConn(key string) (err error) {
+	s.RwLock.Lock()
+	defer s.RwLock.Unlock()
+	conn, exists := s.UserConnectionMap[key]
+	if exists {
+		delete(s.UserConnectionMap, key)
+		if conn != nil {
+			delete(s.ConnectionUserMap, conn)
+		} else {
+			return errors.New("DelUserConn conn is nil, key=" + key)
+		}
+		return nil
+	} else {
+		return errors.New("DelUserConn not found key=" + key)
+	}
+
+}
+
+func (s *Server) DelConnUser(conn *net.TCPConn) (err error) {
+	s.RwLock.Lock()
+	defer s.RwLock.Unlock()
+	if conn == nil {
+		return errors.New("DelConnUserMap conn is nil")
+	}
+	key, exists := s.ConnectionUserMap[conn]
+	if exists {
+		delete(s.UserConnectionMap, key)
+		delete(s.ConnectionUserMap, conn)
+		return nil
+	} else {
+		return errors.New("DelUserConn not found key=" + key)
+	}
+
+}
+
+func (s *Server) Close(conn *net.TCPConn) (err error) {
+	if conn == nil {
+		return errors.New("conn is nil，close err")
+	}
+	_ = s.DelConnUser(conn)
+	_ = conn.Close()
+	conn = nil
+	return nil
 }

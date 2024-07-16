@@ -8,18 +8,15 @@ import (
 func TestTcpTlvServer(t *testing.T) {
 	opt := ServerOption{}
 	opt.Tag = "FF"
-	opt.PacketLengthSize = 4
+	opt.PacketLengthSize = PACKAGE_LENGTH_FOUR_BYTE
 	opt.Type = TYPE_TLV
 
 	svr, err := NewTcpServerOption("127.0.0.1:8080", opt)
 	if err != nil {
 		fmt.Println("Error creating tcp server: ", err)
 	}
-	svr.TagSize = 2
-	svr.PacketLengthSize = 4
-	svr.HeaderLength = 2 + 4
-	svr.OperationList = make([]operation, 0, 16)
-	svr.OperationList = append(svr.OperationList, unPack, Content, Pack)
+	svr.OperationList = make([]operation, 0)
+	svr.OperationList = append(svr.OperationList, unPack, unCompress, Content, compress, Pack)
 	err = svr.Run()
 	if err != nil {
 		fmt.Println("Error running tcp server: ", err)

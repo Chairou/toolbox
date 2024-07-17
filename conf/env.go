@@ -1,86 +1,44 @@
 package conf
 
 import (
-	"log"
-	"net"
+	"fmt"
 	"os"
-	"runtime"
-	"strings"
+	"reflect"
+	"strconv"
 )
 
-// GetEnvironment get the system environment by name.
-// GetEnvironment 获取系统环境变量
-// parameters envName
-// return envValue
-func GetEnvironment(envName string) (envValue string) {
-	envValue = os.Getenv(envName)
-	if envValue == "" {
-		log.Print("Getenv null:", envName)
-		return ""
-	}
-	return envValue
-}
+func loadConfFromEnv() (*Config, error) {
+	config := &Config{}
+	val := reflect.ValueOf(config).Elem()
+	t := val.Type()
 
-// GetPid get the proccess id
-// GetPid 获取进程ID
-// return pid
-func GetPid() (pid int) {
-	getWd := os.Getppid()
-	return getWd
-}
-
-// Getwd get the current working directory
-// Getwd 获取当前工作目录
-// return getwd
-func Getwd() (getwd string, err error) {
-	getwd, err = os.Getwd()
-	if err != nil {
-		log.Println("Getwd|Getwd err:", err)
-		return "", nil
-	}
-	return getwd, nil
-}
-
-// GetLocalIPAddr get the local IP address
-// GetLocalIPAddr 获取本地IP
-// return IP address
-func GetLocalIPAddr() string {
-	addresses, err := net.InterfaceAddrs()
-	if err != nil {
-		return ""
-	}
-	for _, addr := range addresses {
-		ipaddr, _, err := net.ParseCIDR(addr.String())
-		if err != nil {
+	for i := 0; i < val.NumField(); i++ {
+		field := t.Field(i)
+		//fmt.Println("##########", field.Name)
+		envValue := os.Getenv(field.Tag.Get("env"))
+		fmt.Println("##########", field.Tag.Get("env"))
+		fmt.Println("##########", envValue)
+		if envValue == "" {
 			continue
 		}
-		if ipaddr.IsLoopback() {
-			continue
+
+		fieldValue := val.Field(i)
+		if !fieldValue.CanSet() {
+			return nil, fmt.Errorf("cannot set field %s", field.Name)
 		}
-		if ipaddr.To4() != nil {
-			if runtime.GOOS == "darwin" {
-				if !strings.HasPrefix(ipaddr.String(), "192") {
-					continue
-				}
+
+		switch fieldValue.Kind() {
+		case reflect.String:
+			fieldValue.SetString(envValue)
+		case reflect.Int:
+			intVal, err := strconv.Atoi(envValue)
+			if err != nil {
+				return nil, fmt.Errorf("invalid int value for field %s: %s", field.Name, envValue)
 			}
-			return ipaddr.String()
+			fieldValue.SetInt(int64(intVal))
+		default:
+			return nil, fmt.Errorf("unsupported kind: %s", fieldValue.Kind())
 		}
 	}
-	return ""
-}
-
-func SetEnv(key string, value string) error {
-	err := os.Setenv(key, value)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func UnSetEnv(key string) error {
-	err := os.Unsetenv(key)
-	if err != nil {
-		return err
-	}
-	return nil
+	return config, nil
 }

@@ -21,14 +21,14 @@ func TestLogger(t *testing.T) {
 	sample.Sex = "woman"
 	sample.Age = 20
 	sample.Name = "Jessica"
-	log2, err := GetLogPool("test1.log")
+	log2 := GetLogName("test1")
 	t.Log(log2.Path, log2.FileName)
 	if err != nil {
 		t.Error("GetLogPool err:", err)
 	}
 	log2.Debugln("b", 2)
 	log2.Debugf("%#v", sample)
-	log3, err := GetLogNum(1)
+	log3 := GetLogNum(1)
 	if err != nil {
 		t.Error("GetLogPool err:", err)
 	}
@@ -44,13 +44,14 @@ func TestLogPool_SetLevel(t *testing.T) {
 	log.SetLevel(ERROR_LEVEL)
 	log.Infoln("write INFO in ERROR_LEVEL")
 
-	log, err = GetLogPool("test1.log")
-	if err != nil {
+	log = GetLogName("test1.log")
+	if log != nil {
 		t.Error("NewLogPool err:", err)
 	}
 	log.Infoln("write INFO in ERROR_LEVEL")
 	log.SetLevel(INFO_LEVEL)
 	log.Infoln("write INFO in INFO_LEVEL")
+	GetLog().Infoln("QQQQQQ")
 
 }
 

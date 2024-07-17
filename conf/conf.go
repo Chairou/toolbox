@@ -1,69 +1,57 @@
 package conf
 
 import (
-	"gopkg.in/yaml.v2"
-	"io"
-	"log"
-	"os"
+	"fmt"
+	"github.com/jinzhu/copier"
 	"sync"
 )
 
-var ConfMap sync.Map
-
-type Config struct {
-	Env     string      `yaml:"env" json:"env"`
-	Version string      `yaml:"version" json:"version"`
-	Redis   []RedisStru `yaml:"redis" json:"redis"`
-	MySQL   []MySQLStru `yaml:"mysql" json:"mysql"`
+func initLock() {
+	confLock = new(sync.RWMutex)
 }
 
-type RedisStru struct {
-	Name  string `yaml:"name" json:"name"`
-	Host  string `yaml:"host" json:"host"`
-	Auth  string `yaml:"auth" json:"auth"`
-	Owner string `yaml:"owner" json:"owner"`
+func init() {
+	initLock()
+	LoadAllConf()
 }
 
-type MySQLStru struct {
-	Name     string `yaml:"name" json:"name"`
-	Host     string `yaml:"host" json:"host"`
-	Username string `yaml:"user" json:"user"`
-	Password string `yaml:"password" json:"password"`
-	Charset  string `yaml:"charset" json:"charset"`
-	Owner    string `yaml:"owner" json:"owner"`
+func mergeConfig(cmd, file, env *Config) {
+	_ = copier.CopyWithOption(Conf, env, copier.Option{IgnoreEmpty: true})
+	_ = copier.CopyWithOption(Conf, file, copier.Option{IgnoreEmpty: true})
+	_ = copier.CopyWithOption(Conf, cmd, copier.Option{IgnoreEmpty: true})
+	fmt.Printf("FINIAL: %#v\n", Conf)
 }
 
-func LoadConfig() *Config {
-	env := GetEnvironment("env")
-	if env == "" {
-		// 默认读取dev
-		env = "dev"
-	}
+// LoadAllConf 优先级，命令行，配置文件，环境变量
+func LoadAllConf() {
+	once.Do(func() {
+		//读取命令行参数
+		cmd, err := loadConfFromCmd()
+		if err != nil {
+			fmt.Println("cmd err: ", err)
+		}
+		//fmt.Printf("cmd: %#v\n", cmd)
+		//读取配置文件
+		file, err := loadConfFromFile("dev.yaml")
+		if err != nil {
+			fmt.Println("confFile err: ", err)
+		}
+		//fmt.Printf("file: %#v\n", file)
 
-	inst, ok := ConfMap.Load(env)
-	if ok {
-		return inst.(*Config)
-	}
+		//读取环境变量
+		env, err := loadConfFromEnv()
+		if err != nil {
+			fmt.Println("env err: ", err)
+		}
+		//fmt.Printf("env: %#v\n", env)
+		//合并配置
+		mergeConfig(cmd, file, env)
 
-	var config Config
-	if env != "dev" && env != "release" {
-		log.Fatalln("env only can be set to dev or release")
-	}
-	fileName := env + ".yaml"
-	fd, err := os.OpenFile(fileName, os.O_RDONLY, 666)
-	if err != nil {
-		log.Fatalln("OpenFile error: ", err)
-	}
-	dataBytes, err := io.ReadAll(fd)
-	if err != nil {
-		log.Fatalln("ReadAll error: ", err)
-	}
+	})
+}
 
-	err = yaml.Unmarshal(dataBytes, &config)
-	if err != nil {
-		log.Fatalln("yaml.Unmarshal error: ", err)
-	}
-
-	ConfMap.Store(env, &config)
-	return &config
+func GetConf() *Config {
+	confLock.RLock()
+	defer confLock.RUnlock()
+	return Conf
 }

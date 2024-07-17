@@ -11,7 +11,8 @@ import (
 	"sync"
 )
 
-var logMap sync.Map
+var nameLogMap sync.Map
+var intLogMap sync.Map
 
 var (
 	DEBUG_LEVEL int = 0
@@ -20,9 +21,8 @@ var (
 )
 
 type LogIntFileName struct {
-	Lock        sync.RWMutex
-	orderNum    int
-	IntFileName map[int]string
+	Lock     sync.RWMutex
+	orderNum int
 }
 
 var logIntFileName LogIntFileName
@@ -38,18 +38,14 @@ type LogPool struct {
 }
 
 func init() {
-	logIntFileName.Lock.Lock()
-	defer logIntFileName.Lock.Unlock()
-	logIntFileName.orderNum = 1
-	logIntFileName.IntFileName = make(map[int]string)
+	logIntFileName.init()
 }
 
 func NewLogPool(name string, fileName string) (*LogPool, error) {
-	inst, ok := logMap.Load(name)
+	inst, ok := nameLogMap.Load(name)
 	if ok {
 		return inst.(*LogPool), nil
 	} else {
-		SaveLogNameToInt(name)
 		fd, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0664)
 		if err != nil {
 			return nil, err
@@ -89,45 +85,57 @@ func NewLogPool(name string, fileName string) (*LogPool, error) {
 		infoLog.SetOutput(lumberjackLogger)
 		errorLog.SetOutput(lumberjackLogger)
 
-		logMap.Store(name, inst)
+		nameLogMap.Store(name, inst)
+		logIntFileName.SaveIntLogMap(inst)
+
 		return inst, nil
 	}
 }
 
-func GetLogPool(name string) (*LogPool, error) {
-	inst, ok := logMap.Load(name)
-	if ok {
-		return inst.(*LogPool), nil
-	} else {
-		return nil, errors.New("get logger from logMap failed")
-	}
-}
-
-func SaveLogNameToInt(name string) {
-	logIntFileName.Lock.Lock()
-	logIntFileName.IntFileName[logIntFileName.orderNum] = name
-	logIntFileName.orderNum += 1
-	logIntFileName.Lock.Unlock()
-}
-
-func GetLogNum(logNumber int) (*LogPool, error) {
-	logIntFileName.Lock.RLock()
-	fileName, ok := logIntFileName.IntFileName[logNumber]
-	logIntFileName.Lock.RUnlock()
-	if ok {
-		return GetLogPool(fileName)
-	} else {
-		return nil, errors.New("GetLogNum| get logger from logIntFileName failed")
-	}
-}
-
-func GetDefault() *LogPool {
-	inst, err := GetLogNum(1)
-	if err != nil {
+func GetLog() *LogPool {
+	inst := GetLogNum(1)
+	if inst == nil {
 		_ = fmt.Errorf("GetLogNum| get logger from logIntFileName failed")
 		return nil
 	}
 	return inst
+}
+
+func GetLogName(name string) *LogPool {
+	logIntFileName.Lock.RLock()
+	inst, ok := nameLogMap.Load(name)
+	logIntFileName.Lock.RUnlock()
+	if ok {
+		return inst.(*LogPool)
+	} else {
+		fmt.Println("GetLogName| get logger from nameLogMap failed")
+		return nil
+	}
+}
+
+func GetLogNum(logNumber int) *LogPool {
+	logIntFileName.Lock.RLock()
+	inst, ok := intLogMap.Load(logNumber)
+	logIntFileName.Lock.RUnlock()
+	if ok {
+		return inst.(*LogPool)
+	} else {
+		fmt.Println("GetLogNum| get logger from logIntFileName failed")
+		return nil
+	}
+}
+
+func (c *LogIntFileName) init() {
+	c.Lock.Lock()
+	defer c.Lock.Unlock()
+	c.orderNum = 1
+}
+
+func (c *LogIntFileName) SaveIntLogMap(inst *LogPool) {
+	c.Lock.Lock()
+	defer c.Lock.Unlock()
+	intLogMap.Store(c.orderNum, inst)
+	c.orderNum += 1
 }
 
 func (c *LogPool) Debugf(format string, v ...any) {
@@ -179,7 +187,7 @@ func (c *LogPool) Errorln(v ...any) {
 func (c *LogPool) SetLevel(level int) error {
 	if level >= DEBUG_LEVEL && level <= ERROR_LEVEL {
 		c.Level = level
-		logMap.Store(c.FileName, c)
+		nameLogMap.Store(c.FileName, c)
 		return nil
 	}
 	return errors.New("level must be DEBUG_LEVEL, INFO_LEVEL, ERROR_LEVEL")

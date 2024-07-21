@@ -17,7 +17,7 @@ type Ret struct {
 
 type H map[string]any
 
-func WriteRetJson(c *gin.Context, code int, data interface{}, args ...interface{}) {
+func WriteRetJson(c *Context, code int, data interface{}, args ...interface{}) {
 	var msg string
 	var ret Ret
 	ret.Code = code

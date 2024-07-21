@@ -20,4 +20,5 @@ type Config struct {
 	MysqlPass    string `yaml:"mysql_pass" json:"mysql_pass" env:"mysql_pass"`
 	MysqlDb      string `yaml:"mysql_db" json:"mysql_db" env:"mysql_db"`
 	MysqlCharSet string `yaml:"mysql_charset" json:"mysql_charset" env:"mysql_charset"`
+	LogFileName  string `yaml:"log_file_name" json:"log_file_name" env:"log_file_name"`
 }

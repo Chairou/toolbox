@@ -102,23 +102,6 @@ func TestCheckQQNumber(t *testing.T) {
 	}
 }
 
-func TestIntToByte(t *testing.T) {
-	var aa int = 16
-	byteList := IntToByte(aa, 4)
-	t.Log(byteList)
-	if byteList[0] != 16 {
-		t.Error("CheckIntToByte err:")
-	}
-}
-
-func TestSaltMD5(t *testing.T) {
-	source := "123"
-	dig := SaltMD5(source)
-	if dig != "6226dd203e19b0bc02ee41af34275a44" {
-		t.Error("CheckSaltMD5 err:", dig)
-	}
-}
-
 func TestIsOpenid(t *testing.T) {
 	openid := "wx_a123456789012345678901234567890"
 	err := IsOpenid(openid)
@@ -153,4 +136,9 @@ func TestIsValidFields(t *testing.T) {
 func TestInNumRange(t *testing.T) {
 	var a string = "1.2"
 	t.Log(InNumRange(a, 0, 19))
+}
+
+func TestIsSqlField(t *testing.T) {
+	a := "a1b"
+	t.Log(IsSqlField(a))
 }

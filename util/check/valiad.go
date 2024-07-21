@@ -1,7 +1,6 @@
 package check
 
 import (
-	"crypto/md5"
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
@@ -83,22 +82,6 @@ func IsNumeric(val interface{}) bool {
 		return true
 	}
 	return false
-}
-
-// SaltMD5 md5 hash
-func SaltMD5(str string) (md5str string) {
-	return fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("*T#e@c&h*%d*T#e@b&h*%s*T#e@a&h*%d", 0611, str, 1160)))) //将[]byte转成16进制
-}
-
-// IntToByte 整型转字节数组
-func IntToByte(data int, len uintptr) (ret []byte) {
-	ret = make([]byte, len)
-	var tmp = 0xff
-	var index uint
-	for index = 0; index < uint(len); index++ {
-		ret[index] = byte((tmp << (index * 8) & data) >> (index * 8))
-	}
-	return ret
 }
 
 func IsQQNumber(qq string) (err error) {
@@ -267,5 +250,18 @@ func InNumRange(val interface{}, min, max float64) bool {
 		return true
 	} else {
 		return false
+	}
+}
+
+func IsSqlField(str string) bool {
+	pattern := `^[\p{Latin}0-9_\.\-]+$`
+	matched, err := regexp.MatchString(pattern, str)
+	if err != nil {
+		return false
+	}
+	if !matched {
+		return false
+	} else {
+		return true
 	}
 }

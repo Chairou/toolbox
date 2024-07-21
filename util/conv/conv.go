@@ -641,3 +641,14 @@ func MapToStruct(m map[string]interface{}, targetType interface{}) error {
 
 	return nil
 }
+
+// IntToByte 整型转字节数组
+func IntToByte(data int, len uintptr) (ret []byte) {
+	ret = make([]byte, len)
+	var tmp = 0xff
+	var index uint
+	for index = 0; index < uint(len); index++ {
+		ret[index] = byte((tmp << (index * 8) & data) >> (index * 8))
+	}
+	return ret
+}

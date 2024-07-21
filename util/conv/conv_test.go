@@ -176,3 +176,12 @@ func TestMapToStruct(t *testing.T) {
 	}
 	t.Logf("Result: %#v\n", s)
 }
+
+func TestIntToByte(t *testing.T) {
+	var aa int = 16
+	byteList := IntToByte(aa, 4)
+	t.Log(byteList)
+	if byteList[0] != 16 {
+		t.Error("CheckIntToByte err:")
+	}
+}

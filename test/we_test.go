@@ -1,0 +1,42 @@
+package test
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"testing"
+)
+
+func TestWe(t *testing.T) {
+	url := "https://kf.qq.com/cgi-bin/common?channel=flow&command=command%3DF11251%26content%3D%255B%257B%2522name%2522%253A%2522%25E5%25A4%25A7%25E5%258C%25BAID%2522%252C%2522value%2522%253A%252220017%2522%252C%2522type%2522%253A%2522text%2522%257D%252C%257B%2522name%2522%253A%2522%25E8%25A7%2592%25E8%2589%25B2ID%2522%252C%2522value%2522%253A%252271843889728524180%2522%252C%2522type%2522%253A%2522text%2522%257D%252C%257B%2522name%2522%253A%2522%25E4%25B8%25BB%25E7%258E%25A9%25E8%25A7%2592%25E8%2589%25B2%25E5%2590%258D%2522%252C%2522value%2522%253A%2522%25E7%2581%25BE%25E5%25B2%25B8%25E4%25B8%25AD%25E7%25BA%25A2%25E7%259C%25BC%2522%252C%2522type%2522%253A%2522text%2522%257D%252C%257B%2522name%2522%253A%2522%25E4%25B8%25BB%25E7%258E%25A9%25E8%25A7%2592%25E8%2589%25B2%25E8%2581%258C%25E4%25B8%259A%2522%252C%2522value%2522%253A%2522%25E9%25AC%25BC%25E5%2589%2591%25E5%25A3%25AB%2522%252C%2522type%2522%253A%2522text%2522%257D%252C%257B%2522name%2522%253A%2522%25E4%25B8%25BB%25E7%258E%25A9%25E8%25A7%2592%25E8%2589%25B2%25E6%258A%2597%25E9%25AD%2594%25E5%2580%25BC%2522%252C%2522value%2522%253A%252219841%2522%252C%2522type%2522%253A%2522text%2522%257D%252C%257B%2522name%2522%253A%2522%25E6%2598%25AF%25E5%2590%25A6%25E5%259C%25A8%25E7%25BA%25BF%2522%252C%2522value%2522%253A%25221%2522%252C%2522type%2522%253A%2522text%2522%257D%252C%257B%2522name%2522%253A%2522%25E6%25B3%25A8%25E5%2586%258C%25E6%2597%25B6%25E9%2597%25B4%2522%252C%2522value%2522%253A%25222024-05-20%2B08%253A45%253A58%2522%252C%2522type%2522%253A%2522text%2522%257D%255D%26formid%3D240705selfqa2a68514a%26mobile%3D%26uin%3DoFdwkuJkkzf-rXR_wHQ2v5qg3wSw%26uin_type%3Dopenid&rand=2035047538"
+	method := "GET"
+
+	http.DefaultTransport.(*http.Transport).Proxy = nil
+
+	client := &http.Client{
+		Transport: http.DefaultTransport,
+	}
+	req, err := http.NewRequest(method, url, nil)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	req.Header.Set("User-Agent", "test")
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(string(body))
+	fmt.Println(res.Header)
+	fmt.Println(res.Request.Header)
+	fmt.Println(res.Request.Cookies())
+}

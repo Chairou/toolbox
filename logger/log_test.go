@@ -15,7 +15,7 @@ func TestLogger(t *testing.T) {
 	if err != nil {
 		t.Error("NewLogPool err:", err)
 	}
-	log.Infoln("a", 1)
+	log.Info("a", 1)
 	log.Infof("%#v", sample)
 
 	sample.Sex = "woman"
@@ -26,32 +26,32 @@ func TestLogger(t *testing.T) {
 	if err != nil {
 		t.Error("GetLogPool err:", err)
 	}
-	log2.Debugln("b", 2)
+	log2.Debug("b", 2)
 	log2.Debugf("%#v", sample)
 	log3 := GetLogNum(1)
 	if err != nil {
 		t.Error("GetLogPool err:", err)
 	}
-	log3.Debugln("log3", 3)
+	log3.Debug("log3", 3)
 
 }
 
 func TestLogPool_SetLevel(t *testing.T) {
-	log, err := NewLogPool("test1", "test1.log")
+	log, err := NewLogPool("test1", "./tmp/test1.log")
 	if err != nil {
 		t.Error("NewLogPool err:", err)
 	}
 	log.SetLevel(ERROR_LEVEL)
-	log.Infoln("write INFO in ERROR_LEVEL")
+	log.Info("write INFO in ERROR_LEVEL")
 
-	log = GetLogName("test1.log")
+	log = GetLogName("test1")
 	if log != nil {
 		t.Error("NewLogPool err:", err)
 	}
-	log.Infoln("write INFO in ERROR_LEVEL")
+	log.Info("write INFO in ERROR_LEVEL")
 	log.SetLevel(INFO_LEVEL)
-	log.Infoln("write INFO in INFO_LEVEL")
-	GetLog().Infoln("QQQQQQ")
+	log.Info("write INFO in INFO_LEVEL")
+	GetLog().Info("QQQQQQ")
 
 }
 

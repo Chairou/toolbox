@@ -25,7 +25,7 @@ type LogIntFileName struct {
 	orderNum int
 }
 
-var logIntFileName LogIntFileName
+var logInit LogIntFileName
 
 type LogPool struct {
 	Fd          *os.File
@@ -38,7 +38,7 @@ type LogPool struct {
 }
 
 func init() {
-	logIntFileName.init()
+	logInit.init()
 }
 
 func NewLogPool(name string, fileName string) (*LogPool, error) {
@@ -46,6 +46,28 @@ func NewLogPool(name string, fileName string) (*LogPool, error) {
 	if ok {
 		return inst.(*LogPool), nil
 	} else {
+		inst := &LogPool{}
+		inst.Path, _ = os.Getwd()
+		inst.FileName = fileName
+		inst.Level = DEBUG_LEVEL
+
+		dir1 := filepath.Dir(fileName)
+		// 检测目录是否存在，不存在则创建
+		if _, err := os.Stat(dir1); os.IsNotExist(err) {
+			err := os.Mkdir(dir1, os.ModePerm)
+			if err != nil {
+				fmt.Println("logger mkdir failed, err:", err, ", dir=", dir1)
+				os.Exit(1)
+			}
+		}
+
+		var logFileName string
+		if dir1 == "." {
+			logFileName = inst.Path + "/" + inst.FileName
+		} else {
+			logFileName = fileName
+		}
+
 		fd, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0664)
 		if err != nil {
 			return nil, err
@@ -55,23 +77,11 @@ func NewLogPool(name string, fileName string) (*LogPool, error) {
 		debugLog := log.New(fd, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
 		errorLog := log.New(fd, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 
-		inst := &LogPool{}
-		inst.Path, _ = os.Getwd()
 		inst.Fd = fd
-		inst.FileName = fileName
-		inst.Level = DEBUG_LEVEL
 		inst.Path, _ = os.Getwd()
 		inst.infoLogger = infoLog
 		inst.debugLogger = debugLog
 		inst.errorLogger = errorLog
-
-		dir1 := filepath.Dir(fileName)
-		var logFileName string
-		if dir1 == "." {
-			logFileName = inst.Path + "/" + inst.FileName
-		} else {
-			logFileName = fileName
-		}
 
 		lumberjackLogger := &lumberjack.Logger{
 			Filename:   logFileName,
@@ -86,7 +96,7 @@ func NewLogPool(name string, fileName string) (*LogPool, error) {
 		errorLog.SetOutput(lumberjackLogger)
 
 		nameLogMap.Store(name, inst)
-		logIntFileName.SaveIntLogMap(inst)
+		logInit.SaveIntLogMap(inst)
 
 		return inst, nil
 	}
@@ -95,16 +105,16 @@ func NewLogPool(name string, fileName string) (*LogPool, error) {
 func GetLog() *LogPool {
 	inst := GetLogNum(1)
 	if inst == nil {
-		_ = fmt.Errorf("GetLogNum| get logger from logIntFileName failed")
+		_ = fmt.Errorf("GetLogNum| get logger from logInit failed")
 		return nil
 	}
 	return inst
 }
 
 func GetLogName(name string) *LogPool {
-	logIntFileName.Lock.RLock()
+	logInit.Lock.RLock()
 	inst, ok := nameLogMap.Load(name)
-	logIntFileName.Lock.RUnlock()
+	logInit.Lock.RUnlock()
 	if ok {
 		return inst.(*LogPool)
 	} else {
@@ -114,13 +124,13 @@ func GetLogName(name string) *LogPool {
 }
 
 func GetLogNum(logNumber int) *LogPool {
-	logIntFileName.Lock.RLock()
+	logInit.Lock.RLock()
 	inst, ok := intLogMap.Load(logNumber)
-	logIntFileName.Lock.RUnlock()
+	logInit.Lock.RUnlock()
 	if ok {
 		return inst.(*LogPool)
 	} else {
-		fmt.Println("GetLogNum| get logger from logIntFileName failed")
+		fmt.Println("GetLogNum| get logger from logInit failed")
 		return nil
 	}
 }
@@ -146,7 +156,7 @@ func (c *LogPool) Debugf(format string, v ...any) {
 	}
 }
 
-func (c *LogPool) Debugln(v ...any) {
+func (c *LogPool) Debug(v ...any) {
 	if c.Level <= DEBUG_LEVEL {
 		s := fmt.Sprintln(v...)
 		log.Println(s)
@@ -162,7 +172,7 @@ func (c *LogPool) Infof(format string, v ...any) {
 	}
 }
 
-func (c *LogPool) Infoln(v ...any) {
+func (c *LogPool) Info(v ...any) {
 	if c.Level <= INFO_LEVEL {
 		s := fmt.Sprintln(v...)
 		log.Println(s)
@@ -177,7 +187,7 @@ func (c *LogPool) Errorf(format string, v ...any) {
 	c.errorLogger.Output(2, s)
 }
 
-func (c *LogPool) Errorln(v ...any) {
+func (c *LogPool) Error(v ...any) {
 	s := fmt.Sprintln(v...)
 	color.SetColor(color.Red, s)
 	log.Println(s)

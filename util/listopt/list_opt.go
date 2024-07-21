@@ -1,6 +1,10 @@
 package listopt
 
-import "sort"
+import (
+	"reflect"
+	"sort"
+	"strings"
+)
 
 // SplitList 平均分割一个list到num个list里
 func SplitList(arr []string, num int64) [][]string {
@@ -190,4 +194,117 @@ func ReverseStr(arr []string) []string {
 		(arr)[length-1-i] = temp
 	}
 	return arr
+}
+
+// IsContainsInStringArr 是否包含在数组中
+func IsContainsInStringArr(str string, subArr []string) bool {
+	if len(str) <= 0 {
+		return false
+	}
+	for _, rsID := range subArr {
+		if len(rsID) == 0 {
+			continue
+		}
+		if strings.Contains(str, rsID) {
+			return true
+		}
+	}
+	return false
+}
+
+// IsInStringArr 是否在数组中
+func IsInStringArr(arr []string, id string) bool {
+	v := strings.ToLower(strings.TrimSpace(id))
+	for _, rsID := range arr {
+		if len(rsID) == 0 {
+			continue
+		}
+		nv := strings.ToLower(strings.TrimSpace(rsID))
+		if v == nv {
+			return true
+		}
+	}
+	return false
+}
+
+// IsInIntPointerArr 是否在int指针数组中
+func IsInIntPointerArr(arr []*int, id int) bool {
+	for _, rsID := range arr {
+		if rsID != nil && id == *rsID {
+			return true
+		}
+	}
+	return false
+}
+
+// IsInArr 是否在数组中
+func IsInArr(arr []interface{}, one interface{}) bool {
+	for _, iId := range arr {
+		if GetValue(iId) == GetValue(one) {
+			return true
+		}
+	}
+	return false
+}
+
+// InIntArr 是否在int数组中
+func InIntArr(arr []int, id int) bool {
+	for _, rsID := range arr {
+		if id == rsID {
+			return true
+		}
+	}
+	return false
+}
+
+// KeyInIntMap 是否在int类型Map中
+func KeyInIntMap(m map[int]interface{}, id int) bool {
+	for k := range m {
+		if id == k {
+			return true
+		}
+	}
+	return false
+}
+
+// GetValue 获取未知类型的值
+func GetValue(val interface{}) interface{} {
+	if val == nil {
+		return nil
+	}
+
+	reValue := reflect.ValueOf(val)
+	for reValue.Kind() == reflect.Ptr {
+		reValue = reValue.Elem()
+		if !reValue.IsValid() {
+			return nil
+		}
+		val = reValue.Interface()
+		if val == nil {
+			return nil
+		}
+		reValue = reflect.ValueOf(val)
+	}
+
+	if val == nil {
+		return nil
+	}
+
+	switch v := val.(type) {
+	case string:
+		return strings.ToLower(strings.TrimSpace(v))
+	}
+
+	return val
+}
+
+// IsAllSameNum 数组中是否是同一个数
+func IsAllSameNum(arr []int, val int) bool {
+	for _, v := range arr {
+		if v != val {
+			return false
+		}
+	}
+
+	return true
 }

@@ -3,7 +3,6 @@ package gin
 import (
 	"fmt"
 	"github.com/Chairou/toolbox/util/conv"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
 )
@@ -17,7 +16,7 @@ type Ret struct {
 
 type H map[string]any
 
-func WriteRetJson(c *Context, code int, data interface{}, args ...interface{}) {
+func WriteRetJson(c *Context, code int, data interface{}, messages ...interface{}) {
 	var msg string
 	var ret Ret
 	ret.Code = code
@@ -30,7 +29,7 @@ func WriteRetJson(c *Context, code int, data interface{}, args ...interface{}) {
 		ret.Seq = ""
 	}
 
-	for _, arg := range args {
+	for _, arg := range messages {
 		switch v := arg.(type) {
 		case error:
 			msg += v.Error()
@@ -64,7 +63,7 @@ func WriteRetJson(c *Context, code int, data interface{}, args ...interface{}) {
 	c.JSON(http.StatusOK, ret)
 }
 
-func GetStringDefault(c *gin.Context, param string, defaultValue string) string {
+func GetStringDefault(c *Context, param string, defaultValue string) string {
 	val := GetParamValue(c, param)
 	val = strings.Trim(val, " \t\n\r")
 	if val == "" {
@@ -73,7 +72,7 @@ func GetStringDefault(c *gin.Context, param string, defaultValue string) string 
 	return val
 }
 
-func GetIntDefault(c *gin.Context, param string, defaultValue int) int {
+func GetIntDefault(c *Context, param string, defaultValue int) int {
 	val := GetParamValue(c, param)
 	val = strings.Trim(val, " \t\n\r")
 	intVal, ok := conv.Int(val)
@@ -84,7 +83,7 @@ func GetIntDefault(c *gin.Context, param string, defaultValue int) int {
 }
 
 // GetParamValue get parameter string value
-func GetParamValue(c *gin.Context, name string) string {
+func GetParamValue(c *Context, name string) string {
 	// query string
 	v := c.Query(name)
 

@@ -19,10 +19,10 @@ func SafeCheck() gin.HandlerFunc {
 			for key, values := range queryParams {
 				for _, value := range values {
 					// 这里写检查语句啦
-					fmt.Printf("参数：%s，值：%s\n", key, value)
 					if detectSQLInjection(value) == true {
 						c.Abort()
-						c.JSON(http.StatusUnauthorized, gin.H{"message": "访问未授权"})
+						c.JSON(http.StatusUnauthorized, H{"message": "访问未授权"})
+						fmt.Printf("参数：%s，值：%s\n", key, value)
 					}
 				}
 			}

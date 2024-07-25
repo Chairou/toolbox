@@ -581,6 +581,10 @@ type RouterGroup struct {
 	routerGroup *gin.RouterGroup
 }
 
+func (r *RouterGroup) SetGroup(rg *gin.RouterGroup) {
+	r.routerGroup = rg
+}
+
 // stack returns a nicely formatted stack frame, skipping skip frames.
 func stack(skip int) []byte {
 	buf := new(bytes.Buffer) // the returned data

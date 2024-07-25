@@ -14,8 +14,6 @@ type Ret struct {
 	Seq  string      `json:"seq"`
 }
 
-type H map[string]any
-
 func WriteRetJson(c *Context, code int, data interface{}, messages ...interface{}) {
 	var msg string
 	var ret Ret
@@ -60,6 +58,7 @@ func WriteRetJson(c *Context, code int, data interface{}, messages ...interface{
 		}
 	}
 	ret.Msg = msg
+	fmt.Println(ret)
 	c.JSON(http.StatusOK, ret)
 }
 

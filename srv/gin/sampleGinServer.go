@@ -10,17 +10,17 @@ import (
 
 func main() {
 
-	r := gin.Default()
-	r.Use(g.SafeCheck())
-	r.Use(g.ResponseRecorder())
-	api := r.Group("/api")
-	api.GET("/ping", func(c *gin.Context) {
-		g.WriteRetJson(c, 0, nil, "pong")
+	g.SetRouterRegister(func(group *g.RouterGroup) {
+		routerGroup := group.Group("/api")
+		routerGroup.StdGET("get", get)
+		routerGroup.StdPOST("postBody", postBody)
+		routerGroup.StdGET("ping", func(c *g.Context) {
+			g.WriteRetJson(c, 0, nil, "pong")
+		})
 	})
-	r.GET("/get", get)
-	r.POST("/postBody", postBody)
-	r.POST("/upload", g.RecUploadFile)
-	fmt.Println("starting http server")
+	r := g.NewServer()
+
+	fmt.Println("start server at *:80")
 	err := r.Run(":80")
 	if err != nil {
 		fmt.Println("RUN err:", err)
@@ -28,7 +28,7 @@ func main() {
 	}
 }
 
-func get(c *gin.Context) {
+func get(c *g.Context) {
 	queryParams := c.Request.URL.Query()
 	params := make(map[string]string)
 	for key, values := range queryParams {
@@ -38,7 +38,7 @@ func get(c *gin.Context) {
 	c.JSON(http.StatusOK, params)
 }
 
-func postBody(c *gin.Context) {
+func postBody(c *g.Context) {
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

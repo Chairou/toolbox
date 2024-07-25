@@ -137,8 +137,8 @@ func GetLogNum(logNumber int) *LogPool {
 
 func (c *LogIntFileName) init() {
 	c.Lock.Lock()
-	defer c.Lock.Unlock()
 	c.orderNum = 1
+	c.Lock.Unlock()
 }
 
 func (c *LogIntFileName) SaveIntLogMap(inst *LogPool) {

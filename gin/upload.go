@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func RecUploadFile(c *gin.Context) {
+func RecUploadFile(c *Context) {
 	ErrOk := 0
 	ErrInvalidFilename := -11
 	file, err := c.FormFile("file")

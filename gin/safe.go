@@ -9,29 +9,26 @@ import (
 	"regexp"
 )
 
-func SafeCheck() gin.HandlerFunc {
-	return func(c *gin.Context) {
-
-		switch c.Request.Method {
-		case "GET":
-			queryParams := c.Request.URL.Query()
-			// 遍历参数并打印
-			for key, values := range queryParams {
-				for _, value := range values {
-					// 这里写检查语句啦
+func SafeCheck(c *Context) {
+	switch c.Request.Method {
+	case "GET":
+		queryParams := c.Request.URL.Query()
+		// 遍历参数并打印
+		for key, values := range queryParams {
+			for _, value := range values {
+				// 这里写检查语句啦
+				if detectSQLInjection(value) == true {
+					c.Abort()
+					c.JSON(http.StatusUnauthorized, H{"message": "访问未授权"})
 					fmt.Printf("参数：%s，值：%s\n", key, value)
-					if detectSQLInjection(value) == true {
-						c.Abort()
-						c.JSON(http.StatusUnauthorized, gin.H{"message": "访问未授权"})
-					}
 				}
 			}
 		}
-		// 检查通过，设置seq，退出
-		seq := uuid.New()
-		c.Set("seq", seq)
-		c.Next()
 	}
+	// 检查通过，设置seq，退出
+	seq := uuid.New()
+	c.Set("seq", seq)
+	c.Next()
 }
 
 func detectSQLInjection(input string) bool {
@@ -60,21 +57,20 @@ func detectSQLInjection(input string) bool {
 }
 
 // ResponseRecorder 中间件用于记录响应数据
-func ResponseRecorder() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// 创建一个新的响应体
-		blw := &bodyLogWriter{
-			body:           bytes.NewBufferString(""),
-			ResponseWriter: c.Writer,
-		}
-		c.Writer = blw
-
-		// 处理请求
-		c.Next()
-
-		// 请求处理完成后，记录响应体
-		fmt.Println("Response body: " + blw.body.String())
+func ResponseRecorder(c *Context) {
+	// 创建一个新的响应体
+	blw := &bodyLogWriter{
+		body:           bytes.NewBufferString(""),
+		ResponseWriter: c.Writer,
 	}
+	c.Writer = blw
+
+	// 处理请求
+	c.Next()
+
+	// 请求处理完成后，记录响应体
+	fmt.Println("Response body: " + blw.body.String())
+
 }
 
 // bodyLogWriter 是一个包装了响应体的结构体

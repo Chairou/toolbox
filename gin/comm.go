@@ -136,6 +136,8 @@ func (r *responseDumper) bytes() []byte {
 // RetJson 直接返回json串
 func (c *Context) RetJson(code int, data interface{}, messages ...interface{}) {
 	var ret Ret
+	ret.Code = code
+	ret.Data = data
 	seq, ok := c.Get("seq")
 	if ok {
 		ret.Seq = conv.String(seq)

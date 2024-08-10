@@ -133,6 +133,11 @@ func (r *responseDumper) bytes() []byte {
 	return r.outBuffer.Bytes()
 }
 
+// RetJson 直接返回json串
+func (c *Context) RetJson(code int, msg string, data interface{}) {
+	c.JSON(http.StatusOK, gin.H{"code": code, "message": msg, "data": data})
+}
+
 // Debugf formats message according to format specifier
 // and writes to log with level = Debug.
 func (c *Context) Debugf(format string, params ...interface{}) {
@@ -203,10 +208,21 @@ func (c *Context) GetPager() (pageIndex, pageSize uint, code int, err error) {
 	return pageIndex, pageSize, code, nil
 }
 
+// GetLimit 获取分页参数:PageIndex,PageSize，返回offset,limit
+func (c *Context) GetLimit() (offset, limit int, err error) {
+	pageIndex, pageSize, _, err := c.GetPager()
+	if err != nil {
+		return 0, 0, err
+	}
+	offset = (int(pageIndex) - 1) * int(pageSize)
+	limit = int(pageSize)
+	return offset, limit, nil
+}
+
 // GetConditionByParam 根据参数生成sql查询条件并检测前端参数正确性,支持无参无条件情况
-func (c *Context) GetConditionByParam(parConstruct map[string]*ParamConstruct) (string, []interface{}, error) {
+func (c *Context) GetConditionByParam(parConstruct map[string]*ParamConstruct) (string, []interface{}, string, error) {
 	if len(parConstruct) == 0 {
-		return "", nil, nil
+		return "", nil, "", nil
 	}
 
 	strCondition := " 1=1 "
@@ -222,7 +238,7 @@ func (c *Context) GetConditionByParam(parConstruct map[string]*ParamConstruct) (
 		strParam := c.Query(k)
 		//1.无值且必传,直接返回
 		if len(strParam) == 0 && v.Need {
-			return "", nil, c.Error("need param " + k + " is null.")
+			return "", nil, "", c.Error("need param " + k + " is null.")
 		}
 		//2.验证参数值
 		if len(strParam) > 0 {
@@ -237,7 +253,7 @@ func (c *Context) GetConditionByParam(parConstruct map[string]*ParamConstruct) (
 			}
 			err := c.CheckParam(k, strParam, v.CheckValue)
 			if err != nil {
-				return "", nil, err
+				return "", nil, "", err
 			}
 		}
 		//3.根据key生成where条件
@@ -274,7 +290,7 @@ func (c *Context) GetConditionByParam(parConstruct map[string]*ParamConstruct) (
 
 	c.Info("GetConditionByParam strCondition:=======", strCondition, ";args:", args)
 
-	return strCondition, args, nil
+	return strCondition, args, orderByStr, nil
 }
 
 // CheckParam 检验参数值
@@ -467,11 +483,11 @@ func (c *Context) GetConditionByParamBlock(parConByBlockstruct []*ParamConByBloc
 				args = append(args, arg...)
 			}
 		} else {
-			strC, arg, err := c.GetConditionByParam(pbb.ParamConMap)
+			strC, arg, orderStr, err := c.GetConditionByParam(pbb.ParamConMap)
 			if err != nil {
 				return "", nil, err
 			}
-			strCondition += " " + pbb.Link + strC
+			strCondition += " " + pbb.Link + strC + orderStr
 			args = append(args, arg...)
 		}
 	}

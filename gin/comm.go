@@ -134,7 +134,49 @@ func (r *responseDumper) bytes() []byte {
 }
 
 // RetJson 直接返回json串
-func (c *Context) RetJson(code int, msg string, data interface{}) {
+func (c *Context) RetJson(code int, data interface{}, messages ...interface{}) {
+	var ret Ret
+	seq, ok := c.Get("seq")
+	if ok {
+		ret.Seq = conv.String(seq)
+	} else {
+		ret.Seq = ""
+	}
+
+	msg := strings.Builder{}
+	for _, arg := range messages {
+		switch v := arg.(type) {
+		case error:
+			msg.WriteString(v.Error())
+		case string:
+			// 处理string类型
+			msg.WriteString(v)
+		case int:
+			// 处理int类型
+			msg.WriteString(fmt.Sprintf("%d", v))
+		case int32:
+			// 处理int类型
+			msg.WriteString(fmt.Sprintf("%d", v))
+		case int64:
+			// 处理int类型
+			msg.WriteString(fmt.Sprintf("%d", v))
+		case float32:
+			// 处理float64类型
+			msg.WriteString(fmt.Sprintf("%f", v))
+		case float64:
+			// 处理float64类型
+			msg.WriteString(fmt.Sprintf("%f", v))
+		case bool:
+			// 处理bool类型
+			msg.WriteString(fmt.Sprintf(" %t", v))
+		default:
+			// 处理其他类型
+			msg.WriteString(fmt.Sprintf(" %v", v))
+		}
+	}
+	ret.Msg = msg.String()
+	fmt.Println(ret)
+	c.JSON(http.StatusOK, ret)
 	c.JSON(http.StatusOK, gin.H{"code": code, "message": msg, "data": data})
 }
 

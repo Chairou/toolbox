@@ -177,7 +177,7 @@ func (c *Context) RetJson(code int, data interface{}, messages ...interface{}) {
 	ret.Msg = msg.String()
 	fmt.Println(ret)
 	c.JSON(http.StatusOK, ret)
-	c.JSON(http.StatusOK, gin.H{"code": code, "message": msg, "data": data})
+
 }
 
 // Debugf formats message according to format specifier

@@ -88,7 +88,7 @@ func getDataFromMysql(c *g.Context) {
 
 	strCondition, args, orderStr, err := c.GetConditionByParam(parConstruct)
 	if err != nil {
-		c.RetJson(-101, "param err: "+err.Error(), nil)
+		c.RetJson(-101, nil, "param err: ", err)
 		return
 	}
 	//获取分页参数:PageIndex,PageSize, 不传的话默认10000条数据
@@ -96,7 +96,7 @@ func getDataFromMysql(c *g.Context) {
 
 	var catalogs []Catalog
 	DbConn.Find(&catalogs).Where(strCondition, args).Order(orderStr).Offset(offset).Limit(limit)
-	c.RetJson(0, "ok", catalogs)
+	c.RetJson(0, catalogs, "ok")
 
 }
 

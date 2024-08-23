@@ -33,6 +33,7 @@ func TestLogger(t *testing.T) {
 		t.Error("GetLogPool err:", err)
 	}
 	log3.Debug("log3", 3)
+	log3.DebugTag("Chair", "table")
 
 }
 

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Chairou/toolbox/util/color"
-	"github.com/natefinch/lumberjack"
 	"log"
 	"os"
 	"path/filepath"
@@ -32,9 +31,9 @@ type LogPool struct {
 	FileName    string
 	Level       int
 	Path        string
-	infoLogger  *log.Logger
-	debugLogger *log.Logger
-	errorLogger *log.Logger
+	infoLogger  *Logger
+	debugLogger *Logger
+	errorLogger *Logger
 }
 
 func init() {
@@ -73,9 +72,9 @@ func NewLogPool(name string, fileName string) (*LogPool, error) {
 			return nil, err
 		}
 
-		infoLog := log.New(fd, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
-		debugLog := log.New(fd, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
-		errorLog := log.New(fd, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
+		infoLog := New(fd, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+		debugLog := New(fd, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
+		errorLog := New(fd, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 		inst.Fd = fd
 		inst.Path, _ = os.Getwd()
@@ -83,7 +82,7 @@ func NewLogPool(name string, fileName string) (*LogPool, error) {
 		inst.debugLogger = debugLog
 		inst.errorLogger = errorLog
 
-		lumberjackLogger := &lumberjack.Logger{
+		lumberjackLogger := &Loggerj{
 			Filename:   logFileName,
 			MaxSize:    500, // megabytes
 			MaxBackups: 10,
@@ -148,6 +147,13 @@ func (c *LogIntFileName) SaveIntLogMap(inst *LogPool) {
 	c.orderNum += 1
 }
 
+func (c *LogPool) DebugfTag(tag string, format string, v ...any) {
+	if c.Level <= DEBUG_LEVEL {
+		s := tag + " " + fmt.Sprintf(format, v...)
+		log.Println(s)
+		c.debugLogger.Output(2, s)
+	}
+}
 func (c *LogPool) Debugf(format string, v ...any) {
 	if c.Level <= DEBUG_LEVEL {
 		s := fmt.Sprintf(format, v...)
@@ -156,6 +162,13 @@ func (c *LogPool) Debugf(format string, v ...any) {
 	}
 }
 
+func (c *LogPool) DebugTag(tag string, v ...any) {
+	if c.Level <= DEBUG_LEVEL {
+		s := tag + " " + fmt.Sprintln(v...)
+		log.Println(s)
+		c.debugLogger.Output(2, s)
+	}
+}
 func (c *LogPool) Debug(v ...any) {
 	if c.Level <= DEBUG_LEVEL {
 		s := fmt.Sprintln(v...)
@@ -164,9 +177,24 @@ func (c *LogPool) Debug(v ...any) {
 	}
 }
 
+func (c *LogPool) InfofTag(tag string, format string, v ...any) {
+	if c.Level <= INFO_LEVEL {
+		s := tag + " " + fmt.Sprintf(format, v...)
+		log.Println(s)
+		c.infoLogger.Output(2, s)
+	}
+}
 func (c *LogPool) Infof(format string, v ...any) {
 	if c.Level <= INFO_LEVEL {
 		s := fmt.Sprintf(format, v...)
+		log.Println(s)
+		c.infoLogger.Output(2, s)
+	}
+}
+
+func (c *LogPool) InfoTag(tag string, v ...any) {
+	if c.Level <= INFO_LEVEL {
+		s := tag + " " + fmt.Sprintln(v...)
 		log.Println(s)
 		c.infoLogger.Output(2, s)
 	}
@@ -180,8 +208,22 @@ func (c *LogPool) Info(v ...any) {
 	}
 }
 
+func (c *LogPool) ErrorfTag(tag string, format string, v ...any) {
+	s := tag + " " + fmt.Sprintf(format, v...)
+	color.SetColor(color.Red, s)
+	log.Println(s)
+	c.errorLogger.Output(2, s)
+}
+
 func (c *LogPool) Errorf(format string, v ...any) {
 	s := fmt.Sprintf(format, v...)
+	color.SetColor(color.Red, s)
+	log.Println(s)
+	c.errorLogger.Output(2, s)
+}
+
+func (c *LogPool) ErrorTag(tag string, v ...any) {
+	s := tag + " " + fmt.Sprintln(v...)
 	color.SetColor(color.Red, s)
 	log.Println(s)
 	c.errorLogger.Output(2, s)

@@ -94,6 +94,31 @@ func PostJSON(url string, body interface{}) Helper {
 	}
 }
 
+func PostJsonRet(url string, body interface{}, retJson interface{}) error {
+	var client Helper
+	switch value := body.(type) {
+	case string:
+		client = NewRequest("POST", url, strings.NewReader(value)).SetHeader("Content-Type",
+			"application/json")
+	default:
+		byteBody, err := jsoniter.Marshal(body)
+		if err != nil {
+			return fmt.Errorf("new request error: %w", err)
+		}
+		client = NewRequest("POST", url, bytes.NewReader(byteBody)).SetHeader("Content-Type",
+			"application/json")
+	}
+	ret := client.Do()
+	if ret.Error() != nil {
+		return client.error()
+	}
+	err := ret.UnmarshalFromBody(retJson)
+	if err != nil {
+		return fmt.Errorf("ret.UnmarshalFromBody error: %w", err)
+	}
+	return nil
+}
+
 func PostFile(url string, fullPathSourceFileName string, DstFileName string) Helper {
 	// 打开要上传的文件
 	file, err := os.Open(fullPathSourceFileName)

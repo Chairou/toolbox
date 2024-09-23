@@ -119,10 +119,12 @@ func getDiffStr(previous, later string, flag int) (int64, error) {
 	return diffDays, nil
 }
 
+// UnixTimeStamp2TimeStr timestamp转换为标准日期时间
 func UnixTimeStamp2TimeStr(sec int64) string {
 	return time.Unix(sec, 0).Format(TIME_COMMON)
 }
 
+// DayListBetweenStartEnd 获取两个日期之间的所有日期
 func DayListBetweenStartEnd(start, end string) ([]string, error) {
 	dayList := make([]string, 0)
 	days, err := getDiffStr(start, end, TIME_TO_DAYS)
@@ -141,6 +143,7 @@ func DayListBetweenStartEnd(start, end string) ([]string, error) {
 	return dayList, nil
 }
 
+// Yesterday 获取昨天的日期
 func Yesterday(today string) (string, error) {
 	var nTime = time.Time{}
 	var err error
@@ -157,6 +160,7 @@ func Yesterday(today string) (string, error) {
 	return logDay, nil
 }
 
+// Tomorrow 获取明天的日期
 func Tomorrow(today string) (string, error) {
 	var nTime = time.Time{}
 	var err error
@@ -173,6 +177,7 @@ func Tomorrow(today string) (string, error) {
 	return logDay, nil
 }
 
+// GetCurrentAndNextHour 获取当前时间和后一小时
 func GetCurrentAndNextHour(timeStr string) (string, string, error) {
 	now, err := time.ParseInLocation(TIME_COMMON, timeStr, time.Local)
 	if err != nil {
@@ -227,4 +232,20 @@ func GetCalDataStr(date string, delta int) string {
 		return ""
 	}
 	return d.AddDate(0, 0, delta).Format(TIME_DATE)
+}
+
+// GetTimestampGap 获取时间间隔的起始时间戳，用来做基于时间的幂等函数
+func GetTimestampGap(intervalMinutes int) int64 {
+	now := time.Now()
+	// 计算当前时间属于哪个时间间隔
+	intervalStart := now.Truncate(time.Duration(intervalMinutes) * time.Minute)
+	return intervalStart.Unix()
+}
+
+// 获取当前时间的时间戳，基于指定的秒数
+func getCurrentIntervalTimestamp(intervalSeconds int) int64 {
+	now := time.Now()
+	// 计算当前时间属于哪个时间间隔
+	intervalStart := now.Truncate(time.Duration(intervalSeconds) * time.Second)
+	return intervalStart.Unix()
 }

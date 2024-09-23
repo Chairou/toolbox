@@ -43,7 +43,7 @@ A simple and minimally dependent Golang toolbox and development library. Contact
         func (c *logPool) Infof(format string, v ...any) // 写INFO日志
         func (c *logPool) Infoln(v ...any) // 写INFO日志
         func (c *logPool) Errorf(format string, v ...any) //写错误日志
-        func (c *logPool) Errorln(v ...any) // 写错误日志
+        func (c *logPool) Error(v ...any) // 写错误日志
         func (c *logPool) SetLevel(level int) error // 设置日志等级
 
 ### util/redis

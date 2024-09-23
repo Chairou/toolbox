@@ -80,6 +80,19 @@ func TestPostSturctInstance(t *testing.T) {
 	t.Logf("simple : %#v", instance)
 }
 
+func TestPostJsonRet(t *testing.T) {
+	type Simple struct {
+		Name string `json:"name"`
+	}
+	req := Simple{Name: "asd"}
+	ret := Simple{}
+	err := PostJsonRet("http://127.0.0.1/api/postBody", req, &ret)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Logf("simple : %#v", ret)
+}
+
 func TestUrlPathEscape(t *testing.T) {
 	url1 := "http://news.qq.com/?a=1&b=吃饭"
 	urlEncode := UrlPathEscape(url1)

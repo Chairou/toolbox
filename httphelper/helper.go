@@ -100,7 +100,7 @@ func init() {
 			return
 		}
 		log.SetLevel(logger.DEBUG_LEVEL)
-		log.Infoln("http log init.")
+		log.Info("http log init.")
 	})
 }
 
@@ -225,7 +225,7 @@ func (p *httpHelper) Do() Result {
 		if err != nil {
 			redStr := color.SetColor(color.Red, fmt.Sprintf("%v", err))
 			s := fmt.Sprintf("%s  io.ReadAll err: %s", p.Uuid, redStr)
-			log.Errorln(s)
+			log.Error(s)
 			return result.Errorf("io.ReadAll err: %v", err)
 		}
 	}
@@ -235,20 +235,20 @@ func (p *httpHelper) Do() Result {
 	switch p.debug {
 	case DebugNormal:
 		if p.req.Method == "POST" {
-			log.Infoln("HTTP REQ:", p.Uuid, "\n", p.req.Method, p.req.URL.String(), "\n【reqBODY】:",
+			log.Info("HTTP REQ:", p.Uuid, "\n", p.req.Method, p.req.URL.String(), "\n【reqBODY】:",
 				color.SetColor(color.Green, result.ReqBody))
 		} else {
-			log.Infoln("HTTP REQ:", p.Uuid, "\n", p.req.Method, color.SetColor(color.Green, p.req.URL.String()))
+			log.Info("HTTP REQ:", p.Uuid, "\n", p.req.Method, color.SetColor(color.Green, p.req.URL.String()))
 		}
 	case DebugDetail:
 		if p.req.Method == "POST" {
-			log.Infoln("HTTP REQ:", p.Uuid, "\n", p.req.Method, p.req.URL.String(), p.req.Header, p.req.Cookies(),
+			log.Info("HTTP REQ:", p.Uuid, "\n", p.req.Method, p.req.URL.String(), p.req.Header, p.req.Cookies(),
 				"\n【reqBODY】 :", color.SetColor(color.Green, result.ReqBody))
 		} else {
-			log.Infoln("HTTP REQ:", p.Uuid, "\n", p.req.Method, color.SetColor(color.Green, p.req.URL.String()))
+			log.Info("HTTP REQ:", p.Uuid, "\n", p.req.Method, color.SetColor(color.Green, p.req.URL.String()))
 		}
 	case DebugUpload:
-		log.Infoln("HTTP UPLOAD FILE:", p.Uuid, "\n", p.req.Method, p.req.URL.String(), ", fileName:",
+		log.Info("HTTP UPLOAD FILE:", p.Uuid, "\n", p.req.Method, p.req.URL.String(), ", fileName:",
 			p.UploadFileName, ", fileSize:", p.UploadFileSize)
 	}
 
@@ -264,7 +264,7 @@ func (p *httpHelper) Do() Result {
 	if err != nil {
 		redStr := color.SetColor(color.Red, fmt.Sprintf("%v", err))
 		s := fmt.Sprintf("%s do http request err: %s", p.Uuid, redStr)
-		log.Errorln(s)
+		log.Error(s)
 		return result.Errorf("do http request err: %v", err)
 	}
 
@@ -273,7 +273,7 @@ func (p *httpHelper) Do() Result {
 		if err != nil {
 			redStr := color.SetColor(color.Red, fmt.Sprintf("%v", err))
 			s := fmt.Sprintf("%s body close err: %s", p.Uuid, redStr)
-			log.Errorln(s)
+			log.Error(s)
 		}
 	}(resp.Body)
 
@@ -281,7 +281,7 @@ func (p *httpHelper) Do() Result {
 	if err != nil {
 		redStr := color.SetColor(color.Red, fmt.Sprintf("%v", err))
 		s := fmt.Sprintf("%s read response body err: %s", p.Uuid, redStr)
-		log.Errorln(s)
+		log.Error(s)
 		return result.Errorf("read response body err: %v", err)
 	}
 
@@ -298,10 +298,10 @@ func (p *httpHelper) Do() Result {
 	result.Uuid = p.Uuid
 	switch p.debug {
 	case DebugNormal:
-		log.Infoln("HTTP RESP:", p.Uuid, "\n【retBody】:", color.SetColor(color.Green, result.RetBody),
+		log.Info("HTTP RESP:", p.Uuid, "\n【retBody】:", color.SetColor(color.Green, result.RetBody),
 			"elapsed :", elapsed)
 	case DebugDetail:
-		log.Infoln("HTTP RESP:", p.Uuid, "\n【retBody】:", color.SetColor(color.Green, result.RetBody),
+		log.Info("HTTP RESP:", p.Uuid, "\n【retBody】:", color.SetColor(color.Green, result.RetBody),
 			result.RetHeader, result.RetCookie, "elapsed :", elapsed)
 	}
 

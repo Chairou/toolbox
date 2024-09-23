@@ -38,7 +38,7 @@ After nearly 20 years of technical work, I found that I didn't have much accumul
     func (c *logPool) Infof(format string, v ...any) //write INFO logs
     func (c *logPool) Infoln(v ...any) //write INFO logs
     func (c *logPool) Errorf(format string, v ...any) //write error logs
-    func (c *logPool) Errorln(v ...any) //write error logs
+    func (c *logPool) Error(v ...any) //write error logs
     func (c *logPool) SetLevel(level int) error //set log level
 
 ### util/redis

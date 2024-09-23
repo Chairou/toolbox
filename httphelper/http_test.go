@@ -100,7 +100,7 @@ func TestUrlPathEscape(t *testing.T) {
 }
 
 func TestGetHttp(t *testing.T) {
-	url1 := "http://127.0.0.1/get?aa=bb&cc=dd"
+	url1 := "http://127.0.0.1/api/get?aa=bb&cc=dd"
 	client := GET(url1)
 	client.AddQuery("key1", "value1")
 	client.AddHeader("envSelector", "test")
@@ -112,6 +112,22 @@ func TestGetHttp(t *testing.T) {
 	ret := client.Do()
 	// 显示body内容
 	fmt.Println(ret.BaseResult().RetBody)
+}
+
+func TestGetJsonRet(t *testing.T) {
+	type RetJson struct {
+		Aa   string `json:"aa"`
+		Cc   string `json:"cc"`
+		Key1 string `json:"key1"`
+	}
+	var ret RetJson
+	url1 := "http://127.0.0.1/api/get?aa=bb&cc=dd&key1=value1"
+	err := GetJsonRet(url1, &ret)
+	if err != nil {
+		t.Error(err)
+	} else {
+		t.Logf("%#v", ret)
+	}
 }
 
 func TestPathEscaped(t *testing.T) {

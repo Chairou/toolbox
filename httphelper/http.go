@@ -71,6 +71,19 @@ func GET(url string) Helper {
 	return NewRequest("GET", url, nil)
 }
 
+func GetJsonRet(url string, retJson interface{}) error {
+	client := NewRequest("GET", url, nil)
+	ret := client.Do()
+	if ret.Error() != nil {
+		return client.error()
+	}
+	err := ret.UnmarshalFromBody(retJson)
+	if err != nil {
+		return fmt.Errorf("ret.UnmarshalFromBody error: %w", err)
+	}
+	return nil
+}
+
 // PostUrlEncode 创建application/x-www-form-urlencoded的POST请求
 func PostUrlEncode(url string, values url.Values) Helper {
 	return NewRequest("POST", url, strings.NewReader(values.Encode())).SetHeader("Content-Type",

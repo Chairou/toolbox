@@ -192,4 +192,5 @@ func TestByteToString(t *testing.T) {
 	if str != "Hello, World!" {
 		t.Error("CheckByteToString err:")
 	}
+	t.Log(str)
 }

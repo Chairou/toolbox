@@ -63,6 +63,8 @@ func String(val interface{}) string {
 		return v
 	case float64:
 		return strconv.FormatFloat(v, 'f', -1, 64)
+	case []byte:
+		return string(v)
 	default:
 		return fmt.Sprint(v)
 	}

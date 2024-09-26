@@ -185,3 +185,11 @@ func TestIntToByte(t *testing.T) {
 		t.Error("CheckIntToByte err:")
 	}
 }
+
+func TestByteToString(t *testing.T) {
+	var data interface{} = []byte("Hello, World!")
+	str := String(data)
+	if str != "Hello, World!" {
+		t.Error("CheckByteToString err:")
+	}
+}

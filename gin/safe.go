@@ -2,10 +2,12 @@ package gin
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
+	"reflect"
 	"regexp"
 )
 
@@ -54,6 +56,48 @@ func detectSQLInjection(input string) bool {
 		}
 	}
 	return false
+}
+
+// Recursive function to check fields and nested structures
+func checkFields(value reflect.Value, prefix string, errors *[]string) {
+	if value.Kind() == reflect.Ptr {
+		value = value.Elem()
+	}
+
+	switch value.Kind() {
+	case reflect.Struct:
+		for i := 0; i < value.NumField(); i++ {
+			field := value.Field(i)
+			fieldType := value.Type().Field(i)
+			prefixedFieldName := fmt.Sprintf("%s.%s", prefix, fieldType.Name)
+			checkFields(field, prefixedFieldName, errors)
+		}
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < value.Len(); i++ {
+			element := value.Index(i)
+			prefixedElementName := fmt.Sprintf("%s[%d]", prefix, i)
+			checkFields(element, prefixedElementName, errors)
+		}
+	default:
+		// Custom checks (example: check for empty strings)
+		if value.Kind() == reflect.String {
+			if detectSQLInjection(value.String()) {
+				*errors = append(*errors,
+					fmt.Sprintf("Field Name: %s, Field Value: %v has SQL Injection",
+						prefix, value.Interface()),
+				)
+			}
+		}
+	}
+}
+
+func ValidateSql(value reflect.Value, structName string) error {
+	var errorList []string
+	checkFields(value, structName, &errorList)
+	if len(errorList) > 0 {
+		return errors.New(fmt.Sprintf("Validation failed: %v", errorList))
+	}
+	return nil
 }
 
 // ResponseRecorder 中间件用于记录响应数据

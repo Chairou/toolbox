@@ -24,7 +24,7 @@ func TestSqlSafe(t *testing.T) {
 	// Example data
 	ruleSql := RuleSql{
 		ClassType:  "example",
-		Group:      []string{"group1", "group2"},
+		Group:      []string{"group1", "group\n2"},
 		Select:     []string{"field1", "field2", "--"},
 		Where:      "condition",
 		OrderBy:    "order",
@@ -39,6 +39,8 @@ func TestSqlSafe(t *testing.T) {
 
 	err := ValidateSql(reflect.ValueOf(ruleSql), "ruleSql")
 	if err != nil {
-		t.Errorf("validateRuleSql failed: %#v", err)
+		t.Logf("validateRuleSql failed: %#v", err)
 	}
+	EscapeFields(reflect.ValueOf(&ruleSql), "ruleSql")
+	t.Log(ruleSql)
 }

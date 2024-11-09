@@ -7,13 +7,6 @@ import (
 	"strings"
 )
 
-type Ret struct {
-	Code int         `json:"code"`
-	Msg  string      `json:"message"`
-	Data interface{} `json:"data"`
-	Seq  string      `json:"seq"`
-}
-
 func WriteRetJson(c *Context, code int, data interface{}, messages ...interface{}) {
 	var msg string
 	var ret Ret

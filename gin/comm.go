@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Chairou/toolbox/conf"
+	"os"
+
 	"github.com/Chairou/toolbox/logger"
 	"github.com/Chairou/toolbox/util/check"
 	"github.com/Chairou/toolbox/util/conv"
@@ -15,7 +17,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
-	"os"
 	"path"
 	"reflect"
 	"runtime"
@@ -25,16 +26,6 @@ import (
 
 var log *logger.LogPool
 var conf1 *conf.Config
-
-func init() {
-	var err error
-	conf1 = conf.GetConf()
-	log, err = logger.NewLogPool("api", conf1.LogFileName)
-	if err != nil {
-		fmt.Errorf("NewLogPool err: %v", err)
-		os.Exit(1)
-	}
-}
 
 type H map[string]any
 
@@ -47,6 +38,13 @@ type Context struct {
 	requestID   string
 	LoginMethod string
 	UserName    string
+}
+
+type Ret struct {
+	Code int         `json:"code"`
+	Msg  string      `json:"message"`
+	Data interface{} `json:"data"`
+	Seq  string      `json:"seq"`
 }
 
 // ParamConstruct ParamConstruct值类型
@@ -81,10 +79,16 @@ type responseDumper struct {
 }
 
 func NewServer() *gin.Engine {
+	var err error
+	config := conf.GetConf()
+	log, err = logger.NewLogPool("api", config.LogFileName)
+	if err != nil {
+		fmt.Errorf("NewLogPool err: %v", err)
+		os.Exit(1)
+	}
 	r := gin.Default()
 	conf.LoadAllConf()
 
-	config := conf.GetConf()
 	mode := config.Env
 	switch mode {
 	case "dev":

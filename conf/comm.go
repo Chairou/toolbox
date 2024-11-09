@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-var confLock *sync.RWMutex
+var confLock = &sync.RWMutex{}
 var Conf = &Config{}
 var once sync.Once
 

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"reflect"
 	"regexp"
+	"strings"
 )
 
 func SafeCheck(c *Context) {
@@ -127,4 +128,59 @@ type bodyLogWriter struct {
 func (w bodyLogWriter) Write(b []byte) (int, error) {
 	w.body.Write(b)
 	return w.ResponseWriter.Write(b)
+}
+
+// EscapeString 手动转义 SQL 字符串中的特殊字符
+func EscapeString(value string) string {
+	var replacements = []struct {
+		old string
+		new string
+	}{
+		{`'`, `\'`},
+		{`"`, `\"`},
+		{`\`, `\\`},
+		{`\n`, `\\n`},
+		{`\r`, `\\r`},
+		{`\x00`, `\\0`},
+		{`\x1a`, `\\Z`},
+		{"'", `\'`},
+		{"\"", `\"`},
+		{"\\", `\\`},
+		{"\n", `\\n`},
+		{"\r", `\\r`},
+		{"\x00", `\\0`},
+		{"\x1a", `\\Z`},
+	}
+
+	for _, r := range replacements {
+		value = strings.ReplaceAll(value, r.old, r.new)
+	}
+	return value
+}
+
+func EscapeFields(value reflect.Value, prefix string) {
+	if value.Kind() == reflect.Ptr {
+		value = value.Elem()
+	}
+
+	switch value.Kind() {
+	case reflect.Struct:
+		for i := 0; i < value.NumField(); i++ {
+			field := value.Field(i)
+			fieldType := value.Type().Field(i)
+			prefixedFieldName := fmt.Sprintf("%s.%s", prefix, fieldType.Name)
+			EscapeFields(field, prefixedFieldName)
+		}
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < value.Len(); i++ {
+			element := value.Index(i)
+			prefixedElementName := fmt.Sprintf("%s[%d]", prefix, i)
+			EscapeFields(element, prefixedElementName)
+		}
+	default:
+		// Custom checks (example: check for empty strings)
+		if value.Kind() == reflect.String {
+			value.SetString(EscapeString(value.String()))
+		}
+	}
 }

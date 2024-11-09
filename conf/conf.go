@@ -3,17 +3,16 @@ package conf
 import (
 	"fmt"
 	"github.com/jinzhu/copier"
-	"sync"
 )
 
-func initLock() {
-	confLock = new(sync.RWMutex)
-}
+//func initLock() {
+//	confLock = new(sync.RWMutex)
+//}
 
-func init() {
-	initLock()
-	LoadAllConf()
-}
+//func init() {
+//	initLock()
+//	LoadAllConf()
+//}
 
 func mergeConfig(cmd, file, env *Config) {
 	_ = copier.CopyWithOption(Conf, env, copier.Option{IgnoreEmpty: true})

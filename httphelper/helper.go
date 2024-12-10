@@ -35,6 +35,9 @@ type Helper interface {
 	// AddHeader 添加HTTP header
 	AddHeader(k string, v string) Helper
 
+	// AddHeaderMap 通过map来添加HTTP header
+	AddHeaderMap(m map[string]string) Helper
+
 	// SetHeader 设置HTTP header，会覆盖同名的header
 	SetHeader(k string, v string) Helper
 
@@ -42,10 +45,10 @@ type Helper interface {
 	SetTransport(tripper http.RoundTripper) Helper
 
 	// AddCookies 设置完整cookies
-	AddCookies(c []*http.Cookie) Helper
+	AddCookie(c []*http.Cookie) Helper
 
-	// AddSimpleCookies 设置只有简单name和value的cookies
-	AddSimpleCookies(c map[string]string) Helper
+	// AddCookies 设置只有简单name和value的cookies
+	AddCookieMap(c map[string]string) Helper
 
 	// AddBasicAuth 设置简单认证
 	AddBasicAuth(id string, key string) Helper
@@ -146,6 +149,14 @@ func (p *httpHelper) AddHeader(k string, v string) Helper {
 	return p
 }
 
+// AddHeaderMap 通过map来添加HTTP header
+func (p *httpHelper) AddHeaderMap(m map[string]string) Helper {
+	for k, v := range m {
+		p.req.Header.Add(k, v)
+	}
+	return p
+}
+
 // SetHeader 设置HTTP header，会覆盖同名的header
 func (p *httpHelper) SetHeader(k string, v string) Helper {
 	p.req.Header.Set(k, v)
@@ -158,14 +169,14 @@ func (p *httpHelper) SetTransport(tripper http.RoundTripper) Helper {
 	return p
 }
 
-func (p *httpHelper) AddCookies(c []*http.Cookie) Helper {
+func (p *httpHelper) AddCookie(c []*http.Cookie) Helper {
 	for _, v := range c {
 		p.req.AddCookie(v)
 	}
 	return p
 }
 
-func (p *httpHelper) AddSimpleCookies(c map[string]string) Helper {
+func (p *httpHelper) AddCookieMap(c map[string]string) Helper {
 	for k, v := range c {
 		p.req.AddCookie(&http.Cookie{Name: k, Value: v})
 	}
@@ -351,16 +362,19 @@ func (p *errHelper) AddHeader(string, string) Helper {
 	return p
 }
 
+// AddHeaderMap 通过map来添加HTTP header
+func (p *errHelper) AddHeaderMap(m map[string]string) Helper { return p }
+
 // SetHeader 设置HTTP header，会覆盖同名的header
 func (p *errHelper) SetHeader(string, string) Helper {
 	return p
 }
 
-func (p *errHelper) AddCookies(c []*http.Cookie) Helper {
+func (p *errHelper) AddCookie(c []*http.Cookie) Helper {
 	return p
 }
 
-func (p *errHelper) AddSimpleCookies(c map[string]string) Helper {
+func (p *errHelper) AddCookieMap(c map[string]string) Helper {
 	return p
 }
 

@@ -57,14 +57,14 @@ func TestPostString(t *testing.T) {
 	client := PostJSON("http://127.0.0.1/postBody", `{"name":"win"}`)
 	client.SetDebug(DebugDetail)
 	client.AddHeader("aa", "bb").AddHeader("cc", "dd")
-	client.AddSimpleCookies(map[string]string{"ee": "ff"})
+	client.AddCookieMap(map[string]string{"ee": "ff"})
 	ret := client.Do()
 	asd := ret.Get("name")
 	q := asd.JsonIterAny().ToString()
 	t.Log(q)
 }
 
-func TestPostSturctInstance(t *testing.T) {
+func TestPostStrutInstance(t *testing.T) {
 	type Simple struct {
 		Name string `json:"name"`
 	}
@@ -93,6 +93,21 @@ func TestPostJsonRet(t *testing.T) {
 	t.Logf("simple : %#v", ret)
 }
 
+func TestPostJsonAll(t *testing.T) {
+	type Simple struct {
+		Name string `json:"name"`
+	}
+	req := Simple{Name: "asd"}
+	ret := Simple{}
+	header := map[string]string{"envSelector": "test"}
+	cookies := map[string]string{"ee": "ff"}
+	err := PostJsonAll("http://127.0.0.1/api/postBody", header, cookies, req, &ret)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Logf("simple : %#v", ret)
+}
+
 func TestUrlPathEscape(t *testing.T) {
 	url1 := "http://news.qq.com/?a=1&b=吃饭"
 	urlEncode := UrlPathEscape(url1)
@@ -108,7 +123,7 @@ func TestGetHttp(t *testing.T) {
 	c1 := &http.Cookie{Name: "ee", Value: "ff"}
 	c2 := &http.Cookie{Name: "gg", Value: "hh"}
 	cookies = append(cookies, c1, c2)
-	client.AddCookies(cookies)
+	client.AddCookie(cookies)
 	ret := client.Do()
 	// 显示body内容
 	fmt.Println(ret.BaseResult().RetBody)
@@ -228,4 +243,19 @@ func TestJsonGet(t *testing.T) {
 	body := `{"name":"abc"}`
 	asd := jsoniter.Get([]byte(body), "name")
 	t.Logf("%v", (asd).ToString())
+}
+
+func TestMap(t *testing.T) {
+	mapNilTest(nil)
+}
+
+func mapNilTest(m map[string]string) {
+	if m == nil {
+		fmt.Println("m is nil")
+	} else {
+		fmt.Println("m is not nil")
+	}
+	for k, v := range m {
+		fmt.Println(k, v)
+	}
 }

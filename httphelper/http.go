@@ -84,6 +84,25 @@ func GetJsonRet(url string, retJson interface{}) error {
 	return nil
 }
 
+func GetJsonAll(url string, headers map[string]string, cookies map[string]string, retJson interface{}) error {
+	client := NewRequest("GET", url, nil)
+	if headers != nil {
+		client.AddHeaderMap(headers)
+	}
+	if cookies != nil {
+		client.AddCookieMap(cookies)
+	}
+	ret := client.Do()
+	if ret.Error() != nil {
+		return client.error()
+	}
+	err := ret.UnmarshalFromBody(retJson)
+	if err != nil {
+		return fmt.Errorf("ret.UnmarshalFromBody error: %w", err)
+	}
+	return nil
+}
+
 // PostUrlEncode 创建application/x-www-form-urlencoded的POST请求
 func PostUrlEncode(url string, values url.Values) Helper {
 	return NewRequest("POST", url, strings.NewReader(values.Encode())).SetHeader("Content-Type",
@@ -121,6 +140,38 @@ func PostJsonRet(url string, body interface{}, retJson interface{}) error {
 		client = NewRequest("POST", url, bytes.NewReader(byteBody)).SetHeader("Content-Type",
 			"application/json")
 	}
+	ret := client.Do()
+	if ret.Error() != nil {
+		return client.error()
+	}
+	err := ret.UnmarshalFromBody(retJson)
+	if err != nil {
+		return fmt.Errorf("ret.UnmarshalFromBody error: %w", err)
+	}
+	return nil
+}
+
+func PostJsonAll(url string, headers map[string]string, cookies map[string]string, body interface{}, retJson interface{}) error {
+	var client Helper
+	switch value := body.(type) {
+	case string:
+		client = NewRequest("POST", url, strings.NewReader(value)).SetHeader("Content-Type",
+			"application/json")
+	default:
+		byteBody, err := jsoniter.Marshal(body)
+		if err != nil {
+			return fmt.Errorf("new request error: %w", err)
+		}
+		client = NewRequest("POST", url, bytes.NewReader(byteBody)).SetHeader("Content-Type",
+			"application/json")
+	}
+	if headers != nil {
+		client.AddHeaderMap(headers)
+	}
+	if cookies != nil {
+		client.AddCookieMap(cookies)
+	}
+
 	ret := client.Do()
 	if ret.Error() != nil {
 		return client.error()

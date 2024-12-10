@@ -2,6 +2,7 @@ package fileopt
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -51,4 +52,30 @@ func GetAllFilesFromDirectory(rootDir string, filterSuffixes []string) (files []
 		return nil, err
 	}
 	return files, nil
+}
+
+// ReadFileAllByte 读取文件所有内容，返回byte
+func ReadFileAllByte(filename string) (retByte []byte, err error) {
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		fmt.Printf("文件 %s 不存在\n", filename)
+	} else {
+		fmt.Printf("文件 %s 存在\n", filename)
+	}
+	file, err := os.Open(filename)
+	if err != nil {
+		fmt.Printf("打开文件 %s 失败: %v\n", filename, err)
+		return nil, err
+	}
+	defer file.Close()
+	contentByte, err := io.ReadAll(file)
+	if err != nil {
+		fmt.Printf("读取文件 %s 失败: %v\n", filename, err)
+		return nil, err
+	}
+	return contentByte, nil
+}
+
+func ReadFileAllString(filename string) (string, error) {
+	retByte, err := ReadFileAllByte(filename)
+	return string(retByte), err
 }

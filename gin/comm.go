@@ -80,6 +80,7 @@ type responseDumper struct {
 
 func NewServer() *gin.Engine {
 	var err error
+	conf.LoadAllConf()
 	config := conf.GetConf()
 	log, err = logger.NewLogPool("api", config.LogFileName)
 	if err != nil {

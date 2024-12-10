@@ -17,8 +17,8 @@ var DbConn *gorm.DB
 
 func init() {
 	os.Setenv("mysql_host", "127.0.0.1:3306")
-	os.Setenv("mysql_user", "xxx")
-	os.Setenv("mysql_pass", "yyy")
+	os.Setenv("mysql_user", "root")
+	os.Setenv("mysql_pass", "root123456")
 }
 
 type Catalog struct {

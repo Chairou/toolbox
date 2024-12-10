@@ -25,3 +25,9 @@ func TestGetDirFilesMulti(t *testing.T) {
 	}
 	t.Log(files)
 }
+
+func TestStringNil(t *testing.T) {
+	var ret []byte
+	ret = nil
+	t.Log(string(ret))
+}

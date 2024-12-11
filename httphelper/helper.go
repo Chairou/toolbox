@@ -283,7 +283,7 @@ func (p *httpHelper) Do() Result {
 	}
 	p.req.Body = rc
 
-	resp, err := http.DefaultClient.Do(p.req)
+	resp, err := p.client.Do(p.req)
 	if err != nil {
 		redStr := color.SetColor(color.Red, fmt.Sprintf("%v", err))
 		s := fmt.Sprintf("%s do http request err: %s", p.Uuid, redStr)

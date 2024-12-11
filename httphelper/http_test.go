@@ -101,7 +101,7 @@ func TestPostJsonAll(t *testing.T) {
 	ret := Simple{}
 	header := map[string]string{"envSelector": "test"}
 	cookies := map[string]string{"ee": "ff"}
-	err := PostJsonAll("http://127.0.0.1/api/postBody", header, cookies, req, &ret)
+	err := PostJsonAll("http://127.0.0.1/api/postBody", header, cookies, req, &ret, nil)
 	if err != nil {
 		t.Error(err)
 	}

@@ -13,6 +13,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"io"
 	"math/rand"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -67,6 +68,8 @@ type Helper interface {
 	error() error
 
 	SetUploadFile(fileName string, fileSize int64) Helper
+
+	SetTimeout(dialTimeout time.Duration, totalTimeout time.Duration) Helper
 }
 
 const (
@@ -102,7 +105,7 @@ func init() {
 			fmt.Println("Error creating log:", err.Error())
 			return
 		}
-		log.SetLevel(logger.DEBUG_LEVEL)
+		_ = log.SetLevel(logger.DEBUG_LEVEL)
 		log.Info("http log init.")
 	})
 }
@@ -225,6 +228,15 @@ func (p *httpHelper) SetUploadFile(fileName string, fileSize int64) Helper {
 	return p
 }
 
+func (p *httpHelper) SetTimeout(dialTimeout time.Duration, totalTimeout time.Duration) Helper {
+	p.client.Transport.(*http.Transport).DialContext = (&net.Dialer{
+		Timeout:   dialTimeout * time.Second,
+		KeepAlive: 90 * time.Second,
+	}).DialContext
+	p.client.Timeout = totalTimeout * time.Second
+	return p
+}
+
 // Do 发送请求
 func (p *httpHelper) Do() Result {
 	startTime := time.Now()
@@ -307,6 +319,11 @@ func (p *httpHelper) Do() Result {
 	result.Elapsed = conv.String(elapsed)
 	result.BodyLen = len(body)
 	result.Uuid = p.Uuid
+	if resp.StatusCode != http.StatusOK {
+		s := fmt.Sprintf("%s http resp status code: %d", p.Uuid, resp.StatusCode)
+		log.Error(s)
+		return result.Errorf("http resp status code: %d", resp.StatusCode)
+	}
 	switch p.debug {
 	case DebugNormal:
 		log.Info("HTTP RESP:", p.Uuid, "\n【retBody】:", color.SetColor(color.Green, result.RetBody),
@@ -405,3 +422,7 @@ func (p *errHelper) Do() Result {
 }
 
 func (p *errHelper) SetUploadFile(fileName string, fileSize int64) Helper { return p }
+
+func (p *errHelper) SetTimeout(dialTimeout time.Duration, totalTimeout time.Duration) Helper {
+	return p
+}

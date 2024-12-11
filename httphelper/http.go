@@ -26,7 +26,7 @@ var once sync.Once
 var gCookies sync.Map
 
 // NewRequest 创建新的请求
-func NewRequest(method string, urlStr string, body io.Reader) Helper {
+func NewRequest(method string, urlStr string, body io.Reader, client *http.Client) Helper {
 	once.Do(func() {
 		http.DefaultClient = &http.Client{
 			Transport: &http.Transport{
@@ -57,8 +57,14 @@ func NewRequest(method string, urlStr string, body io.Reader) Helper {
 		//}
 	}
 
+	var clientInstance *http.Client
+	if client != nil {
+		clientInstance = client
+	} else {
+		clientInstance = http.DefaultClient
+	}
 	helper := &httpHelper{
-		client: *http.DefaultClient,
+		client: *clientInstance,
 		req:    req,
 		debug:  DebugNormal,
 		Err:    nil,
@@ -68,11 +74,11 @@ func NewRequest(method string, urlStr string, body io.Reader) Helper {
 
 // GET 创建新的GET请求
 func GET(url string) Helper {
-	return NewRequest("GET", url, nil)
+	return NewRequest("GET", url, nil, nil)
 }
 
 func GetJsonRet(url string, retJson interface{}) error {
-	client := NewRequest("GET", url, nil)
+	client := NewRequest("GET", url, nil, nil)
 	ret := client.Do()
 	if ret.Error() != nil {
 		return client.error()
@@ -85,7 +91,7 @@ func GetJsonRet(url string, retJson interface{}) error {
 }
 
 func GetJsonAll(url string, headers map[string]string, cookies map[string]string, retJson interface{}) error {
-	client := NewRequest("GET", url, nil)
+	client := NewRequest("GET", url, nil, nil)
 	if headers != nil {
 		client.AddHeaderMap(headers)
 	}
@@ -105,7 +111,7 @@ func GetJsonAll(url string, headers map[string]string, cookies map[string]string
 
 // PostUrlEncode 创建application/x-www-form-urlencoded的POST请求
 func PostUrlEncode(url string, values url.Values) Helper {
-	return NewRequest("POST", url, strings.NewReader(values.Encode())).SetHeader("Content-Type",
+	return NewRequest("POST", url, strings.NewReader(values.Encode()), nil).SetHeader("Content-Type",
 		"application/x-www-form-urlencoded")
 }
 
@@ -113,14 +119,14 @@ func PostUrlEncode(url string, values url.Values) Helper {
 func PostJSON(url string, body interface{}) Helper {
 	switch value := body.(type) {
 	case string:
-		return NewRequest("POST", url, strings.NewReader(value)).SetHeader("Content-Type",
+		return NewRequest("POST", url, strings.NewReader(value), nil).SetHeader("Content-Type",
 			"application/json")
 	default:
 		byteBody, err := jsoniter.Marshal(body)
 		if err != nil {
 			return errorHelper(fmt.Errorf("new request error: %w", err))
 		}
-		return NewRequest("POST", url, bytes.NewReader(byteBody)).SetHeader("Content-Type",
+		return NewRequest("POST", url, bytes.NewReader(byteBody), nil).SetHeader("Content-Type",
 			"application/json")
 
 	}
@@ -130,14 +136,14 @@ func PostJsonRet(url string, body interface{}, retJson interface{}) error {
 	var client Helper
 	switch value := body.(type) {
 	case string:
-		client = NewRequest("POST", url, strings.NewReader(value)).SetHeader("Content-Type",
+		client = NewRequest("POST", url, strings.NewReader(value), nil).SetHeader("Content-Type",
 			"application/json")
 	default:
 		byteBody, err := jsoniter.Marshal(body)
 		if err != nil {
 			return fmt.Errorf("new request error: %w", err)
 		}
-		client = NewRequest("POST", url, bytes.NewReader(byteBody)).SetHeader("Content-Type",
+		client = NewRequest("POST", url, bytes.NewReader(byteBody), nil).SetHeader("Content-Type",
 			"application/json")
 	}
 	ret := client.Do()
@@ -151,18 +157,19 @@ func PostJsonRet(url string, body interface{}, retJson interface{}) error {
 	return nil
 }
 
-func PostJsonAll(url string, headers map[string]string, cookies map[string]string, body interface{}, retJson interface{}) error {
+func PostJsonAll(url string, headers map[string]string, cookies map[string]string, body interface{},
+	retJson interface{}, httpClient *http.Client) error {
 	var client Helper
 	switch value := body.(type) {
 	case string:
-		client = NewRequest("POST", url, strings.NewReader(value)).SetHeader("Content-Type",
+		client = NewRequest("POST", url, strings.NewReader(value), httpClient).SetHeader("Content-Type",
 			"application/json")
 	default:
 		byteBody, err := jsoniter.Marshal(body)
 		if err != nil {
 			return fmt.Errorf("new request error: %w", err)
 		}
-		client = NewRequest("POST", url, bytes.NewReader(byteBody)).SetHeader("Content-Type",
+		client = NewRequest("POST", url, bytes.NewReader(byteBody), httpClient).SetHeader("Content-Type",
 			"application/json")
 	}
 	if headers != nil {
@@ -222,7 +229,7 @@ func PostFile(url string, fullPathSourceFileName string, DstFileName string) Hel
 	}
 
 	// 创建一个POST请求
-	httpClient := NewRequest("POST", url, body).SetHeader("Content-Type",
+	httpClient := NewRequest("POST", url, body, nil).SetHeader("Content-Type",
 		writer.FormDataContentType())
 	httpClient.SetDebug(DebugUpload)
 	httpClient.SetUploadFile(fullPathSourceFileName, stat.Size())

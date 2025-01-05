@@ -2,6 +2,7 @@ package conf
 
 import (
 	"fmt"
+	"github.com/Chairou/toolbox/util/structtool"
 	"github.com/jinzhu/copier"
 )
 
@@ -14,7 +15,7 @@ import (
 //	LoadAllConf()
 //}
 
-func mergeConfig(cmd, file, env *Config) {
+func mergeConfig[T any](cmd, file, env *T) {
 	_ = copier.CopyWithOption(Conf, env, copier.Option{IgnoreEmpty: true})
 	_ = copier.CopyWithOption(Conf, file, copier.Option{IgnoreEmpty: true})
 	_ = copier.CopyWithOption(Conf, cmd, copier.Option{IgnoreEmpty: true})
@@ -22,29 +23,32 @@ func mergeConfig(cmd, file, env *Config) {
 }
 
 // LoadAllConf 优先级，命令行，配置文件，环境变量
-func LoadAllConf() {
+func LoadAllConf[T any](conf *T) {
+	cmdConfig := structtool.NewInstance(conf)
+	fileConfig := structtool.NewInstance(conf)
+	envConfig := structtool.NewInstance(conf)
 	once.Do(func() {
 		//读取命令行参数
-		cmd, err := loadConfFromCmd()
+		err := LoadConfFromCmd(cmdConfig)
 		if err != nil {
-			fmt.Println("cmd err: ", err)
+			fmt.Println("cmdConfig err: ", err)
 		}
-		//fmt.Printf("cmd: %#v\n", cmd)
+		fmt.Printf("cmdConfig: %+v\n", cmdConfig)
 		//读取配置文件
-		file, err := loadConfFromFile("dev.yaml")
+		err = loadConfFromFile("dev.yaml", fileConfig)
 		if err != nil {
 			fmt.Println("confFile err: ", err)
 		}
-		//fmt.Printf("file: %#v\n", file)
+		fmt.Printf("fileConfig: %+v\n", fileConfig)
 
-		//读取环境变量
-		env, err := loadConfFromEnv()
+		// 读取环境变量
+		err = loadConfFromEnv(envConfig)
 		if err != nil {
-			fmt.Println("env err: ", err)
+			fmt.Println("envConfig err: ", err)
 		}
-		//fmt.Printf("env: %#v\n", env)
+		fmt.Printf("env: %+v\n", envConfig)
 		//合并配置
-		mergeConfig(cmd, file, env)
+		mergeConfig(cmdConfig, fileConfig, envConfig)
 
 	})
 }
@@ -53,4 +57,15 @@ func GetConf() *Config {
 	confLock.RLock()
 	defer confLock.RUnlock()
 	return Conf
+}
+
+func createStruct[T any]() *T {
+	return new(T)
+}
+
+func LoadConf[T any](config *T) error {
+	// 先处理YAML文件， 保底处理方式
+	// 然后处理e
+
+	return nil
 }

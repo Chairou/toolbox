@@ -1,7 +1,6 @@
-package test
+package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -10,59 +9,51 @@ import (
 
 // LoadConfFromCmd 使用反射从命令行参数加载配置到结构体
 func LoadConfFromCmd[T any](config *T) error {
-	if len(os.Args) < 2 {
-		return errors.New("no config file specified")
-	}
 
+	if len(os.Args) < 2 {
+		return nil
+	}
+	// 使用反射获取结构体的字段
 	val := reflect.ValueOf(config).Elem()
 	t := val.Type()
-
-	// 创建一个临时的map来存储flag
-	flagMap := make(map[string]interface{})
-
 	for i := 0; i < val.NumField(); i++ {
 		field := t.Field(i)
 		fieldName := field.Name
 		fieldType := field.Type.Kind()
 
-		var defaultValue interface{}
-		var usage string = "usage"
-
+		// 创建命令行标志
 		switch fieldType {
 		case reflect.String:
-			defaultValue = ""
+			flag.StringVar(val.Field(i).Addr().Interface().(*string), fieldName, "", "usage")
 		case reflect.Int:
-			defaultValue = 0
-		// 可以根据需要添加更多类型
+			flag.IntVar(val.Field(i).Addr().Interface().(*int), fieldName, 0, "usage")
+		case reflect.Float64:
+			flag.Float64Var(val.Field(i).Addr().Interface().(*float64), fieldName, 0, "usage")
 		default:
-			continue // 忽略不支持的类型
+			panic("not string or int ")
 		}
-
-		flagVar := reflect.New(field.Type).Interface()
-		flagName := fmt.Sprintf("--%s", fieldName)
-		switch fieldType {
-		case reflect.String:
-			flag.StringVar(flagVar.(*string), flagName, defaultValue.(string), usage)
-		case reflect.Int:
-			flag.IntVar(flagVar.(*int), flagName, defaultValue.(int), usage)
-			// 添加更多类型的flag设置
-		}
-
-		flagMap[flagName] = flagVar
 	}
 
 	// 解析命令行参数
 	flag.Parse()
 
-	// 将flag的值设置回结构体
-	for i := 0; i < val.NumField(); i++ {
-		field := t.Field(i)
-		fieldName := field.Name
-		flagName := fmt.Sprintf("--%s", fieldName)
-		if valField := flagMap[flagName]; valField != nil {
-			val.Field(i).Set(reflect.ValueOf(valField).Elem())
-		}
+	// 输出结果
+	return nil
+
+}
+
+func main() {
+	type Config struct {
+		Name  string  `json:"Name"`
+		Age   int     `json:"Age"`
+		Money float64 `json:"Money"`
 	}
 
-	return nil
+	config := &Config{}
+	if err := LoadConfFromCmd(config); err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println("Config:", config)
 }

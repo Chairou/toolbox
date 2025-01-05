@@ -1,9 +1,9 @@
 module github.com/Chairou/toolbox
 
-go 1.19
+go 1.22
 
 require (
-	github.com/dop251/goja v0.0.0-20230806174421-c933cf95e127
+	github.com/dop251/goja v0.0.0-20241024094426-79f3a7efcdbd
 	github.com/ecies/go/v2 v2.0.8
 	github.com/gin-gonic/gin v1.10.0
 	github.com/gomodule/redigo v1.9.2
@@ -30,7 +30,8 @@ require (
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
-	github.com/dlclark/regexp2 v1.11.0 // indirect
+	github.com/dlclark/regexp2 v1.11.4 // indirect
+	github.com/dop251/goja_nodejs v0.0.0-20211022123610-8dd9abb0616d // indirect
 	github.com/ethereum/go-ethereum v1.13.5 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.4 // indirect

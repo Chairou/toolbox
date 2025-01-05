@@ -15,11 +15,11 @@ import (
 //	LoadAllConf()
 //}
 
-func mergeConfig[T any](cmd, file, env *T) {
-	_ = copier.CopyWithOption(Conf, env, copier.Option{IgnoreEmpty: true})
-	_ = copier.CopyWithOption(Conf, file, copier.Option{IgnoreEmpty: true})
-	_ = copier.CopyWithOption(Conf, cmd, copier.Option{IgnoreEmpty: true})
-	fmt.Printf("FINIAL: %#v\n", Conf)
+func mergeConfig[T any](conf, cmd, file, env *T) {
+	_ = copier.CopyWithOption(conf, env, copier.Option{IgnoreEmpty: true})
+	_ = copier.CopyWithOption(conf, file, copier.Option{IgnoreEmpty: true})
+	_ = copier.CopyWithOption(conf, cmd, copier.Option{IgnoreEmpty: true})
+	fmt.Printf("FINIAL: %#v\n", conf)
 }
 
 // LoadAllConf 优先级，命令行，配置文件，环境变量
@@ -48,15 +48,9 @@ func LoadAllConf[T any](conf *T) {
 		}
 		fmt.Printf("env: %+v\n", envConfig)
 		//合并配置
-		mergeConfig(cmdConfig, fileConfig, envConfig)
+		mergeConfig(conf, cmdConfig, fileConfig, envConfig)
 
 	})
-}
-
-func GetConf() *Config {
-	confLock.RLock()
-	defer confLock.RUnlock()
-	return Conf
 }
 
 func createStruct[T any]() *T {

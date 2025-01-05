@@ -1,4 +1,4 @@
-package test
+package main
 
 import (
 	conf2 "github.com/Chairou/toolbox/conf"

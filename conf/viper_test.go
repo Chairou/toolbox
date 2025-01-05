@@ -10,7 +10,10 @@ import (
 func TestViper(t *testing.T) {
 
 	pflag.Int("redis.port", 3302, "redis port")
-	viper.BindPFlags(pflag.CommandLine)
+	err := viper.BindPFlags(pflag.CommandLine)
+	if err != nil {
+		return
+	}
 	pflag.Parse()
 
 	viper.SetConfigName("config")
@@ -19,7 +22,7 @@ func TestViper(t *testing.T) {
 
 	viper.AutomaticEnv()
 
-	err := viper.ReadInConfig() //根据上面配置加载文件
+	err = viper.ReadInConfig() //根据上面配置加载文件
 	if err != nil {
 		fmt.Println(err)
 		return

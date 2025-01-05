@@ -9,8 +9,8 @@ import (
 type Person struct {
 	Name    string
 	Age     int
-	Address Address // 子结构体
-
+	Address []Address // 子结构体
+	CityMap map[string]string
 }
 
 type Address struct {
@@ -36,9 +36,13 @@ func TestPrintStruct(t *testing.T) {
 	p := Person{
 		Name: "Alice",
 		Age:  30,
-		Address: Address{
-			City:  "Wonderland",
-			State: "Fantasy",
+		Address: []Address{
+			{City: "New York", State: "NY"},
+			{City: "San Francisco", State: "CA"},
+		},
+		CityMap: map[string]string{
+			"home": "Beijing",
+			"work": "Shanghai",
 		},
 	}
 	PrintStructAll(p)

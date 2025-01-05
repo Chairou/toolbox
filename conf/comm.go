@@ -4,8 +4,6 @@ import (
 	"sync"
 )
 
-var confLock = &sync.RWMutex{}
-var Conf = &Config{}
 var once sync.Once
 
 type Config struct {

@@ -5,8 +5,8 @@ import (
 	"reflect"
 )
 
-// NewInstance 定义一个泛型函数，接受一个类型为T的值，返回一个新的该类型的实例
-func NewInstance[T any](item *T) *T {
+// NewEmptyInstance 定义一个泛型函数，接受一个类型为T的值，返回一个新的该类型的实例
+func NewEmptyInstance[T any](item *T) *T {
 	itemType := reflect.TypeOf(item).Elem()
 	itemValue := reflect.New(itemType).Interface()
 	return itemValue.(*T)
@@ -21,6 +21,7 @@ func GetStructName(item any) string {
 func PrintStructAll(item any) {
 	v := reflect.ValueOf(item)
 	PrintStruct2(v, "")
+	fmt.Println()
 }
 
 // PrintStruct 打印结构体，递归用

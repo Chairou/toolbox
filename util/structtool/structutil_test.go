@@ -18,9 +18,9 @@ type Address struct {
 	State string
 }
 
-func TestClone(t *testing.T) {
+func TestCloneStruct(t *testing.T) {
 	person := &Person{Name: "John", Age: 30}
-	newPerson := NewInstance(person)
+	newPerson := NewEmptyInstance(person)
 	fmt.Printf("Original Person: %+v\n", person)
 	fmt.Printf("New Person: %+v\n", newPerson)
 }

@@ -55,7 +55,7 @@ type Config2 struct {
 func TestClone(t *testing.T) {
 	person := &Person{Name: "John", Age: 30}
 
-	newPerson := structtool.NewInstance(person)
+	newPerson := structtool.NewEmptyInstance(person)
 
 	fmt.Printf("Original Person: %+v\n", person)
 	fmt.Printf("New Person: %+v\n", newPerson)

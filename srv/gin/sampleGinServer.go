@@ -13,12 +13,19 @@ import (
 	"os"
 )
 
-var DbConn *gorm.DB
-
-func init() {
-	os.Setenv("mysql_host", "127.0.0.1:3306")
-	os.Setenv("mysql_user", "root")
-	os.Setenv("mysql_pass", "root123456")
+type Config struct {
+	Env          string `yaml:"env" json:"env" env:"env"`
+	Version      int    `yaml:"version" json:"version" env:"version"`
+	RedisName    string `yaml:"redis_name" json:"redis_name" env:"redis_name"`
+	RedisHost    string `yaml:"redis_host" json:"redis_host" env:"redis_host"`
+	RedisAuth    string `yaml:"redis_auth" json:"redis_auth" env:"redis_auth"`
+	MysqlName    string `yaml:"mysql_name" json:"mysql_name" env:"mysql_name"`
+	MysqlHost    string `yaml:"mysql_host" json:"mysql_host" env:"mysql_host"`
+	MysqlUser    string `yaml:"mysql_user" json:"mysql_user" env:"mysql_user"`
+	MysqlPass    string `yaml:"mysql_pass" json:"mysql_pass" env:"mysql_pass"`
+	MysqlDb      string `yaml:"mysql_db" json:"mysql_db" env:"mysql_db"`
+	MysqlCharSet string `yaml:"mysql_charset" json:"mysql_charset" env:"mysql_charset"`
+	LogFileName  string `yaml:"log_file_name" json:"log_file_name" env:"log_file_name"`
 }
 
 type Catalog struct {
@@ -29,6 +36,15 @@ type Catalog struct {
 	CreateTime  timeformat.Time `gorm:"column:createTime;type:datetime;not null;default:CURRENT_TIMESTAMP;comment:创建时间" json:"createTime"`
 	UpdateTime  timeformat.Time `gorm:"column:updateTime;type:datetime;not null;default:CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;comment:更新时间" json:"updateTime"`
 	Updater     string          `gorm:"column:updater;type:varchar(100);not null;comment:更新人" json:"updater"`
+}
+
+var config = Config{}
+var DbConn *gorm.DB
+
+func init() {
+	_ = os.Setenv("mysql_host", "127.0.0.1:3306")
+	_ = os.Setenv("mysql_user", "root")
+	_ = os.Setenv("mysql_pass", "root123456")
 }
 
 func (Catalog) TableName() string { return "t_catalog" }
@@ -44,7 +60,7 @@ func main() {
 			g.WriteRetJson(c, 0, nil, "pong")
 		})
 	})
-	r := g.NewServer()
+	r := g.NewServer("dev", "srv.log")
 
 	fmt.Println("start server at *:80")
 	err := r.Run(":80")
@@ -102,15 +118,14 @@ func getDataFromMysql(c *g.Context) {
 
 func mysqlInit() {
 	// 初始化mysql
-	configInst := conf.GetConf()
-	host := configInst.MysqlHost
-	user := configInst.MysqlUser
-	password := configInst.MysqlPass
-	db := configInst.MysqlDb
+	conf.LoadAllConf(&config)
+	host := config.MysqlHost
+	user := config.MysqlUser
+	password := config.MysqlPass
+	db := config.MysqlDb
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", user, password, host, db)
 
-	//fmt.Printf("dsn: %s\n", dsn)
-	fmt.Printf("config: %#v\n", conf.GetConf())
+	fmt.Printf("config: %#v\n", config)
 	var err error
 	DbConn, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 		SkipDefaultTransaction:   true,

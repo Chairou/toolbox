@@ -78,19 +78,16 @@ type responseDumper struct {
 	outBuffer *bytes.Buffer
 }
 
-func NewServer() *gin.Engine {
+func NewServer(env string, logFileName string) *gin.Engine {
 	var err error
-	conf.LoadAllConf()
-	config := conf.GetConf()
-	log, err = logger.NewLogPool("api", config.LogFileName)
+	log, err = logger.NewLogPool("api", logFileName)
 	if err != nil {
-		fmt.Errorf("NewLogPool err: %v", err)
+		_ = fmt.Errorf("NewLogPool err: %v", err)
 		os.Exit(1)
 	}
 	r := gin.Default()
-	conf.LoadAllConf()
 
-	mode := config.Env
+	mode := env
 	switch mode {
 	case "dev":
 		gin.SetMode(gin.DebugMode)

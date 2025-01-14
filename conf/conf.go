@@ -8,8 +8,8 @@ import (
 )
 
 func mergeConfig[T any](conf, cmd, file, env *T) {
-	_ = copier.CopyWithOption(conf, env, copier.Option{IgnoreEmpty: true})
 	_ = copier.CopyWithOption(conf, file, copier.Option{IgnoreEmpty: true})
+	_ = copier.CopyWithOption(conf, env, copier.Option{IgnoreEmpty: true})
 	_ = copier.CopyWithOption(conf, cmd, copier.Option{IgnoreEmpty: true})
 	fmt.Printf("FINIAL: %#v\n", conf)
 }

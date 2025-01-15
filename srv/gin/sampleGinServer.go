@@ -60,7 +60,7 @@ func main() {
 			g.WriteRetJson(c, 0, nil, "pong")
 		})
 	})
-	r := g.NewServer("dev", "srv.log")
+	r := g.NewServer("dev", "srv.log", nil)
 
 	fmt.Println("start server at *:80")
 	err := r.Run(":80")

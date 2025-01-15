@@ -78,7 +78,7 @@ type responseDumper struct {
 	outBuffer *bytes.Buffer
 }
 
-func NewServer(env string, logFileName string) *gin.Engine {
+func NewServer(env string, logFileName string, middle []func(c *Context)) *gin.Engine {
 	var err error
 	log, err = logger.NewLogPool("api", logFileName)
 	if err != nil {
@@ -103,6 +103,10 @@ func NewServer(env string, logFileName string) *gin.Engine {
 	}
 	stdRouter.Use(SafeCheck)
 	stdRouter.Use(ResponseRecorder)
+
+	for _, v := range middle {
+		stdRouter.Use(v)
+	}
 
 	SetupRouter(stdRouter)
 

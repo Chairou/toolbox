@@ -151,14 +151,14 @@ func (c *LogPool) DebugfTag(tag string, format string, v ...any) {
 	if c.Level <= DEBUG_LEVEL {
 		s := tag + " " + fmt.Sprintf(format, v...)
 		log.Println(s)
-		c.debugLogger.Output(2, s)
+		c.debugLogger.Output(3, s)
 	}
 }
 func (c *LogPool) Debugf(format string, v ...any) {
 	if c.Level <= DEBUG_LEVEL {
 		s := fmt.Sprintf(format, v...)
 		log.Println(s)
-		c.debugLogger.Output(2, s)
+		c.debugLogger.Output(3, s)
 	}
 }
 
@@ -166,14 +166,14 @@ func (c *LogPool) DebugTag(tag string, v ...any) {
 	if c.Level <= DEBUG_LEVEL {
 		s := tag + " " + fmt.Sprintln(v...)
 		log.Println(s)
-		c.debugLogger.Output(2, s)
+		c.debugLogger.Output(3, s)
 	}
 }
 func (c *LogPool) Debug(v ...any) {
 	if c.Level <= DEBUG_LEVEL {
 		s := fmt.Sprintln(v...)
 		log.Println(s)
-		c.debugLogger.Output(2, s)
+		c.debugLogger.Output(3, s)
 	}
 }
 
@@ -181,14 +181,14 @@ func (c *LogPool) InfofTag(tag string, format string, v ...any) {
 	if c.Level <= INFO_LEVEL {
 		s := tag + " " + fmt.Sprintf(format, v...)
 		log.Println(s)
-		c.infoLogger.Output(2, s)
+		c.infoLogger.Output(3, s)
 	}
 }
 func (c *LogPool) Infof(format string, v ...any) {
 	if c.Level <= INFO_LEVEL {
 		s := fmt.Sprintf(format, v...)
 		log.Println(s)
-		c.infoLogger.Output(2, s)
+		c.infoLogger.Output(3, s)
 	}
 }
 
@@ -196,7 +196,7 @@ func (c *LogPool) InfoTag(tag string, v ...any) {
 	if c.Level <= INFO_LEVEL {
 		s := tag + " " + fmt.Sprintln(v...)
 		log.Println(s)
-		c.infoLogger.Output(2, s)
+		c.infoLogger.Output(3, s)
 	}
 }
 
@@ -204,7 +204,7 @@ func (c *LogPool) Info(v ...any) {
 	if c.Level <= INFO_LEVEL {
 		s := fmt.Sprintln(v...)
 		log.Println(s)
-		c.infoLogger.Output(2, s)
+		c.infoLogger.Output(3, s)
 	}
 }
 
@@ -212,28 +212,28 @@ func (c *LogPool) ErrorfTag(tag string, format string, v ...any) {
 	s := tag + " " + fmt.Sprintf(format, v...)
 	color.SetColor(color.Red, s)
 	log.Println(s)
-	c.errorLogger.Output(2, s)
+	c.errorLogger.Output(3, s)
 }
 
 func (c *LogPool) Errorf(format string, v ...any) {
 	s := fmt.Sprintf(format, v...)
 	color.SetColor(color.Red, s)
 	log.Println(s)
-	c.errorLogger.Output(2, s)
+	c.errorLogger.Output(3, s)
 }
 
 func (c *LogPool) ErrorTag(tag string, v ...any) {
 	s := tag + " " + fmt.Sprintln(v...)
 	color.SetColor(color.Red, s)
 	log.Println(s)
-	c.errorLogger.Output(2, s)
+	c.errorLogger.Output(3, s)
 }
 
 func (c *LogPool) Error(v ...any) {
 	s := fmt.Sprintln(v...)
 	color.SetColor(color.Red, s)
 	log.Println(s)
-	c.errorLogger.Output(2, s)
+	c.errorLogger.Output(3, s)
 }
 
 func (c *LogPool) SetLevel(level int) error {

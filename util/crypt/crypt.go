@@ -10,7 +10,7 @@ import (
 
 var DefaultKey string = "0987654321!@#$%^&*()tyKfqngDfg,."
 
-func AesEncrypt2(orig []byte, key string) string {
+func AesEncrypt2(origData []byte, key string) string {
 	tmpKey := key + "12345678901234567890123456789012"
 	realKey := tmpKey[:32]
 
@@ -39,7 +39,7 @@ func AesEncrypt2(orig []byte, key string) string {
 
 }
 
-func AesDecrypt2(cryted string, key string) string {
+func AesDecrypt2(cryted string, key string) []byte {
 	tmpKey := key + "12345678901234567890123456789012"
 	realKey := tmpKey[:32]
 	// 转成字节数组
@@ -65,7 +65,7 @@ func AesDecrypt2(cryted string, key string) string {
 	blockMode.CryptBlocks(orig, crytedByte)
 	// 去补全码
 	orig = PKCS7UnPadding(orig)
-	return string(orig)
+	return orig
 }
 
 // PKCS7Padding 补码

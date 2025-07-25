@@ -15,7 +15,7 @@ func TestCreatePem(t *testing.T) {
 	}
 	publicKeyFile, err := os.Create("public.pem")
 	if err != nil {
-		panic(err)
+		t.Error(err)
 	}
 	defer publicKeyFile.Close()
 	bytes, err := pub.PEM()
@@ -79,7 +79,7 @@ func TestEccFromFile(t *testing.T) {
 	//for k, v := range aa {
 	//	fmt.Println("k:", k, ", v:", v)
 	//}
-	
+
 	prifile, _ := os.Open("private.pem")
 	_, _ = prifile.Read(buf)
 	queryUnescapeStr, _ := url.QueryUnescape(queryEscapeStr)

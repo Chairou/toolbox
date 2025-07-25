@@ -10,12 +10,11 @@ import (
 
 var DefaultKey string = "0987654321!@#$%^&*()tyKfqngDfg,."
 
-func AesEncrypt2(orig string, key string) string {
+func AesEncrypt2(orig []byte, key string) string {
 	tmpKey := key + "12345678901234567890123456789012"
 	realKey := tmpKey[:32]
 
 	// 转成字节数组
-	origData := []byte(orig)
 	var k []byte
 	if key != "" {
 		k = []byte(realKey)

@@ -23,7 +23,11 @@ func AesEncrypt2(origData []byte, key string) string {
 	}
 
 	// 分组秘钥
-	block, _ := aes.NewCipher(k)
+	block, err := aes.NewCipher(k)
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
 	// 获取秘钥块的长度
 	blockSize := block.BlockSize()
 	// 补全码
@@ -43,7 +47,11 @@ func AesDecrypt2(cryted string, key string) []byte {
 	tmpKey := key + "12345678901234567890123456789012"
 	realKey := tmpKey[:32]
 	// 转成字节数组
-	crytedByte, _ := base64.StdEncoding.DecodeString(cryted)
+	crytedByte, err := base64.StdEncoding.DecodeString(cryted)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
 	var k []byte
 	if key != "" {
 		k = []byte(realKey)

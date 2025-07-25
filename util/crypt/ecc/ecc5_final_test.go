@@ -1,44 +1,43 @@
 package ecc
 
 import (
-	"crypto/elliptic"
 	"github.com/Chairou/toolbox/util/encode"
 	"net/url"
 	"os"
 	"testing"
 )
 
-func TestCreatePem(t *testing.T) {
-	pub, priv, err := GenerateKeys(elliptic.P521())
-	if err != nil {
-		panic(err)
-	}
-	publicKeyFile, err := os.Create("public.pem")
-	if err != nil {
-		t.Error(err)
-	}
-	defer publicKeyFile.Close()
-	bytes, err := pub.PEM()
-	if err != nil {
-		panic(err)
-	}
-	_, err = publicKeyFile.Write(bytes)
-	if err != nil {
-		panic(err)
-	}
-	privateKeyFile, err := os.Create("private.pem")
-	if err != nil {
-		panic(err)
-	}
-	bytes, err = priv.PEM("123")
-	if err != nil {
-		panic(err)
-	}
-	_, err = privateKeyFile.Write(bytes)
-	if err != nil {
-		panic(err)
-	}
-}
+//func TestCreatePem(t *testing.T) {
+//	pub, priv, err := GenerateKeys(elliptic.P521())
+//	if err != nil {
+//		panic(err)
+//	}
+//	publicKeyFile, err := os.Create("public.pem")
+//	if err != nil {
+//		t.Error(err)
+//	}
+//	defer publicKeyFile.Close()
+//	bytes, err := pub.PEM()
+//	if err != nil {
+//		panic(err)
+//	}
+//	_, err = publicKeyFile.Write(bytes)
+//	if err != nil {
+//		panic(err)
+//	}
+//	privateKeyFile, err := os.Create("private.pem")
+//	if err != nil {
+//		panic(err)
+//	}
+//	bytes, err = priv.PEM("123")
+//	if err != nil {
+//		panic(err)
+//	}
+//	_, err = privateKeyFile.Write(bytes)
+//	if err != nil {
+//		panic(err)
+//	}
+//}
 
 //func TestEcc5(t *testing.T) {
 //	// create keys

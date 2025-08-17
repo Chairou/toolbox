@@ -13,7 +13,6 @@ import (
 	"crypto/rand"
 	"crypto/sha512"
 	"errors"
-	"fmt"
 	"github.com/Chairou/toolbox/util/crypt/ecc/padding"
 	"github.com/Chairou/toolbox/util/crypt/ecc/symcrypt"
 )
@@ -33,11 +32,11 @@ func Encrypt(pub *ecdsa.PublicKey, in []byte) (out []byte, err error) {
 	if x == nil {
 		return nil, errors.New("failed to generate encryption key")
 	}
-	fmt.Println("X0 :", x)
+	//fmt.Println("X0 :", x)
 	byteSum := JoinBytes(x.Bytes(), y.Bytes())
 	//shared := sha512.Sum512(x.Bytes())
 	shared := sha512.Sum512(byteSum)
-	fmt.Println("shared:", shared)
+	//fmt.Println("shared:", shared)
 	iv, err := symcrypt.MakeRandom(16)
 	if err != nil {
 		return nil, err
@@ -62,7 +61,7 @@ func Encrypt(pub *ecdsa.PublicKey, in []byte) (out []byte, err error) {
 	copy(out[1+num+1:], ephPub)
 	copy(out[1+num+1+len(ephPub):], iv)
 	out = append(out, ct...)
-	fmt.Println("RAW BYTE:", out)
+	//fmt.Println("RAW BYTE:", out)
 
 	//out = make([]byte, 1+len(ephPub)+16)
 	//out[0] = byte(len(ephPub))
@@ -104,9 +103,9 @@ func Decrypt(priv *ecdsa.PrivateKey, in []byte) (out []byte, err error) {
 	//}
 
 	x, y = priv.Curve.ScalarMult(x, y, priv.D.Bytes())
-	fmt.Println("x1:", x)
+	//fmt.Println("x1:", x)
 	x, y = priv.Double(x, y)
-	fmt.Println("x2:", x)
+	//fmt.Println("x2:", x)
 
 	if x == nil {
 		return nil, errors.New("failed to generate encryption key")

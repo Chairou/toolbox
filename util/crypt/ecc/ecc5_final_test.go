@@ -85,13 +85,14 @@ func TestEccFromFile(t *testing.T) {
 	t.Log(string(decrypt))
 }
 
-//func TestSum(t *testing.T) {
-//	out := make([]byte, 2)
-//	out[0] = byte(65)
-//	out[1] = byte(65)
-//	h := hmac.New(sha512.New, []byte("1"))
-//	h.Write([]byte("A"))
-//	h.Write([]byte("A"))
-//	out = h.Sum(out)
-//	t.Log(out)
-//}
+func TestEccFromFunction(t *testing.T) {
+	enStr, err := EncryptStringFromEccFile("public.pem", "hand in 2hand we stand")
+	if err != nil {
+		t.Error(err)
+	}
+	plaint, err := DecryptStringFromEccFile("1.pem", "123", enStr)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(plaint)
+}

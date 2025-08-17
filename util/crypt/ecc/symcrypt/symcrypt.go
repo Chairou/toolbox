@@ -5,7 +5,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"fmt"
 	"math/big"
 )
 
@@ -63,7 +62,7 @@ func MakeRandom(length int) ([]byte, error) {
 		}
 		Bytes[i] = randList[n.Int64()%int64(MaxLen)].bytes[i]
 	}
-	fmt.Println("Bytes:", Bytes)
+	//fmt.Println("Bytes:", Bytes)
 	return Bytes, nil
 }
 

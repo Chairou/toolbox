@@ -57,13 +57,14 @@ import (
 
 func TestEccFromFile(t *testing.T) {
 	file, _ := os.Open("public.pem")
+	//file, _ := os.Open("2aes.pem")
 	buf := make([]byte, 65536)
 	_, _ = file.Read(buf)
 	pub, err := DecodePEMPublicKey(buf)
 	if err != nil {
 		t.Error(err)
 	}
-	plaintext := "secret secrets are no fun, secret secrets hurt someone"
+	plaintext := "secret secrets are no fun, secret secrets hurt someone!"
 
 	// use public key to encrypt
 	encrypted, _ := pub.Encrypt([]byte(plaintext))
@@ -71,15 +72,8 @@ func TestEccFromFile(t *testing.T) {
 	queryEscapeStr := url.QueryEscape(b64ecrypt)
 	t.Log("enStr:", queryEscapeStr)
 
-	//aa := make(map[string]int, 64)
-	//for i := 0; i < len(queryEscapeStr); i++ {
-	//	aa[queryEscapeStr[i:i+1]]++
-	//}
-	//for k, v := range aa {
-	//	fmt.Println("k:", k, ", v:", v)
-	//}
-
 	prifile, _ := os.Open("private.pem")
+	//prifile, _ := os.Open("1.pem")
 	_, _ = prifile.Read(buf)
 	queryUnescapeStr, _ := url.QueryUnescape(queryEscapeStr)
 	unb64Encrypt, _ := encode.Base64Decode(queryUnescapeStr)

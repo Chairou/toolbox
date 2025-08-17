@@ -44,7 +44,9 @@ func MakeRandom(length int) ([]byte, error) {
 	type randomData struct {
 		bytes []byte
 	}
-	randList := make([]randomData, length)
+	const MaxLen = 4096
+	//randList := make([]randomData, length)
+	randList := make([]randomData, MaxLen)
 	Bytes := make([]byte, length)
 	for k, _ := range randList {
 		randList[k].bytes = make([]byte, length)
@@ -54,11 +56,12 @@ func MakeRandom(length int) ([]byte, error) {
 		}
 	}
 	for i := 0; i < length; i++ {
-		n, err := rand.Int(rand.Reader, big.NewInt(65536))
+		// s
+		n, err := rand.Int(rand.Reader, big.NewInt(4294967296))
 		if err != nil {
 			return nil, err
 		}
-		Bytes[i] = randList[n.Int64()%int64(length)].bytes[i]
+		Bytes[i] = randList[n.Int64()%int64(MaxLen)].bytes[i]
 	}
 	fmt.Println("Bytes:", Bytes)
 	return Bytes, nil

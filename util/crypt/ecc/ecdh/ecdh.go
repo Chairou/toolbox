@@ -5,6 +5,7 @@
 package ecdh
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -25,30 +26,33 @@ var Curve = elliptic.P521
 func Encrypt(pub *ecdsa.PublicKey, in []byte) (out []byte, err error) {
 	ephemeral, err := ecdsa.GenerateKey(Curve(), rand.Reader)
 	if err != nil {
-		return
+		return nil, err
 	}
 	x, y := pub.Curve.ScalarMult(pub.X, pub.Y, ephemeral.D.Bytes())
-	x, _ = pub.Double(x, y)
+	x, y = pub.Double(x, y)
 	if x == nil {
-		return nil, errors.New("Failed to generate encryption key")
+		return nil, errors.New("failed to generate encryption key")
 	}
-	shared := sha512.Sum512(x.Bytes())
+	fmt.Println("X0 :", x)
+	byteSum := JoinBytes(x.Bytes(), y.Bytes())
+	//shared := sha512.Sum512(x.Bytes())
+	shared := sha512.Sum512(byteSum)
 	fmt.Println("shared:", shared)
 	iv, err := symcrypt.MakeRandom(16)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	paddedIn := padding.AddPaddingB(in)
-	ct, err := symcrypt.EncryptCBC(paddedIn, iv, shared[32:64])
+	ct, err := symcrypt.EncryptCBC(paddedIn, iv, getKeyFromX(x.Bytes(), y.Bytes(), iv, shared))
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	ephPub := elliptic.MarshalCompressed(pub.Curve, ephemeral.PublicKey.X, ephemeral.PublicKey.Y)
 	//out = make([]byte, 1+len(ephPub)+16)
 
-	num, _ := symcrypt.RandomInRange(10, 200)
+	num, _ := symcrypt.RandomInRange(13, 256)
 	randBytes, _ := symcrypt.MakeRandom(int(num))
 
 	out = make([]byte, num+1+1+len(ephPub)+16)
@@ -70,7 +74,7 @@ func Encrypt(pub *ecdsa.PublicKey, in []byte) (out []byte, err error) {
 	h.Write(iv)
 	h.Write(ct)
 	out = h.Sum(out)
-	return
+	return out, nil
 }
 
 // Decrypt authenticates and recovers the original message from
@@ -101,26 +105,46 @@ func Decrypt(priv *ecdsa.PrivateKey, in []byte) (out []byte, err error) {
 
 	x, y = priv.Curve.ScalarMult(x, y, priv.D.Bytes())
 	fmt.Println("x1:", x)
-	x, _ = priv.Double(x, y)
+	x, y = priv.Double(x, y)
 	fmt.Println("x2:", x)
 
 	if x == nil {
-		return nil, errors.New("Failed to generate encryption key")
+		return nil, errors.New("failed to generate encryption key")
 	}
-	shared := sha512.Sum512(x.Bytes())
+	byteSum := JoinBytes(x.Bytes(), y.Bytes())
+
+	//shared := sha512.Sum512(x.Bytes())
+	shared := sha512.Sum512(byteSum)
 
 	tagStart := len(ct) - sha512.Size
 	h := hmac.New(sha512.New, shared[:])
 	h.Write(ct[:tagStart])
 	mac := h.Sum(nil)
 	if !hmac.Equal(mac, ct[tagStart:]) {
-		return nil, errors.New("Invalid MAC")
+		return nil, errors.New("invalid MAC")
 	}
-
-	paddedOut, err := symcrypt.DecryptCBC(ct[aes.BlockSize:tagStart], ct[:aes.BlockSize], shared[32:64])
+	iv := ct[:aes.BlockSize]
+	paddedOut, err := symcrypt.DecryptCBC(ct[aes.BlockSize:tagStart], iv, getKeyFromX(x.Bytes(), y.Bytes(), iv, shared))
 	if err != nil {
 		return
 	}
 	out, err = padding.RemovePadding(paddedOut)
 	return
+}
+
+func JoinBytes(slices ...[]byte) []byte {
+	return bytes.Join(slices, []byte{})
+}
+
+func getKeyFromShared(iv []byte, shared [64]byte) []byte {
+	startNum := iv[0] % 32
+	return shared[startNum : startNum+32]
+}
+
+func getKeyFromX(x []byte, y []byte, iv []byte, shared [64]byte) []byte {
+	xPosition := shared[4] % 64
+	ivPosition := shared[7] % 16
+	yPosition := shared[47] % 64
+	startNum := (x[xPosition] + iv[ivPosition] + y[yPosition]) % 32
+	return shared[startNum : startNum+32]
 }

@@ -24,6 +24,12 @@ import (
 	"strings"
 )
 
+const API_OK = 0
+const API_INTERNAL_ERROR = -99
+const API_DB_ERROR = -98
+const API_REMOTE_ERROR = -97
+const API_ARG_ERROR = -96
+
 var log *logger.LogPool
 var conf1 *conf.Config
 

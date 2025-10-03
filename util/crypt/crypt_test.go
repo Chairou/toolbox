@@ -16,11 +16,11 @@ func TestCrypt(t *testing.T) {
 }
 
 func TestEncryptLargeFile(t *testing.T) {
-	err := EncryptLargeFile([]byte("hand in hand we stand."), "sample.txt", "sample.enc")
+	err := EncryptLargeFile([]byte("12345678901234567890123456789012"), "sample.txt", "sample.enc")
 	if err != nil {
 		t.Error(err)
 	}
-	err = DecryptLargeFile([]byte("hand in hand we stand."), "sample.enc", "sample.dec")
+	err = DecryptLargeFile([]byte("12345678901234567890123456789012"), "sample.enc", "sample.dec")
 	if err != nil {
 		t.Error(err)
 	}

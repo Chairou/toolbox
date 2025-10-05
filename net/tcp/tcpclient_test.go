@@ -18,9 +18,16 @@ func TestTcpTlvClient(t *testing.T) {
 		fmt.Println("Failed to connect error: ", err)
 		return
 	}
+	contentBytes := []byte("hello")
 	for {
 		time.Sleep(time.Second)
-		conn.Write(makeTlvBuffer("BF", "hello"))
+		outbytes, err := com(&contentBytes)
+		if err != nil {
+			fmt.Println("compress error: ", err)
+			return
+		}
+		conn.Write(makeTlvBuffer("BF", outbytes))
+
 		tlvRead(conn)
 	}
 }
@@ -43,8 +50,9 @@ func TestTcpEndMarkClient(t *testing.T) {
 	}
 }
 
-func makeTlvBuffer(tag string, content string) []byte {
+func makeTlvBuffer(tag string, content []byte) []byte {
 	var length uint32
+	// 再打包
 	length = uint32(len(content) + 4 + 2)
 	buffer := make([]byte, 0, 4+2)
 	buffer = append(buffer, []byte(tag)...)
@@ -59,13 +67,16 @@ func makeTlvBuffer(tag string, content string) []byte {
 
 func tlvRead(conn net.Conn) {
 	// 首先读取长度前缀
+	fmt.Println("read tlv")
 	lengthBuf := make([]byte, 4+2) // 假设tag字段长度2字节，长度字段是4个字节
 	_, err := io.ReadFull(conn, lengthBuf)
+	fmt.Println("io.ReadFull(conn, lengthBuf)")
 	if err != nil {
+		fmt.Println("ReadFull err: ", err.Error())
 		if err != io.EOF {
-			fmt.Println("Error reading length prefix:", err)
+			fmt.Println("Error reading length prefix:", err.Error())
+			return
 		}
-		return
 	}
 	fmt.Println("Tlv buffer header: ", lengthBuf)
 	// 解析长度
@@ -79,8 +90,13 @@ func tlvRead(conn net.Conn) {
 		fmt.Println("Error reading message:", err)
 		return
 	}
-	// 处理消息
-	fmt.Printf("Received message: %s\n", string(messageBuf))
+	// 解压缩
+	content, err := unCom(&messageBuf)
+	if err != nil {
+		fmt.Println("unCom err: ", err.Error())
+		return
+	}
+	fmt.Printf("Received message: %s\n", string(content))
 }
 
 func readEndMarker(conn *net.TCPConn) (output []byte, err error) {

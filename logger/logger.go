@@ -27,13 +27,14 @@ type LogIntFileName struct {
 var logInit LogIntFileName
 
 type LogPool struct {
-	Fd          *os.File
-	FileName    string
-	Level       int
-	Path        string
-	infoLogger  *Logger
-	debugLogger *Logger
-	errorLogger *Logger
+	Fd           *os.File
+	FileName     string
+	Level        int
+	Path         string
+	PrintConsole bool
+	infoLogger   *Logger
+	debugLogger  *Logger
+	errorLogger  *Logger
 }
 
 func init() {
@@ -49,6 +50,7 @@ func NewLogPool(name string, fileName string) (*LogPool, error) {
 		inst.Path, _ = os.Getwd()
 		inst.FileName = fileName
 		inst.Level = DEBUG_LEVEL
+		inst.PrintConsole = false
 
 		dir1 := filepath.Dir(fileName)
 		// 检测目录是否存在，不存在则创建
@@ -147,93 +149,121 @@ func (c *LogIntFileName) SaveIntLogMap(inst *LogPool) {
 	c.orderNum += 1
 }
 
+func (c *LogPool) SetPrintConsole(isEnable bool) {
+	c.PrintConsole = isEnable
+}
+
 func (c *LogPool) DebugfTag(tag string, format string, v ...any) {
 	if c.Level <= DEBUG_LEVEL {
 		s := tag + " " + fmt.Sprintf(format, v...)
-		log.Println(s)
-		c.debugLogger.Output(3, s)
+		_ = c.debugLogger.Output(3, s)
+		if c.PrintConsole {
+			log.Println(s)
+		}
 	}
 }
 func (c *LogPool) Debugf(format string, v ...any) {
 	if c.Level <= DEBUG_LEVEL {
 		s := fmt.Sprintf(format, v...)
-		log.Println(s)
-		c.debugLogger.Output(3, s)
+		_ = c.debugLogger.Output(3, s)
+		if c.PrintConsole {
+			log.Println(s)
+		}
 	}
 }
 
 func (c *LogPool) DebugTag(tag string, v ...any) {
 	if c.Level <= DEBUG_LEVEL {
 		s := tag + " " + fmt.Sprintln(v...)
-		log.Println(s)
-		c.debugLogger.Output(3, s)
+		_ = c.debugLogger.Output(3, s)
+		if c.PrintConsole {
+			log.Println(s)
+		}
 	}
 }
 func (c *LogPool) Debug(v ...any) {
 	if c.Level <= DEBUG_LEVEL {
 		s := fmt.Sprintln(v...)
-		log.Println(s)
-		c.debugLogger.Output(3, s)
+		_ = c.debugLogger.Output(3, s)
+		if c.PrintConsole {
+			log.Println(s)
+		}
 	}
 }
 
 func (c *LogPool) InfofTag(tag string, format string, v ...any) {
 	if c.Level <= INFO_LEVEL {
 		s := tag + " " + fmt.Sprintf(format, v...)
-		log.Println(s)
-		c.infoLogger.Output(3, s)
+		_ = c.infoLogger.Output(3, s)
+		if c.PrintConsole {
+			log.Println(s)
+		}
 	}
 }
 func (c *LogPool) Infof(format string, v ...any) {
 	if c.Level <= INFO_LEVEL {
 		s := fmt.Sprintf(format, v...)
-		log.Println(s)
-		c.infoLogger.Output(3, s)
+		_ = c.infoLogger.Output(3, s)
+		if c.PrintConsole {
+			log.Println(s)
+		}
 	}
 }
 
 func (c *LogPool) InfoTag(tag string, v ...any) {
 	if c.Level <= INFO_LEVEL {
 		s := tag + " " + fmt.Sprintln(v...)
-		log.Println(s)
-		c.infoLogger.Output(3, s)
+		_ = c.infoLogger.Output(3, s)
+		if c.PrintConsole {
+			log.Println(s)
+		}
 	}
 }
 
 func (c *LogPool) Info(v ...any) {
 	if c.Level <= INFO_LEVEL {
 		s := fmt.Sprintln(v...)
-		log.Println(s)
-		c.infoLogger.Output(3, s)
+		_ = c.infoLogger.Output(3, s)
+		if c.PrintConsole {
+			log.Println(s)
+		}
 	}
 }
 
 func (c *LogPool) ErrorfTag(tag string, format string, v ...any) {
 	s := tag + " " + fmt.Sprintf(format, v...)
 	color.SetColor(color.Red, s)
-	log.Println(s)
-	c.errorLogger.Output(3, s)
+	_ = c.errorLogger.Output(3, s)
+	if c.PrintConsole {
+		log.Println(s)
+	}
 }
 
 func (c *LogPool) Errorf(format string, v ...any) {
 	s := fmt.Sprintf(format, v...)
 	color.SetColor(color.Red, s)
-	log.Println(s)
-	c.errorLogger.Output(3, s)
+	_ = c.errorLogger.Output(3, s)
+	if c.PrintConsole {
+		log.Println(s)
+	}
 }
 
 func (c *LogPool) ErrorTag(tag string, v ...any) {
 	s := tag + " " + fmt.Sprintln(v...)
 	color.SetColor(color.Red, s)
-	log.Println(s)
-	c.errorLogger.Output(3, s)
+	_ = c.errorLogger.Output(3, s)
+	if c.PrintConsole {
+		log.Println(s)
+	}
 }
 
 func (c *LogPool) Error(v ...any) {
 	s := fmt.Sprintln(v...)
 	color.SetColor(color.Red, s)
-	log.Println(s)
-	c.errorLogger.Output(3, s)
+	_ = c.errorLogger.Output(3, s)
+	if c.PrintConsole {
+		log.Println(s)
+	}
 }
 
 func (c *LogPool) SetLevel(level int) error {

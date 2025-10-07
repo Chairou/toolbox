@@ -16,7 +16,9 @@ func TestTcpTlvServer(t *testing.T) {
 		fmt.Println("Error creating tcp server: ", err)
 	}
 	svr.OperationList = make([]operation, 0)
-	svr.OperationList = append(svr.OperationList, unPack, unCompress, Content, compress, Pack)
+	//svr.OperationList = append(svr.OperationList, unPack, unCompress, Content, compress, Pack)
+	svr.OperationList = append(svr.OperationList, unPack, Content, Pack)
+
 	err = svr.Run()
 	if err != nil {
 		fmt.Println("Error running tcp server: ", err)

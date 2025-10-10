@@ -5,6 +5,7 @@ import (
 	"github.com/Chairou/toolbox/util/structtool"
 	"github.com/jinzhu/copier"
 	"log"
+	"os"
 )
 
 func mergeConfig[T any](conf, cmd, file, env *T) {
@@ -27,7 +28,11 @@ func LoadAllConf[T any](conf *T) {
 		}
 		fmt.Printf("cmdConfig: %+v\n", cmdConfig)
 		//读取配置文件
-		err = loadConfFromFile("dev.yaml", fileConfig)
+		envStr := os.Getenv("env")
+		if envStr == "" {
+			envStr = "dev"
+		}
+		err = loadConfFromFile(envStr+".yaml", fileConfig)
 		if err != nil {
 			log.Println("confFile err: ", err)
 		}

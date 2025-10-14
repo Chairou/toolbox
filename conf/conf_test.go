@@ -3,6 +3,7 @@ package conf
 import (
 	"fmt"
 	"github.com/Chairou/toolbox/util/structtool"
+	"os"
 	"reflect"
 	"testing"
 )
@@ -13,6 +14,12 @@ type Person struct {
 }
 
 func TestLoadAllConf(t *testing.T) {
+	config := Config{}
+	LoadAllConf(&config)
+}
+
+func TestLoadConf(t *testing.T) {
+	os.Setenv("env", "test")
 	config := Config{}
 	LoadAllConf(&config)
 }

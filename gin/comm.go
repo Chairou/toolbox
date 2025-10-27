@@ -424,8 +424,12 @@ func GenOrder(param string, paramConstruct *ParamConstruct) string {
 		}
 	}
 
+	//if isExp {
+	//	return fmt.Sprintf(" order by %s ", strings.Join(orderArr, ","))
+	// }
+	// 为了适应 gorm，需要去掉 order by
 	if isExp {
-		return fmt.Sprintf(" order by %s ", strings.Join(orderArr, ","))
+		return fmt.Sprintf(" %s ", strings.Join(orderArr, ","))
 	}
 
 	return ""

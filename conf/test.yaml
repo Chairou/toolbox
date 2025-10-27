@@ -1,0 +1,11 @@
+env: dev
+version: 123
+redis_name : redis1
+redis_host : 127.0.0.1:6379
+redis_auth : XXXX
+mysql_host : 127.0.0.1:3306
+mysql_user : root
+mysql_pass : XXXX
+mysql_db : dbSoftCenter
+mysql_charset : utf8mb4
+log_file_name : srv.log

@@ -33,7 +33,7 @@ func LoadAllConf[T any](conf *T) {
 			log.Println("env is empty , set to dev.yaml")
 			envStr = "dev"
 		} else {
-			log.Println("set conf to ", envStr, ".yaml")
+			log.Println("set conf to ", envStr+".yaml")
 		}
 		err = loadConfFromFile(envStr+".yaml", fileConfig)
 		if err != nil {

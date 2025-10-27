@@ -340,9 +340,10 @@ func (c *Context) GetConditionByParam(parConstruct map[string]*ParamConstruct) (
 			}
 		}
 	}
-	if len(orderByStr) > 0 {
-		strCondition += orderByStr
-	}
+	// 适配 gorm
+	//if len(orderByStr) > 0 {
+	//	strCondition += orderByStr
+	//}
 
 	c.Info("GetConditionByParam strCondition:=======", strCondition, ";args:", args)
 

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/Chairou/toolbox/conf"
 	"os"
+	"time"
 
 	"github.com/Chairou/toolbox/logger"
 	"github.com/Chairou/toolbox/util/check"
@@ -1219,14 +1220,22 @@ func GormStructToMap(src interface{}, dst interface{}, gormSubTagName string) er
 
 			// 递归处理嵌套结构体
 			if actualValue.Kind() == reflect.Struct {
-				// 创建一个新的map来存储嵌套结构体
-				nestedMap := make(map[string]interface{})
-				err := GormStructToMap(actualValue.Interface(), &nestedMap, gormSubTagName)
-				if err != nil {
-					return err
+				// 特殊处理 time.Time 类型
+				if actualValue.Type().String() == "time.Time" {
+					timeValue := actualValue.Interface().(time.Time)
+					// 转换为 "2006-01-02 15:04:05" 格式的字符串
+					timeStr := timeValue.Format("2006-01-02 15:04:05")
+					dstElem.SetMapIndex(reflect.ValueOf(fieldName), reflect.ValueOf(timeStr))
+				} else {
+					// 创建一个新的map来存储嵌套结构体
+					nestedMap := make(map[string]interface{})
+					err := GormStructToMap(actualValue.Interface(), &nestedMap, gormSubTagName)
+					if err != nil {
+						return err
+					}
+					// 将嵌套的map设置到父map中
+					dstElem.SetMapIndex(reflect.ValueOf(fieldName), reflect.ValueOf(nestedMap))
 				}
-				// 将嵌套的map设置到父map中
-				dstElem.SetMapIndex(reflect.ValueOf(fieldName), reflect.ValueOf(nestedMap))
 			} else {
 				// 设置map的值
 				dstElem.SetMapIndex(reflect.ValueOf(fieldName), actualValue)

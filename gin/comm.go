@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/Chairou/toolbox/conf"
@@ -1111,5 +1112,190 @@ func lastStd(c []StdHandlerFunc) StdHandlerFunc {
 	if length := len(c); length > 0 {
 		return c[length-1]
 	}
+	return nil
+}
+
+// GormTagParser 用于解析 gorm 标签
+type GormTagParser struct {
+	tags map[string]string
+}
+
+// NewGormTagParser 创建一个新的 gorm 标签解析器
+func NewGormTagParser(gormTag string) *GormTagParser {
+	parser := &GormTagParser{
+		tags: make(map[string]string),
+	}
+	parser.parse(gormTag)
+	return parser
+}
+
+// parse 解析 gorm 标签字符串
+func (p *GormTagParser) parse(gormTag string) {
+	parts := strings.Split(gormTag, ";")
+
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+
+		if strings.Contains(part, ":") {
+			kv := strings.SplitN(part, ":", 2)
+			if len(kv) == 2 {
+				p.tags[kv[0]] = kv[1]
+			}
+		} else if part != "" {
+			// 处理没有值的标签，如 "primaryKey", "autoIncrement"
+			p.tags[part] = ""
+		}
+	}
+}
+
+// Get 获取指定键的值
+func (p *GormTagParser) Get(key string) (string, bool) {
+	val, ok := p.tags[key]
+	return val, ok
+}
+
+func GormStructToMap(src interface{}, dst interface{}, gormSubTagName string) error {
+	srcValue := reflect.ValueOf(src)
+	dstValue := reflect.ValueOf(dst)
+
+	// 确保dst是指针类型
+	if dstValue.Kind() != reflect.Ptr {
+		return errors.New("dst must be a pointer")
+	}
+
+	// 如果src是指针，获取其指向的值
+	if srcValue.Kind() == reflect.Ptr {
+		if srcValue.IsNil() {
+			return nil
+		}
+		srcValue = srcValue.Elem()
+	}
+
+	// 获取dst指向的值
+	dstElem := dstValue.Elem()
+
+	// 处理结构体到map的转换（最常见的场景）
+	if srcValue.Kind() == reflect.Struct && dstElem.Kind() == reflect.Map {
+		// 确保dst map已初始化
+		if dstElem.IsNil() {
+			dstElem.Set(reflect.MakeMap(dstElem.Type()))
+		}
+
+		srcType := srcValue.Type()
+		for i := 0; i < srcValue.NumField(); i++ {
+			fieldValue := srcValue.Field(i)
+			fieldType := srcType.Field(i)
+
+			// 跳过未导出的字段
+			if !fieldType.IsExported() {
+				continue
+			}
+
+			// 检查字段是否为nil
+			isNil := false
+			if fieldValue.Kind() == reflect.Ptr || fieldValue.Kind() == reflect.Interface {
+				isNil = fieldValue.IsNil()
+			}
+
+			// 如果是nil字段，跳过赋值
+			if isNil {
+				continue
+			}
+
+			// 获取字段名（使用gorm tag或字段名）
+			fieldName := fieldType.Name
+			if gormTag := fieldType.Tag.Get("gorm"); gormTag != "" && gormTag != "-" {
+				gorm := NewGormTagParser(gormTag)
+				if tagValue, ok := gorm.Get(gormSubTagName); ok && tagValue != "" {
+					fieldName = tagValue
+				}
+			}
+
+			// 对于指针类型，获取其指向的值
+			actualValue := fieldValue
+			if fieldValue.Kind() == reflect.Ptr && !fieldValue.IsNil() {
+				actualValue = fieldValue.Elem()
+			}
+
+			// 递归处理嵌套结构体
+			if actualValue.Kind() == reflect.Struct {
+				// 创建一个新的map来存储嵌套结构体
+				nestedMap := make(map[string]interface{})
+				err := GormStructToMap(actualValue.Interface(), &nestedMap, gormSubTagName)
+				if err != nil {
+					return err
+				}
+				// 将嵌套的map设置到父map中
+				dstElem.SetMapIndex(reflect.ValueOf(fieldName), reflect.ValueOf(nestedMap))
+			} else {
+				// 设置map的值
+				dstElem.SetMapIndex(reflect.ValueOf(fieldName), actualValue)
+			}
+		}
+		return nil
+	}
+
+	// 处理结构体到结构体的拷贝
+	if srcValue.Kind() == reflect.Struct && dstElem.Kind() == reflect.Struct {
+		for i := 0; i < srcValue.NumField(); i++ {
+			fieldValue := srcValue.Field(i)
+
+			// 检查字段是否为nil
+			isNil := false
+			if fieldValue.Kind() == reflect.Ptr || fieldValue.Kind() == reflect.Interface {
+				isNil = fieldValue.IsNil()
+			}
+
+			// 如果是nil字段，跳过赋值
+			if isNil {
+				continue
+			}
+
+			// 复制非nil字段
+			if dstElem.Field(i).CanSet() {
+				dstElem.Field(i).Set(fieldValue)
+			}
+		}
+		return nil
+	}
+
+	// 处理map到map的拷贝
+	if srcValue.Kind() == reflect.Map && dstElem.Kind() == reflect.Map {
+		// 确保dst map已初始化
+		if dstElem.IsNil() {
+			dstElem.Set(reflect.MakeMap(dstElem.Type()))
+		}
+
+		// 遍历源map，只复制非nil的值
+		for _, key := range srcValue.MapKeys() {
+			value := srcValue.MapIndex(key)
+
+			// 检查值是否为nil
+			isNil := false
+			if value.Kind() == reflect.Ptr || value.Kind() == reflect.Interface {
+				isNil = value.IsNil()
+			}
+
+			// 如果是nil值，跳过赋值
+			if isNil {
+				continue
+			}
+
+			dstElem.SetMapIndex(key, value)
+		}
+		return nil
+	}
+
+	// 其他类型使用JSON序列化方式
+	b, err := json.Marshal(src)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(b, dst)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

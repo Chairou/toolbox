@@ -12,6 +12,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"time"
 )
 
 func SafeCheck(c *Context) {
@@ -119,9 +120,9 @@ func ResponseRecorder(c *Context) {
 	// 请求处理完成后，记录响应体
 	largeTransferList := []string{"File Transfer"}
 	if !listopt.IsInStringArr(largeTransferList, blw.ResponseWriter.Header().Get("Content-Description")) {
-		fmt.Println("Response body: " + blw.body.String())
+		fmt.Println(time.Now().Format(time.DateTime), " [Response body]: "+blw.body.String())
 	} else {
-		fmt.Println("大数据量传输中，只输出头部512字节: ", "\n", blw.body.String()[:512])
+		fmt.Println(time.Now().Format(time.DateTime), " [大数据量传输中，只输出头部512字节]: ", "\n", blw.body.String()[:512])
 	}
 
 }

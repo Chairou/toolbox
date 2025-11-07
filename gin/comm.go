@@ -745,10 +745,11 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 				id := make([]byte, 16)
 				rand.Read(id)
 				requestID = hex.EncodeToString(id)
-				c.Set(_RequestIDKey, requestID[8:16])
+				c.Set(_RequestIDKey, requestID)
 				c.Writer.Header().Set("X-Request-Id", requestID)
 			}
 		}
+		requestID = requestID[8:16]
 		context, exists := c.Get(_ContextKey)
 		var ctx *Context
 		if exists {

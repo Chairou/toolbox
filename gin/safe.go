@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Chairou/toolbox/util/encode"
+	"github.com/Chairou/toolbox/util/listopt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
@@ -115,7 +116,12 @@ func ResponseRecorder(c *Context) {
 	c.Next()
 
 	// 请求处理完成后，记录响应体
-	fmt.Println("Response body: " + blw.body.String())
+	largeTransferList := []string{"File Transfer"}
+	if !listopt.IsInStringArr(largeTransferList, c.GetHeader("Content-Description")) {
+		fmt.Println("Response body: " + blw.body.String())
+	} else {
+		fmt.Println("大文件传输中，只输出头部1K字节:", blw.body.String()[:1024])
+	}
 
 }
 

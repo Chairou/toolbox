@@ -120,7 +120,7 @@ func ResponseRecorder(c *Context) {
 	if !listopt.IsInStringArr(largeTransferList, c.GetHeader("Content-Description")) {
 		fmt.Println("Response body: " + blw.body.String())
 	} else {
-		fmt.Println("大文件传输中，不记录response body")
+		fmt.Println("大文件传输中，只输出头部1K字节:", blw.body.String()[:1024])
 	}
 
 }

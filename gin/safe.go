@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Chairou/toolbox/util/encode"
+	"github.com/Chairou/toolbox/util/listopt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
@@ -113,12 +114,14 @@ func ResponseRecorder(c *Context) {
 
 	// 处理请求
 	c.Next()
+	blw.ResponseWriter.Header().Get("Content-Length")
 
 	// 请求处理完成后，记录响应体
-	if len(blw.body.String()) <= 1024 {
+	largeTransferList := []string{"File Transfer"}
+	if !listopt.IsInStringArr(largeTransferList, blw.ResponseWriter.Header().Get("Content-Description")) {
 		fmt.Println("Response body: " + blw.body.String())
 	} else {
-		fmt.Println("大数据量传输中，只输出头部512字节: ", "\n", blw.body.String()[:1024])
+		fmt.Println("大数据量传输中，只输出头部512字节: ", "\n", blw.body.String()[:512])
 	}
 
 }

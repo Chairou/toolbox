@@ -118,7 +118,7 @@ func ResponseRecorder(c *Context) {
 	if len(blw.body.String()) <= 1024 {
 		fmt.Println("Response body: " + blw.body.String())
 	} else {
-		fmt.Println("大文件传输中，只输出头部1K字节:", blw.body.String()[:1024])
+		fmt.Println("大数据量传输中，只输出头部512字节: ", "\n", blw.body.String()[:1024])
 	}
 
 }

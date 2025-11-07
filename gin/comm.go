@@ -745,7 +745,7 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 				id := make([]byte, 16)
 				rand.Read(id)
 				requestID = hex.EncodeToString(id)
-				c.Set(_RequestIDKey, requestID)
+				c.Set(_RequestIDKey, requestID[8:16])
 				c.Writer.Header().Set("X-Request-Id", requestID)
 			}
 		}

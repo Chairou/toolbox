@@ -749,7 +749,6 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 				c.Writer.Header().Set("X-Request-Id", requestID)
 			}
 		}
-		requestID = requestID[8:16]
 		context, exists := c.Get(_ContextKey)
 		var ctx *Context
 		if exists {
@@ -757,7 +756,7 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 		} else {
 			ctx = &Context{
 				Context:   c,
-				requestID: strings.ReplaceAll(requestID, "-", ""),
+				requestID: strings.ReplaceAll(requestID, "-", "")[8:16],
 			}
 			c.Set(_ContextKey, ctx)
 		}

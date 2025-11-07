@@ -1006,12 +1006,13 @@ func wrapMiddleware(h HandlerFunc) gin.HandlerFunc {
 		requestID := c.GetString(_RequestIDKey)
 		if len(requestID) == 0 {
 			if requestID = c.Request.Header.Get("X-Request-Id"); len(requestID) > 0 {
+				requestID = requestID[8:16]
 				c.Set(_RequestIDKey, requestID)
 				c.Writer.Header().Set("X-Request-Id", requestID)
 			} else {
 				id := make([]byte, 16)
 				rand.Read(id)
-				requestID = hex.EncodeToString(id)
+				requestID = hex.EncodeToString(id)[8:16]
 				c.Set(_RequestIDKey, requestID)
 				c.Writer.Header().Set("X-Request-Id", requestID)
 			}

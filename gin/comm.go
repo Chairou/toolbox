@@ -795,7 +795,11 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 				c.AbortWithError(http.StatusInternalServerError, err)
 				return
 			}
-			ctx.Infof("Request: %s\n\n------------------", buf.String())
+			if buf.Len() <= 4096 {
+				ctx.Infof("Request: %s\n\n------------------", buf.String())
+			} else {
+				ctx.Infof("Request too large, output 4k : %s\n\n------------------", buf.String()[0:4096])
+			}
 			c.Request.Body = ioutil.NopCloser(bytes.NewReader(buf.Bytes()))
 		}
 

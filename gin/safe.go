@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/Chairou/toolbox/util/encode"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
@@ -29,7 +30,7 @@ func SafeCheck(c *Context) {
 		}
 	}
 	// 检查通过，设置seq，退出
-	seq := uuid.New()
+	seq := encode.Sha512([]byte(uuid.New().String()))[16:24]
 	c.Set("seq", seq)
 	c.Next()
 }

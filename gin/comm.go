@@ -677,16 +677,16 @@ func stack(skip int) []byte {
 			break
 		}
 		// Print this much at least.  If we can't find the source, it won't show.
-		fmt.Fprintf(buf, "%s:%d (0x%x)\n", file, line, pc)
+		_, _ = fmt.Fprintf(buf, "%s:%d (0x%x)\n", file, line, pc)
 		if file != lastFile {
-			data, err := ioutil.ReadFile(file)
+			data, err := os.ReadFile(file)
 			if err != nil {
 				continue
 			}
 			lines = bytes.Split(data, []byte{'\n'})
 			lastFile = file
 		}
-		fmt.Fprintf(buf, "\t%s: %s\n", function(pc), source(lines, line))
+		_, _ = fmt.Fprintf(buf, "\t%s: %s\n", function(pc), source(lines, line))
 	}
 	return buf.Bytes()
 }
@@ -744,7 +744,7 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 				c.Writer.Header().Set("X-Request-Id", requestID)
 			} else {
 				id := make([]byte, 16)
-				rand.Read(id)
+				_, _ = rand.Read(id)
 				requestID = hex.EncodeToString(id)[8:16]
 				c.Set(_RequestIDKey, requestID)
 				c.Writer.Header().Set("X-Request-Id", requestID)
@@ -766,7 +766,7 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 			if err := recover(); err != nil {
 				if log != nil {
 					stack := stack(1)
-					ctx.Errorf("[Recovery] panic recovered:\n%s\n%s", err, stack)
+					_ = ctx.Errorf("[Recovery] panic recovered:\n%s\n%s", err, stack)
 				}
 				c.JSON(500, err)
 			}
@@ -779,7 +779,7 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 
 		dump, err := httputil.DumpRequest(c.Request, false)
 		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
+			_ = c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
@@ -788,11 +788,11 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 		if c.Request.Body != http.NoBody && c.Request.Body != nil {
 			var buf bytes.Buffer
 			if _, err = buf.ReadFrom(c.Request.Body); err != nil {
-				c.AbortWithError(http.StatusInternalServerError, err)
+				_ = c.AbortWithError(http.StatusInternalServerError, err)
 				return
 			}
 			if err = c.Request.Body.Close(); err != nil {
-				c.AbortWithError(http.StatusInternalServerError, err)
+				_ = c.AbortWithError(http.StatusInternalServerError, err)
 				return
 			}
 			if buf.Len() <= 4096 {
@@ -1015,7 +1015,7 @@ func wrapMiddleware(h HandlerFunc) gin.HandlerFunc {
 				c.Writer.Header().Set("X-Request-Id", requestID)
 			} else {
 				id := make([]byte, 16)
-				rand.Read(id)
+				_, _ = rand.Read(id)
 				requestID = hex.EncodeToString(id)[8:16]
 				c.Set(_RequestIDKey, requestID)
 				c.Writer.Header().Set("X-Request-Id", requestID)
@@ -1042,7 +1042,7 @@ func wrapStdHandler(h StdHandlerFunc) gin.HandlerFunc {
 		defer func() {
 			if err := recover(); err != nil {
 				stack := stack(4)
-				c.Errorf("panic:\n%s\n%s", err, stack)
+				_ = c.Errorf("panic:\n%s\n%s", err, stack)
 
 				c.Set("code", 500)
 				c.JSON(200, gin.H{
@@ -1246,8 +1246,13 @@ func GormStructToMap(src interface{}, dst interface{}, gormSubTagName string) er
 					dstElem.SetMapIndex(reflect.ValueOf(fieldName), reflect.ValueOf(nestedMap))
 				}
 			} else {
-				// 设置map的值
-				dstElem.SetMapIndex(reflect.ValueOf(fieldName), actualValue)
+				// 设置map的kv
+				key := reflect.ValueOf(fieldName)
+				if strings.EqualFold(key.String(), "id") {
+					// 跳过id字段，不然updates会修改id的值
+					continue
+				}
+				dstElem.SetMapIndex(key, actualValue)
 			}
 		}
 		return nil

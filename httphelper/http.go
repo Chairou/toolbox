@@ -199,7 +199,7 @@ func PostJsonAll(url string, headers map[string]string, cookies map[string]strin
 	return nil
 }
 
-func PostFile(url string, fullPathSourceFileName string, DstFileName string) Helper {
+func PostFile(url string, fullPathSourceFileName string, DstFileName string, params map[string]string) Helper {
 	// 打开要上传的文件
 	file, err := os.Open(fullPathSourceFileName)
 	if err != nil {
@@ -217,7 +217,7 @@ func PostFile(url string, fullPathSourceFileName string, DstFileName string) Hel
 	// 创建一个缓冲区来存储请求体
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-
+	
 	// 创建一个表单字段，将文件内容写入其中
 	fileField, err := writer.CreateFormFile("file", DstFileName)
 	if err != nil {
@@ -228,6 +228,16 @@ func PostFile(url string, fullPathSourceFileName string, DstFileName string) Hel
 	if err != nil {
 		fmt.Println("写入文件内容失败:", err)
 		return errorHelper(fmt.Errorf("创建表单字段失败: %w", err))
+	}
+	// 写入参数
+	if params != nil {
+		for key, value := range params {
+			err = writer.WriteField(key, value)
+			if err != nil {
+				fmt.Println("写入表单字段失败:", err)
+				return errorHelper(fmt.Errorf("写入表单字段失败: %w", err))
+			}
+		}
 	}
 
 	// 完成表单写入
@@ -240,7 +250,7 @@ func PostFile(url string, fullPathSourceFileName string, DstFileName string) Hel
 	// 创建一个POST请求
 	httpClient := NewRequest("POST", url, body).SetHeader("Content-Type",
 		writer.FormDataContentType())
-	httpClient.SetDebug(DebugUpload)
+	//httpClient.SetDebug(DebugUpload)
 	httpClient.SetUploadFile(fullPathSourceFileName, stat.Size())
 
 	return httpClient

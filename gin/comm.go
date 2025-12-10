@@ -798,7 +798,8 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 			if buf.Len() <= 4096 {
 				ctx.Infof("Request: %s\n\n------------------", buf.String())
 			} else {
-				ctx.Infof("Request too large, output 4k : %s\n\n------------------", buf.String()[0:4096])
+				ctx.Infof("Request too large, output 4k : %s%s\n\n------------------", buf.String()[0:256],
+					buf.String()[buf.Len()-256:])
 			}
 			c.Request.Body = ioutil.NopCloser(bytes.NewReader(buf.Bytes()))
 		}

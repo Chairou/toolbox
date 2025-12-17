@@ -783,7 +783,7 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 			return
 		}
 
-		ctx.Infof("\n==================> Begin API Handler: =================>\n %s", dump)
+		ctx.Infof("\n\n==================> Begin API Handler: =================>\n %s", dump)
 
 		if c.Request.Body != http.NoBody && c.Request.Body != nil {
 			var buf bytes.Buffer
@@ -810,7 +810,7 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 		h(ctx)
 		largeTransferList := []string{"File Transfer"}
 		if !listopt.IsInStringArr(largeTransferList, responseDumper.Header().Get("Content-Description")) {
-			ctx.Infof("End API Handler: \n%s\n------------------", responseDumper.bytes())
+			ctx.Infof(" \n%s\n>--------End API Handler----------<", responseDumper.bytes())
 		}
 	}
 }

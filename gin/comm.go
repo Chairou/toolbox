@@ -783,7 +783,7 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 			return
 		}
 
-		ctx.Infof("Begin API Handler: %s------------------", dump)
+		ctx.Infof("\n==================> Begin API Handler: =================>\n %s", dump)
 
 		if c.Request.Body != http.NoBody && c.Request.Body != nil {
 			var buf bytes.Buffer

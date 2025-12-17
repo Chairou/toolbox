@@ -227,7 +227,7 @@ func TestBasicAuth(t *testing.T) {
 
 func TestUploadFile(t *testing.T) {
 	url1 := "http://127.0.0.1/upload"
-	client := PostFile(url1, "/tmp/abc.txt", "test1.txt")
+	client := PostFile(url1, "/tmp/abc.txt", "test1.txt", map[string]string{"aa": "bb"})
 	ret := client.Do()
 	if ret.Error() != nil {
 		t.Log(ret.Error())

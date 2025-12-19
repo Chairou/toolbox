@@ -90,7 +90,7 @@ func GetJsonRet(url string, retJson interface{}) error {
 	client := NewRequest("GET", url, nil)
 	ret := client.Do()
 	if ret.Error() != nil {
-		return client.error()
+		return ret.Error()
 	}
 	err := ret.UnmarshalFromBody(retJson)
 	if err != nil {
@@ -109,7 +109,7 @@ func GetJsonAll(url string, headers map[string]string, cookies map[string]string
 	}
 	ret := client.Do()
 	if ret.Error() != nil {
-		return client.error()
+		return ret.Error()
 	}
 	err := ret.UnmarshalFromBody(retJson)
 	if err != nil {
@@ -157,7 +157,7 @@ func PostJsonRet(url string, body interface{}, retJson interface{}) error {
 	}
 	ret := client.Do()
 	if ret.Error() != nil {
-		return client.error()
+		return ret.Error()
 	}
 	err := ret.UnmarshalFromBody(retJson)
 	if err != nil {
@@ -190,7 +190,7 @@ func PostJsonAll(url string, headers map[string]string, cookies map[string]strin
 
 	ret := client.Do()
 	if ret.Error() != nil {
-		return client.error()
+		return ret.Error()
 	}
 	err := ret.UnmarshalFromBody(retJson)
 	if err != nil {
@@ -217,7 +217,7 @@ func PostFile(url string, fullPathSourceFileName string, DstFileName string, par
 	// 创建一个缓冲区来存储请求体
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	
+
 	// 创建一个表单字段，将文件内容写入其中
 	fileField, err := writer.CreateFormFile("file", DstFileName)
 	if err != nil {

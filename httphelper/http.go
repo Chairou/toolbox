@@ -155,6 +155,7 @@ func PostJsonRet(url string, body interface{}, retJson interface{}) error {
 		client = NewRequest("POST", url, bytes.NewReader(byteBody)).SetHeader("Content-Type",
 			"application/json")
 	}
+	client.SetTimeout(time.Second*5, time.Second*20)
 	ret := client.Do()
 	if ret.Error() != nil {
 		return ret.Error()

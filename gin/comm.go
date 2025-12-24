@@ -111,6 +111,7 @@ func NewServer(env string, logFileName string, middle []func(c *Context)) *gin.E
 	}
 	stdRouter.Use(SafeCheck)
 	stdRouter.Use(ResponseRecorder)
+	stdRouter.Use(CorsMiddleware)
 
 	for _, v := range middle {
 		stdRouter.Use(v)

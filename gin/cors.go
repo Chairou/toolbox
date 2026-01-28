@@ -2,8 +2,9 @@ package gin
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 // CorsMiddleware CORS 中间件，允许所有跨域请求
@@ -11,7 +12,7 @@ import (
 //
 //	router := gin.Default()
 //	router.Use(CorsMiddleware())
-func CorsMiddleware(c *Context) {
+func CorsMiddleware(c *gin.Context) {
 	// 允许所有来源
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 

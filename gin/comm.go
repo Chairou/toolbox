@@ -7,15 +7,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Chairou/toolbox/conf"
 	"os"
 	"time"
 
-	"github.com/Chairou/toolbox/logger"
-	"github.com/Chairou/toolbox/util/check"
-	"github.com/Chairou/toolbox/util/conv"
-	"github.com/Chairou/toolbox/util/listopt"
-	"github.com/gin-gonic/gin"
+	"github.com/Chairou/toolbox/conf"
+
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
@@ -24,6 +20,12 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/Chairou/toolbox/logger"
+	"github.com/Chairou/toolbox/util/check"
+	"github.com/Chairou/toolbox/util/conv"
+	"github.com/Chairou/toolbox/util/listopt"
+	"github.com/gin-gonic/gin"
 )
 
 const API_OK = 0
@@ -111,7 +113,7 @@ func NewServer(env string, logFileName string, middle []func(c *Context)) *gin.E
 	}
 	stdRouter.Use(SafeCheck)
 	stdRouter.Use(ResponseRecorder)
-	stdRouter.Use(CorsMiddleware)
+	stdRouter.Use(CorsMiddleware())
 
 	for _, v := range middle {
 		stdRouter.Use(v)

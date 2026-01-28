@@ -12,33 +12,34 @@ import (
 //
 //	router := gin.Default()
 //	router.Use(CorsMiddleware())
-func CorsMiddleware(c *gin.Context) {
-	// 允许所有来源
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+func CorsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// 允许所有来源
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 
-	// 允许的请求方法
-	c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD")
+		// 允许的请求方法
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD")
 
-	// 允许的请求头
-	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, Token")
+		// 允许的请求头
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, Token")
 
-	// 允许浏览器访问的响应头
-	c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type")
+		// 允许浏览器访问的响应头
+		c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type")
 
-	// 允许携带凭证（cookies）
-	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		// 允许携带凭证（cookies）
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 
-	// 预检请求的缓存时间（秒）
-	c.Writer.Header().Set("Access-Control-Max-Age", "86400")
+		// 预检请求的缓存时间（秒）
+		c.Writer.Header().Set("Access-Control-Max-Age", "86400")
 
-	// 处理 OPTIONS 预检请求
-	if c.Request.Method == "OPTIONS" {
-		c.AbortWithStatus(http.StatusNoContent)
-		return
+		// 处理 OPTIONS 预检请求
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+
+		c.Next()
 	}
-
-	c.Next()
-
 }
 
 // CustomCorsMiddleware 自定义 CORS 中间件，可配置具体参数

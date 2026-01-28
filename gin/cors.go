@@ -12,8 +12,8 @@ import (
 //
 //	router := gin.Default()
 //	router.Use(CorsMiddleware())
-func CorsMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func CorsMiddleware() HandlerFunc {
+	return func(c *Context) {
 		// 允许所有来源
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 

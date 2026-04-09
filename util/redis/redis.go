@@ -2,10 +2,11 @@ package redis
 
 import (
 	"errors"
-	redigo "github.com/gomodule/redigo/redis"
 	"log"
 	"sync"
 	"time"
+
+	redigo "github.com/gomodule/redigo/redis"
 )
 
 var redisMap sync.Map
@@ -19,15 +20,15 @@ type RdPool struct {
 
 // NewRedis 生成新的redis实例并放入Pool中
 func NewRedis(name string, addr string, passwd string) *RdPool {
-	inst, ok := redisMap.Load(name)
-	if ok {
+	newInst := &RdPool{Name: name, addr: addr, passwd: passwd}
+	newInst.newRedisPool(addr, passwd)
+	inst, loaded := redisMap.LoadOrStore(name, newInst)
+	if loaded {
+		// 已存在，关闭刚创建的连接池
+		_ = newInst.pool.Close()
 		return inst.(*RdPool)
-	} else {
-		inst := &RdPool{addr: addr, passwd: passwd}
-		inst.newRedisPool(addr, passwd)
-		redisMap.Store(name, inst)
-		return inst
 	}
+	return newInst
 }
 
 // GetRedisPool 每次用前先获得redis pool的实例
@@ -57,13 +58,25 @@ func (c *RdPool) newRedisPool(addr string, passwd string) {
 		MaxIdle:     5,
 		IdleTimeout: 60 * time.Second,
 		Dial: func() (redigo.Conn, error) {
-			conn, err := redigo.Dial("tcp", addr, setPasswd)
+			conn, err := redigo.Dial("tcp", addr,
+				setPasswd,
+				redigo.DialConnectTimeout(5*time.Second),
+				redigo.DialReadTimeout(3*time.Second),
+				redigo.DialWriteTimeout(3*time.Second),
+			)
 			if err != nil {
 				return nil, errors.New("failed to connect to Redis: " + err.Error())
 			}
 			return conn, nil
 		},
 		MaxActive: 100,
+		TestOnBorrow: func(c redigo.Conn, t time.Time) error {
+			if time.Since(t) < time.Minute {
+				return nil
+			}
+			_, err := c.Do("PING")
+			return err
+		},
 	}
 }
 
@@ -134,11 +147,11 @@ func (c *RdPool) HSet(key string, subKey string, val string) (int64, error) {
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
 	}(conn)
-	str, err := redigo.Int64(conn.Do("HSET", key, subKey, val))
+	ret, err := redigo.Int64(conn.Do("HSET", key, subKey, val))
 	if err != nil {
-		return str, err
+		return ret, err
 	}
-	return 0, nil
+	return ret, nil
 }
 
 // Del
@@ -166,7 +179,7 @@ func (c *RdPool) Do(commandName string, args ...interface{}) (interface{}, error
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
 	}(conn)
-	ret, err := conn.Do(commandName, args)
+	ret, err := conn.Do(commandName, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +241,8 @@ func (c *RdPool) HMGet(key string, values ...string) ([]string, error) {
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
 	}(conn)
-	ret, err := redigo.Strings(conn.Do("HMGET", key, values))
+	args := redigo.Args{}.Add(key).AddFlat(values)
+	ret, err := redigo.Strings(conn.Do("HMGET", args...))
 	if err != nil {
 		return ret, err
 	}
@@ -247,7 +261,8 @@ func (c *RdPool) HMSet(key string, kv map[string]string) (string, error) {
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
 	}(conn)
-	ret, err := redigo.String(conn.Do("HMSET", key, kv))
+	args := redigo.Args{}.Add(key).AddFlat(kv)
+	ret, err := redigo.String(conn.Do("HMSET", args...))
 	if err != nil {
 		return ret, err
 	}
@@ -264,7 +279,8 @@ func (c *RdPool) HDel(key string, fields ...string) (int64, error) {
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
 	}(conn)
-	ret, err := redigo.Int64(conn.Do("HDEL", key, fields))
+	args := redigo.Args{}.Add(key).AddFlat(fields)
+	ret, err := redigo.Int64(conn.Do("HDEL", args...))
 	if err != nil {
 		return ret, err
 	}
@@ -286,7 +302,7 @@ func (c *RdPool) HGetAll(key string) (map[string]string, error) {
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
 	}(conn)
-	ret, err := redigo.StringMap(conn.Do("HGetAll", key))
+	ret, err := redigo.StringMap(conn.Do("HGETALL", key))
 	if err != nil {
 		return ret, err
 	}
@@ -414,14 +430,11 @@ func (c *RdPool) LPush(key string, values ...interface{}) (int64, error) {
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
 	}(conn)
-	var ret int64
-	for _, v := range values {
-		ret, err := redigo.Int64(conn.Do("LPush", key, v))
-		if err != nil {
-			return ret, err
-		}
+	args := redigo.Args{}.Add(key).AddFlat(values)
+	ret, err := redigo.Int64(conn.Do("LPUSH", args...))
+	if err != nil {
+		return ret, err
 	}
-
 	return ret, nil
 }
 
@@ -442,13 +455,10 @@ func (c *RdPool) LPushX(key string, values ...interface{}) (int64, error) {
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
 	}(conn)
-
-	var ret int64
-	for _, v := range values {
-		ret, err := redigo.Int64(conn.Do("LPush", key, v))
-		if err != nil {
-			return ret, err
-		}
+	args := redigo.Args{}.Add(key).AddFlat(values)
+	ret, err := redigo.Int64(conn.Do("LPUSHX", args...))
+	if err != nil {
+		return ret, err
 	}
 	return ret, nil
 }
@@ -494,12 +504,12 @@ func (c *RdPool) LRem(key string, count int, value string) (int64, error) {
 // 1) "four"
 // 2) "five"
 // 3) "three"
-func (c *RdPool) LSet(key, value string, index int) (int64, error) {
+func (c *RdPool) LSet(key string, index int, value string) (string, error) {
 	conn := c.pool.Get()
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
 	}(conn)
-	ret, err := redigo.Int64(conn.Do("LSet", key, value, index))
+	ret, err := redigo.String(conn.Do("LSET", key, index, value))
 	if err != nil {
 		return ret, err
 	}
@@ -535,7 +545,8 @@ func (c *RdPool) MGet(keys ...string) ([]string, error) {
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
 	}(conn)
-	ret, err := redigo.Strings(conn.Do("MGet", keys))
+	args := redigo.Args{}.AddFlat(keys)
+	ret, err := redigo.Strings(conn.Do("MGET", args...))
 	if err != nil {
 		return ret, err
 	}
@@ -548,7 +559,7 @@ func (c *RdPool) MSet(pairs ...interface{}) (string, error) {
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
 	}(conn)
-	ret, err := redigo.String(conn.Do("MSet", pairs))
+	ret, err := redigo.String(conn.Do("MSET", pairs...))
 	if err != nil {
 		return ret, err
 	}
@@ -583,7 +594,7 @@ func (c *RdPool) SetEX(key string, value interface{}, expire int) (string, error
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
 	}(conn)
-	ret, err := redigo.String(conn.Do("SetEX", key, value, expire))
+	ret, err := redigo.String(conn.Do("SETEX", key, expire, value))
 	if err != nil {
 		return ret, err
 	}
@@ -602,11 +613,16 @@ func (c *RdPool) SetNX(key string, value interface{}, expire int) (int64, error)
 	defer func(conn redigo.Conn) {
 		_ = conn.Close()
 	}(conn)
-	ret, err := redigo.Int64(conn.Do("SetNX", key, value, expire))
+	// 使用 SET key value EX seconds NX 实现带过期时间的原子设置
+	// 返回 "OK" 表示设置成功，nil 表示 key 已存在
+	reply, err := conn.Do("SET", key, value, "EX", expire, "NX")
 	if err != nil {
-		return ret, err
+		return 0, err
 	}
-	return ret, nil
+	if reply == nil {
+		return 0, nil // key 已存在，未设置
+	}
+	return 1, nil // 设置成功
 }
 
 func (c *RdPool) LRange(key string, start, stop int64) ([]string, error) {

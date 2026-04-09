@@ -33,7 +33,7 @@ func (s *Set) Add(items ...interface{}) {
 	if len(items) == 0 {
 		return
 	}
-	
+
 	for _, item := range items {
 		s.m[item] = keyExists
 	}

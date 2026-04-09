@@ -28,13 +28,12 @@ func newTS() *Set {
 // Add includes the specified items (one or more) to the set. The underlying
 // Set s is modified. If passed nothing it silently returns.
 func (s *Set) Add(items ...interface{}) {
+	s.l.Lock()
+	defer s.l.Unlock()
 	if len(items) == 0 {
 		return
 	}
-
-	s.l.Lock()
-	defer s.l.Unlock()
-
+	
 	for _, item := range items {
 		s.m[item] = keyExists
 	}
@@ -43,12 +42,11 @@ func (s *Set) Add(items ...interface{}) {
 // Remove deletes the specified items from the set.  The underlying Set s is
 // modified. If passed nothing it silently returns.
 func (s *Set) Remove(items ...interface{}) {
+	s.l.Lock()
+	defer s.l.Unlock()
 	if len(items) == 0 {
 		return
 	}
-
-	s.l.Lock()
-	defer s.l.Unlock()
 
 	for _, item := range items {
 		delete(s.m, item)
@@ -72,13 +70,12 @@ func (s *Set) Pop() interface{} {
 // Has looks for the existence of items passed. It returns false if nothing is
 // passed. For multiple items it returns true only if all of  the items exist.
 func (s *Set) Has(items ...interface{}) bool {
+	s.l.RLock()
+	defer s.l.RUnlock()
 	// assume checked for empty item, which not exist
 	if len(items) == 0 {
 		return false
 	}
-
-	s.l.RLock()
-	defer s.l.RUnlock()
 
 	has := true
 	for _, item := range items {
@@ -331,5 +328,3 @@ func (s *Set) Separate(t Interface) {
 		delete(s.m, item)
 	}
 }
-
-

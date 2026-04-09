@@ -6,11 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"github.com/Chairou/toolbox/logger"
-	"github.com/Chairou/toolbox/util/color"
-	"github.com/Chairou/toolbox/util/conv"
-	uuid2 "github.com/google/uuid"
-	jsoniter "github.com/json-iterator/go"
 	"io"
 	"math/rand"
 	"net"
@@ -19,6 +14,12 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/Chairou/toolbox/logger"
+	"github.com/Chairou/toolbox/util/color"
+	"github.com/Chairou/toolbox/util/conv"
+	uuid2 "github.com/google/uuid"
+	jsoniter "github.com/json-iterator/go"
 )
 
 // Helper http Helper接口的提供的方法
@@ -45,10 +46,10 @@ type Helper interface {
 	// SetTransport 设置RoundTripper，可用于添加中间件
 	SetTransport(tripper http.RoundTripper) Helper
 
-	// AddCookies 设置完整cookies
+	// AddCookie 设置完整cookies
 	AddCookie(c []*http.Cookie) Helper
 
-	// AddCookies 设置只有简单name和value的cookies
+	// AddCookieMap 设置只有简单name和value的cookies
 	AddCookieMap(c map[string]string) Helper
 
 	// AddBasicAuth 设置简单认证
@@ -80,7 +81,6 @@ const (
 )
 
 type httpHelper struct {
-	body           io.Reader
 	client         http.Client
 	req            *http.Request
 	debug          int
@@ -90,11 +90,11 @@ type httpHelper struct {
 	Uuid           string
 }
 
-var Once sync.Once
+var helperOnce sync.Once
 var log *logger.LogPool
 
 func init() {
-	Once.Do(func() {
+	helperOnce.Do(func() {
 		logFileName := os.Getenv("httpLogFileName")
 		if logFileName == "" {
 			logFileName = "/tmp/http.log"
@@ -229,17 +229,20 @@ func (p *httpHelper) SetUploadFile(fileName string, fileSize int64) Helper {
 }
 
 func (p *httpHelper) SetTimeout(dialTimeout time.Duration, totalTimeout time.Duration) Helper {
-	p.client.Transport.(*http.Transport).DialContext = (&net.Dialer{
-		Timeout:   dialTimeout * time.Second,
-		KeepAlive: 90 * time.Second,
-	}).DialContext
-	p.client.Timeout = totalTimeout * time.Second
+	if transport, ok := p.client.Transport.(*http.Transport); ok && transport != nil {
+		transport.DialContext = (&net.Dialer{
+			Timeout:   dialTimeout,
+			KeepAlive: 30 * time.Second,
+		}).DialContext
+	}
+	p.client.Timeout = totalTimeout
 	return p
 }
 
 // Do 发送请求
 func (p *httpHelper) Do() Result {
 	startTime := time.Now()
+	p.Uuid = uuid2.NewString()
 	result := &baseResult{}
 	var byteBody []byte
 	if p.req.Body != nil {
@@ -253,7 +256,6 @@ func (p *httpHelper) Do() Result {
 		}
 	}
 
-	p.Uuid = uuid2.NewString()
 	result.ReqBody = string(byteBody)
 	switch p.debug {
 	case DebugNormal:
@@ -275,13 +277,11 @@ func (p *httpHelper) Do() Result {
 			p.UploadFileName, ", fileSize:", p.UploadFileSize)
 	}
 
-	newByteBodyReader := bytes.NewReader(byteBody)
-
-	var rc io.ReadCloser
-	if newByteBodyReader != nil {
-		rc = io.NopCloser(newByteBodyReader)
+	if len(byteBody) > 0 {
+		p.req.Body = io.NopCloser(bytes.NewReader(byteBody))
+	} else {
+		p.req.Body = nil
 	}
-	p.req.Body = rc
 
 	resp, err := p.client.Do(p.req)
 	if err != nil {
@@ -320,9 +320,9 @@ func (p *httpHelper) Do() Result {
 	result.BodyLen = len(body)
 	result.Uuid = p.Uuid
 	if resp.StatusCode != http.StatusOK {
-		s := fmt.Sprintf("%s http resp status code: %d", p.Uuid, resp.StatusCode)
+		s := fmt.Sprintf("%s http resp status code: %d, body: %s", p.Uuid, resp.StatusCode, result.RetBody)
 		log.Error(s)
-		return result.Errorf("http resp status code: %d", resp.StatusCode)
+		return result.Errorf("http resp status code: %d, body: %s", resp.StatusCode, result.RetBody)
 	}
 	switch p.debug {
 	case DebugNormal:

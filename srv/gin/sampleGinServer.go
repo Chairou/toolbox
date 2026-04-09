@@ -2,15 +2,17 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+
 	"github.com/Chairou/toolbox/conf"
 	g "github.com/Chairou/toolbox/gin"
 	"github.com/Chairou/toolbox/timeformat"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	gorm "gorm.io/gorm"
-	"io"
-	"net/http"
-	"os"
 )
 
 type Config struct {
@@ -50,7 +52,8 @@ func init() {
 func (Catalog) TableName() string { return "t_catalog" }
 
 func main() {
-
+	conf.LoadAllConf(&config)
+	mysqlInit()
 	g.SetRouterRegister(func(group *g.RouterGroup) {
 		routerGroup := group.Group("/api")
 		routerGroup.StdGET("get", get)
@@ -63,7 +66,7 @@ func main() {
 	r := g.NewServer("dev", "srv.log", nil)
 
 	fmt.Println("start server at *:80")
-	err := r.Run(":80")
+	err := r.Run(":8080")
 	if err != nil {
 		fmt.Println("RUN err:", err)
 		return
@@ -86,17 +89,17 @@ func postBody(c *g.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	_ = c.Request.Body.Close()
 	c.String(http.StatusOK, string(body))
 }
 
 func getDataFromMysql(c *g.Context) {
-	mysqlInit()
 	parConstruct := map[string]*g.ParamConstruct{
 		"id":          {FieldName: "id", DefaultValue: "", CheckValue: nil, Need: false, Link: "and", Symbol: "="},
 		"englishName": {FieldName: "englishName", DefaultValue: "", CheckValue: nil, Need: false, Link: "and", Symbol: "="},
 		"chineseName": {FieldName: "chineseName", DefaultValue: "", CheckValue: nil, Need: false, Link: "and", Symbol: "like"},
 		"status":      {FieldName: "status", DefaultValue: "", CheckValue: nil, Need: false, Link: "and", Symbol: "="},
-		"createtime":  {FieldName: "createtime", DefaultValue: "", CheckValue: nil, Need: false, Link: "and", Symbol: ">="},
+		"createtime":  {FieldName: "createTime", DefaultValue: "", CheckValue: nil, Need: false, Link: "and", Symbol: ">="},
 		"endtime":     {FieldName: "createTime", DefaultValue: "", CheckValue: nil, Need: false, Link: "and", Symbol: "<="},
 		"searchKey":   {FieldName: "englishName|chineseName", DefaultValue: "", CheckValue: nil, Need: false, Link: "and"},
 		"orderBy":     {FieldName: "", DefaultValue: "id|desc", CheckValue: nil, Need: false},
@@ -109,16 +112,19 @@ func getDataFromMysql(c *g.Context) {
 	}
 	//获取分页参数:PageIndex,PageSize, 不传的话默认10000条数据
 	offset, limit, err := c.GetLimit()
+	if err != nil {
+		c.RetJson(-101, nil, "param err: ", err)
+		return
+	}
 
 	var catalogs []Catalog
-	DbConn.Find(&catalogs).Where(strCondition, args).Order(orderStr).Offset(offset).Limit(limit)
+	DbConn.Where(strCondition, args...).Order(orderStr).Offset(offset).Limit(limit).Find(&catalogs)
 	c.RetJson(0, catalogs, "ok")
 
 }
 
 func mysqlInit() {
 	// 初始化mysql
-	conf.LoadAllConf(&config)
 	host := config.MysqlHost
 	user := config.MysqlUser
 	password := config.MysqlPass
@@ -132,6 +138,6 @@ func mysqlInit() {
 		DisableNestedTransaction: true,
 	})
 	if err != nil {
-		panic("failed to connect database," + dsn)
+		log.Fatal("failed to connect database," + host)
 	}
 }

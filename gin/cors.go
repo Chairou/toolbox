@@ -1,10 +1,9 @@
 package gin
 
 import (
-	"fmt"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
+	"strconv"
+	"strings"
 )
 
 // CorsMiddleware CORS 中间件，允许所有跨域请求
@@ -27,7 +26,7 @@ func CorsMiddleware() HandlerFunc {
 		c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type")
 
 		// 允许携带凭证（cookies）
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		//c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		// 预检请求的缓存时间（秒）
 		c.Writer.Header().Set("Access-Control-Max-Age", "86400")
@@ -50,7 +49,7 @@ func CorsMiddleware() HandlerFunc {
 //	    AllowOrigins: []string{"https://example.com"},
 //	    AllowMethods: []string{"GET", "POST"},
 //	}))
-func CustomCorsMiddleware(config CorsConfig) gin.HandlerFunc {
+func CustomCorsMiddleware(config CorsConfig) HandlerFunc {
 	// 设置默认值
 	if len(config.AllowOrigins) == 0 {
 		config.AllowOrigins = []string{"*"}
@@ -68,7 +67,7 @@ func CustomCorsMiddleware(config CorsConfig) gin.HandlerFunc {
 		config.MaxAge = 86400 // 默认 24 小时
 	}
 
-	return func(c *gin.Context) {
+	return func(c *Context) {
 		origin := c.Request.Header.Get("Origin")
 
 		// 检查来源是否允许
@@ -88,16 +87,16 @@ func CustomCorsMiddleware(config CorsConfig) gin.HandlerFunc {
 		}
 
 		c.Writer.Header().Set("Access-Control-Allow-Origin", allowOrigin)
-		c.Writer.Header().Set("Access-Control-Allow-Methods", joinStrings(config.AllowMethods, ", "))
-		c.Writer.Header().Set("Access-Control-Allow-Headers", joinStrings(config.AllowHeaders, ", "))
-		c.Writer.Header().Set("Access-Control-Expose-Headers", joinStrings(config.ExposeHeaders, ", "))
+		c.Writer.Header().Set("Access-Control-Allow-Methods", strings.Join(config.AllowMethods, ", "))
+		c.Writer.Header().Set("Access-Control-Allow-Headers", strings.Join(config.AllowHeaders, ", "))
+		c.Writer.Header().Set("Access-Control-Expose-Headers", strings.Join(config.ExposeHeaders, ", "))
 
 		if config.AllowCredentials {
 			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		}
 
 		if config.MaxAge > 0 {
-			c.Writer.Header().Set("Access-Control-Max-Age", fmt.Sprintf("%d", config.MaxAge))
+			c.Writer.Header().Set("Access-Control-Max-Age", strconv.Itoa(config.MaxAge))
 		}
 
 		// 处理 OPTIONS 预检请求

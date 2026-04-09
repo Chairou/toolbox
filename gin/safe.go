@@ -2,34 +2,80 @@ package gin
 
 import (
 	"bytes"
-	"errors"
+	"encoding/json"
 	"fmt"
-	"github.com/Chairou/toolbox/util/encode"
-	"github.com/Chairou/toolbox/util/listopt"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
+	"io"
 	"net/http"
 	"reflect"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/Chairou/toolbox/util/encode"
+	"github.com/Chairou/toolbox/util/listopt"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
+
+// 预编译 SQL 注入检测正则表达式，避免每次调用都重新编译
+var sqlInjectionPatterns []*regexp.Regexp
+
+func init() {
+	patterns := []string{
+		`(?i)\bunion\b.*\bselect\b`, // 检测UNION SELECT攻击
+		`(?i)\binsert\b.*\binto\b`,  // 检测INSERT INTO攻击
+		`(?i)\bselect\b.*\bfrom\b`,  // 检测SELECT FROM攻击
+		`(?i)\bdelete\b.*\bfrom\b`,  // 检测DELETE FROM攻击
+		`(?i)\bupdate\b.*\bset\b`,   // 检测UPDATE SET攻击
+		`(?i)\bdrop\b.*\btable\b`,   // 检测DROP TABLE攻击
+		`--`,                        // 检测单行注释
+		`/\*.*?\*/`,                 // 检测多行注释
+	}
+	for _, p := range patterns {
+		sqlInjectionPatterns = append(sqlInjectionPatterns, regexp.MustCompile(p))
+	}
+}
 
 func SafeCheck(c *Context) {
 	switch c.Request.Method {
 	case "GET":
 		queryParams := c.Request.URL.Query()
-		// 遍历参数并打印
+		// 遍历参数并检查
 		for key, values := range queryParams {
 			for _, value := range values {
-				// 这里写检查语句啦
-				if detectSQLInjection(value) == true {
+				if detectSQLInjection(value) {
+					c.JSON(http.StatusForbidden, H{"message": "访问被禁止"})
+					fmt.Printf("SQL注入检测 - 参数：%s，值：%s\n", key, value)
 					c.Abort()
-					c.JSON(http.StatusUnauthorized, H{"message": "访问未授权"})
-					fmt.Printf("参数：%s，值：%s\n", key, value)
+					return
 				}
 			}
 		}
+	case "POST", "PUT", "DELETE", "PATCH":
+		// 读取 body
+		bodyBytes, err := io.ReadAll(c.Request.Body)
+		if err != nil {
+			c.Abort()
+			return
+		}
+		// 重要：读取后必须重新填充 body，否则后续 handler 无法读取
+		c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+		// 解析为 map 后递归遍历
+		var jsonData map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &jsonData); err == nil {
+			for key, value := range jsonData {
+				if strVal, ok := value.(string); ok {
+					if detectSQLInjection(strVal) {
+						c.JSON(http.StatusForbidden, H{"message": "访问被禁止"})
+						fmt.Printf("SQL注入检测 - 参数：%s，值：%s\n", key, strVal)
+						c.Abort()
+						return
+					}
+				}
+			}
+		}
+
 	}
 	// 检查通过，设置seq，退出
 	seq := encode.Sha512([]byte(uuid.New().String()))[16:24]
@@ -38,31 +84,15 @@ func SafeCheck(c *Context) {
 }
 
 func detectSQLInjection(input string) bool {
-	// 正则表达式用于检测一些SQL注入的常见模式
-	// 注意：这些正则表达式非常简单，实际情况可能需要更复杂的模式
-	var sqlInjectionPatterns = []string{
-		"(?i)union(.*)select", // 检测UNION SELECT攻击
-		"(?i)insert(.*)into",  // 检测INSERT INTO攻击
-		"(?i)select(.*)from",  // 检测SELECT FROM攻击
-		"(?i)delete(.*)from",  // 检测DELETE FROM攻击
-		"(?i)update(.*)set",   // 检测UPDATE SET攻击
-		"(?i)drop(.*)table",   // 检测DROP TABLE攻击
-		"--",                  // 检测单行注释
-		";",                   // 检测分号
-		"/\\*.*?\\*/",         // 检测多行注释
-		"'",                   // 检测单引号
-		"\"",                  // 检测双引号
-	}
-
-	for _, pattern := range sqlInjectionPatterns {
-		if matched, _ := regexp.MatchString(pattern, input); matched {
+	for _, re := range sqlInjectionPatterns {
+		if re.MatchString(input) {
 			return true
 		}
 	}
 	return false
 }
 
-// Recursive function to check fields and nested structures
+// checkFields 递归检查结构体字段中是否存在 SQL 注入
 func checkFields(value reflect.Value, prefix string, errors *[]string) {
 	if value.Kind() == reflect.Ptr {
 		value = value.Elem()
@@ -83,7 +113,6 @@ func checkFields(value reflect.Value, prefix string, errors *[]string) {
 			checkFields(element, prefixedElementName, errors)
 		}
 	default:
-		// Custom checks (example: check for empty strings)
 		if value.Kind() == reflect.String {
 			if detectSQLInjection(value.String()) {
 				*errors = append(*errors,
@@ -99,7 +128,7 @@ func ValidateSql(value reflect.Value, structName string) error {
 	var errorList []string
 	checkFields(value, structName, &errorList)
 	if len(errorList) > 0 {
-		return errors.New(fmt.Sprintf("Validation failed: %v", errorList))
+		return fmt.Errorf("Validation failed: %v", errorList)
 	}
 	return nil
 }
@@ -115,16 +144,19 @@ func ResponseRecorder(c *Context) {
 
 	// 处理请求
 	c.Next()
-	blw.ResponseWriter.Header().Get("Content-Length")
 
 	// 请求处理完成后，记录响应体
 	largeTransferList := []string{"File Transfer"}
 	if !listopt.IsInStringArr(largeTransferList, blw.ResponseWriter.Header().Get("Content-Description")) {
 		fmt.Println(time.Now().Format(time.DateTime), " [Response body]: "+blw.body.String())
 	} else {
-		fmt.Println(time.Now().Format(time.DateTime), " [大数据量传输中，只输出头部512字节]: ", "\n", blw.body.String()[:512])
+		bodyStr := blw.body.String()
+		if len(bodyStr) > 512 {
+			fmt.Println(time.Now().Format(time.DateTime), " [大数据量传输中，只输出头部512字节]: ", "\n", bodyStr[:512])
+		} else {
+			fmt.Println(time.Now().Format(time.DateTime), " [Response body]: "+bodyStr)
+		}
 	}
-
 }
 
 // bodyLogWriter 是一个包装了响应体的结构体
@@ -133,32 +165,26 @@ type bodyLogWriter struct {
 	body *bytes.Buffer
 }
 
-// Write 重写Write方法以捕获响应体数据
-func (w bodyLogWriter) Write(b []byte) (int, error) {
+// Write 重写Write方法以捕获响应体数据（使用指针接收者）
+func (w *bodyLogWriter) Write(b []byte) (int, error) {
 	w.body.Write(b)
 	return w.ResponseWriter.Write(b)
 }
 
 // EscapeString 手动转义 SQL 字符串中的特殊字符
+// 注意：反斜杠必须最先替换，避免后续替换产生的反斜杠被二次转义
 func EscapeString(value string) string {
 	var replacements = []struct {
 		old string
 		new string
 	}{
-		{`'`, `\'`},
-		{`"`, `\"`},
-		{`\`, `\\`},
-		{`\n`, `\\n`},
-		{`\r`, `\\r`},
-		{`\x00`, `\\0`},
-		{`\x1a`, `\\Z`},
+		{"\\", `\\`}, // 反斜杠必须第一个替换
 		{"'", `\'`},
 		{"\"", `\"`},
-		{"\\", `\\`},
-		{"\n", `\\n`},
-		{"\r", `\\r`},
-		{"\x00", `\\0`},
-		{"\x1a", `\\Z`},
+		{"\n", `\n`},
+		{"\r", `\r`},
+		{"\x00", `\0`},
+		{"\x1a", `\Z`},
 	}
 
 	for _, r := range replacements {
@@ -167,6 +193,7 @@ func EscapeString(value string) string {
 	return value
 }
 
+// EscapeFields 递归转义结构体中所有字符串字段的 SQL 特殊字符
 func EscapeFields(value reflect.Value, prefix string) {
 	if value.Kind() == reflect.Ptr {
 		value = value.Elem()
@@ -187,7 +214,6 @@ func EscapeFields(value reflect.Value, prefix string) {
 			EscapeFields(element, prefixedElementName)
 		}
 	default:
-		// Custom checks (example: check for empty strings)
 		if value.Kind() == reflect.String {
 			value.SetString(EscapeString(value.String()))
 		}

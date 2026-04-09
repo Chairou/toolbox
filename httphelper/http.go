@@ -207,7 +207,11 @@ func PostFile(url string, fullPathSourceFileName string, DstFileName string, par
 		fmt.Println("无法打开文件:", err)
 		return errorHelper(fmt.Errorf("无法打开文件: %w", err))
 	}
-	stat, _ := file.Stat()
+	stat, err := file.Stat()
+	if err != nil {
+		fmt.Println("获取文件信息失败:", err)
+		return errorHelper(fmt.Errorf("获取文件信息失败: %w", err))
+	}
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
@@ -304,23 +308,33 @@ func PathEscape(param map[string]string) string {
 func UrlToMap(url string) map[string]string {
 	argMap := make(map[string]string)
 	pos := strings.Index(url, "?")
+	if pos == -1 {
+		// 没有 "?"，尝试将整个字符串作为参数解析
+		pos = -1
+	}
 	argLine := url[pos+1:]
 	argList := strings.Split(argLine, "&")
 
 	for _, v := range argList {
-		rowList := strings.Split(v, "=")
-		argMap[rowList[0]] = rowList[1]
+		rowList := strings.SplitN(v, "=", 2)
+		if len(rowList) == 2 {
+			argMap[rowList[0]] = rowList[1]
+		} else if len(rowList) == 1 && rowList[0] != "" {
+			argMap[rowList[0]] = ""
+		}
 	}
 	return argMap
 }
 
 func UrlPathEscape(url string) string {
 	pos := strings.Index(url, "?")
+	if pos == -1 {
+		return url
+	}
 	urlHeader := url[0 : pos+1]
 	urlParam := url[pos+1:]
 	encodeStr := PathEscape(UrlToMap(urlParam))
 	return urlHeader + encodeStr
-
 }
 
 func SetGlobalCookie(key string, c []*http.Cookie) error {

@@ -2,6 +2,7 @@ package conf
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"reflect"
 )
@@ -41,12 +42,14 @@ func LoadConfFromCmd[T any](config T) error {
 			}
 			flag.Float64Var(val.Field(i).Addr().Interface().(*float64), fieldName, 0, "usage")
 		default:
-			panic("not string or int ")
+			return fmt.Errorf("unsupported field type: %s for field: %s", fieldType, fieldName)
 		}
 	}
 
 	// 解析命令行参数
-	flag.Parse()
+	if !flag.Parsed() {
+		flag.Parse()
+	}
 
 	return nil
 

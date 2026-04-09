@@ -3,11 +3,12 @@ package logger
 import (
 	"errors"
 	"fmt"
-	"github.com/Chairou/toolbox/util/color"
 	"log"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/Chairou/toolbox/util/color"
 )
 
 var nameLogMap sync.Map
@@ -28,6 +29,7 @@ var logInit LogIntFileName
 
 type LogPool struct {
 	Fd           *os.File
+	Name         string
 	FileName     string
 	Level        int
 	Path         string
@@ -48,17 +50,17 @@ func NewLogPool(name string, fileName string) (*LogPool, error) {
 	} else {
 		inst := &LogPool{}
 		inst.Path, _ = os.Getwd()
+		inst.Name = name
 		inst.FileName = fileName
 		inst.Level = DEBUG_LEVEL
 		inst.PrintConsole = false
 
 		dir1 := filepath.Dir(fileName)
-		// 检测目录是否存在，不存在则创建
+		// 检测目录是否存在，不存在则创建（使用 MkdirAll 支持多层目录）
 		if _, err := os.Stat(dir1); os.IsNotExist(err) {
-			err := os.Mkdir(dir1, os.ModePerm)
+			err := os.MkdirAll(dir1, os.ModePerm)
 			if err != nil {
-				fmt.Println("logger mkdir failed, err:", err, ", dir=", dir1)
-				os.Exit(1)
+				return nil, fmt.Errorf("logger mkdir failed, err: %w, dir: %s", err, dir1)
 			}
 		}
 
@@ -69,7 +71,7 @@ func NewLogPool(name string, fileName string) (*LogPool, error) {
 			logFileName = fileName
 		}
 
-		fd, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0664)
+		fd, err := os.OpenFile(logFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0664)
 		if err != nil {
 			return nil, err
 		}
@@ -106,16 +108,14 @@ func NewLogPool(name string, fileName string) (*LogPool, error) {
 func GetLog() *LogPool {
 	inst := GetLogNum(1)
 	if inst == nil {
-		_ = fmt.Errorf("GetLogNum| get logger from logInit failed")
+		fmt.Println("GetLogNum| get logger from logInit failed")
 		return nil
 	}
 	return inst
 }
 
 func GetLogName(name string) *LogPool {
-	logInit.Lock.RLock()
 	inst, ok := nameLogMap.Load(name)
-	logInit.Lock.RUnlock()
 	if ok {
 		return inst.(*LogPool)
 	} else {
@@ -125,9 +125,7 @@ func GetLogName(name string) *LogPool {
 }
 
 func GetLogNum(logNumber int) *LogPool {
-	logInit.Lock.RLock()
 	inst, ok := intLogMap.Load(logNumber)
-	logInit.Lock.RUnlock()
 	if ok {
 		return inst.(*LogPool)
 	} else {
@@ -232,45 +230,53 @@ func (c *LogPool) Info(v ...any) {
 
 func (c *LogPool) ErrorfTag(tag string, format string, v ...any) {
 	s := tag + " " + fmt.Sprintf(format, v...)
-	color.SetColor(color.Red, s)
+	coloredStr := color.SetColor(color.Red, s)
 	_ = c.errorLogger.Output(3, s)
 	if c.PrintConsole {
-		log.Println(s)
+		log.Println(coloredStr)
 	}
 }
 
 func (c *LogPool) Errorf(format string, v ...any) {
 	s := fmt.Sprintf(format, v...)
-	color.SetColor(color.Red, s)
+	coloredStr := color.SetColor(color.Red, s)
 	_ = c.errorLogger.Output(3, s)
 	if c.PrintConsole {
-		log.Println(s)
+		log.Println(coloredStr)
 	}
 }
 
 func (c *LogPool) ErrorTag(tag string, v ...any) {
 	s := tag + " " + fmt.Sprintln(v...)
-	color.SetColor(color.Red, s)
+	coloredStr := color.SetColor(color.Red, s)
 	_ = c.errorLogger.Output(3, s)
 	if c.PrintConsole {
-		log.Println(s)
+		log.Println(coloredStr)
 	}
 }
 
 func (c *LogPool) Error(v ...any) {
 	s := fmt.Sprintln(v...)
-	color.SetColor(color.Red, s)
+	coloredStr := color.SetColor(color.Red, s)
 	_ = c.errorLogger.Output(3, s)
 	if c.PrintConsole {
-		log.Println(s)
+		log.Println(coloredStr)
 	}
 }
 
 func (c *LogPool) SetLevel(level int) error {
 	if level >= DEBUG_LEVEL && level <= ERROR_LEVEL {
 		c.Level = level
-		nameLogMap.Store(c.FileName, c)
+		nameLogMap.Store(c.Name, c)
 		return nil
 	}
 	return errors.New("level must be DEBUG_LEVEL, INFO_LEVEL, ERROR_LEVEL")
+}
+
+// Close 关闭日志池，释放文件描述符
+func (c *LogPool) Close() error {
+	if c.Fd != nil {
+		return c.Fd.Close()
+	}
+	return nil
 }

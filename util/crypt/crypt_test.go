@@ -12,7 +12,7 @@ func TestCrypt(t *testing.T) {
 	cryptContent := AesEncrypt2(orig, key)
 
 	output := AesDecrypt2(cryptContent, key)
-	t.Logf(string(output))
+	t.Log(string(output))
 }
 
 func TestEncryptLargeFile(t *testing.T) {

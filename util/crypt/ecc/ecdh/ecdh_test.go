@@ -12,7 +12,7 @@ var testKey *ecdsa.PrivateKey
 
 func TestGenerateKey(t *testing.T) {
 	var err error
-	testKey, err = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	testKey, err = ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

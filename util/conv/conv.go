@@ -3,13 +3,14 @@ package conv
 import (
 	"bytes"
 	"fmt"
-	"golang.org/x/text/encoding/simplifiedchinese"
-	"golang.org/x/text/transform"
 	"io"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/transform"
 
 	jsoniter "github.com/json-iterator/go"
 )
@@ -328,14 +329,22 @@ func IsNil(val interface{}) bool {
 		return true
 	}
 	reValue := reflect.ValueOf(val)
-	for reValue.Kind() == reflect.Ptr {
-		reValue = reValue.Elem()
-		if !reValue.IsValid() || reValue.IsNil() {
-			return true
+	for {
+		switch reValue.Kind() {
+		case reflect.Ptr, reflect.Interface:
+			if reValue.IsNil() {
+				return true
+			}
+			reValue = reValue.Elem()
+			if !reValue.IsValid() {
+				return true
+			}
+		case reflect.Chan, reflect.Func, reflect.Map, reflect.Slice:
+			return reValue.IsNil()
+		default:
+			return false
 		}
-		reValue = reflect.ValueOf(reValue.Interface())
 	}
-	return false
 }
 
 func TimeDefault(val interface{}, defaultVal string) time.Time {
@@ -432,26 +441,28 @@ func StringToArray(ext string) (array []string, err error) {
 				tmp = nil
 			}
 		case '"':
-			//单双引号互相引用
-			if dOff || escape {
-				tmp = append(tmp, extRaw[offset])
-				escape = false
-				continue
-			}
-			//开关
-			sOff = !sOff
-			if !sOff && tmp == nil {
-				//如果关闭之后数据还为空，增加一个空字段进去
-				array = append(array, string(tmp))
-			}
-		case '\'':
+			// 如果在单引号内或转义状态，双引号作为普通字符
 			if sOff || escape {
 				tmp = append(tmp, extRaw[offset])
 				escape = false
 				continue
 			}
+			// 切换双引号开关
 			dOff = !dOff
 			if !dOff && tmp == nil {
+				// 如果关闭之后数据还为空，增加一个空字段进去
+				array = append(array, string(tmp))
+			}
+		case '\'':
+			// 如果在双引号内或转义状态，单引号作为普通字符
+			if dOff || escape {
+				tmp = append(tmp, extRaw[offset])
+				escape = false
+				continue
+			}
+			// 切换单引号开关
+			sOff = !sOff
+			if !sOff && tmp == nil {
 				array = append(array, string(tmp))
 			}
 		case '\t':
@@ -496,10 +507,6 @@ func StringToArray(ext string) (array []string, err error) {
 		}
 	}
 
-	if len(array)%2 != 0 {
-		return nil, fmt.Errorf("array length is not even(%d), check your parameters", len(array))
-	}
-
 	return array, nil
 }
 
@@ -507,11 +514,14 @@ func StringToArray(ext string) (array []string, err error) {
 // "-a 123 -b hello" ---> {"-a":"123","-b":"hello"}
 func StringToMap(ext string) (map[string]string, error) {
 	array, err := StringToArray(ext)
+	if err != nil {
+		return nil, err
+	}
 	if len(array) == 0 {
 		return nil, nil
 	}
-	if err != nil {
-		return nil, err
+	if len(array)%2 != 0 {
+		return nil, fmt.Errorf("array length is not even(%d), check your parameters", len(array))
 	}
 	m := make(map[string]string, len(array)/2)
 	for i := range array {
@@ -536,22 +546,12 @@ func JsonToArray(ext string) ([]string, error) {
 	if err != nil {
 		return array, err
 	}
-	keyCount := 0
 	for key, value := range extMap {
-		if strings.HasPrefix(value, "-") {
-			continue
-		}
 		if strings.HasPrefix(key, "-") {
 			array = append(array, key, value)
-			keyCount++
 		} else {
 			array = append(array, "-"+key, value)
-			keyCount++
 		}
-	}
-
-	if keyCount != len(extMap) {
-		return nil, fmt.Errorf("array length is not even(%d), check your parameters", len(array))
 	}
 
 	return array, nil
@@ -570,22 +570,12 @@ func JsonToString(ext string) (string, error) {
 	if err != nil {
 		return str, err
 	}
-	keyCount := 0
 	for key, value := range extMap {
-		if strings.HasPrefix(value, "-") {
-			continue
-		}
 		if strings.HasPrefix(key, "-") {
 			str += fmt.Sprintf("%s %s ", key, value)
-			keyCount++
 		} else {
 			str += fmt.Sprintf("-%s %s ", key, value)
-			keyCount++
 		}
-	}
-
-	if keyCount != len(extMap) {
-		return "", fmt.Errorf("json length is not even(%d), check your parameters", keyCount)
 	}
 
 	return strings.TrimSpace(str), nil
@@ -645,12 +635,11 @@ func MapToStruct(m map[string]interface{}, targetType interface{}) error {
 }
 
 // IntToByte 整型转字节数组
-func IntToByte(data int, len uintptr) (ret []byte) {
-	ret = make([]byte, len)
-	var tmp = 0xff
+func IntToByte(data int, size uintptr) (ret []byte) {
+	ret = make([]byte, size)
 	var index uint
-	for index = 0; index < uint(len); index++ {
-		ret[index] = byte((tmp << (index * 8) & data) >> (index * 8))
+	for index = 0; index < uint(size); index++ {
+		ret[index] = byte(data >> (index * 8) & 0xff)
 	}
 	return ret
 }

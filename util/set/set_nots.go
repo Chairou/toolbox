@@ -94,13 +94,23 @@ func (s *set) IsEmpty() bool {
 
 // IsEqual test whether s and t are the same in size and have the same items.
 func (s *set) IsEqual(t Interface) bool {
-	// Force locking only if given set is threadsafe.
+	// 如果 t 是线程安全的 *Set，直接访问底层 map，避免嵌套锁
 	if conv, ok := t.(*Set); ok {
 		conv.l.RLock()
 		defer conv.l.RUnlock()
+
+		if len(s.m) != len(conv.m) {
+			return false
+		}
+		for item := range conv.m {
+			if _, ok := s.m[item]; !ok {
+				return false
+			}
+		}
+		return true
 	}
 
-	// return false if they are no the same size
+	// 非线程安全版本，通过接口方法访问
 	if sameSize := len(s.m) == t.Size(); !sameSize {
 		return false
 	}
@@ -116,6 +126,19 @@ func (s *set) IsEqual(t Interface) bool {
 
 // IsSubset tests whether t is a subset of s.
 func (s *set) IsSubset(t Interface) (subset bool) {
+	// 如果 t 是线程安全的 *Set，直接访问底层 map，避免嵌套锁
+	if conv, ok := t.(*Set); ok {
+		conv.l.RLock()
+		defer conv.l.RUnlock()
+
+		for item := range conv.m {
+			if _, ok := s.m[item]; !ok {
+				return false
+			}
+		}
+		return true
+	}
+
 	subset = true
 
 	t.Each(func(item interface{}) bool {
@@ -153,8 +176,9 @@ func (s *set) Copy() Interface {
 
 // String returns a string representation of s
 func (s *set) String() string {
-	t := make([]string, 0, len(s.List()))
-	for _, item := range s.List() {
+	list := s.List()
+	t := make([]string, 0, len(list))
+	for _, item := range list {
 		t = append(t, fmt.Sprintf("%v", item))
 	}
 
@@ -182,8 +206,8 @@ func (s *set) Merge(t Interface) {
 	})
 }
 
-// it's not the opposite of Merge.
-// Separate removes the set items containing in t from set s. Please aware that
+// Separate removes the set items containing in t from set s.
+// It's not the opposite of Merge. Items in t that are not in s are ignored.
 func (s *set) Separate(t Interface) {
 	s.Remove(t.List()...)
 }

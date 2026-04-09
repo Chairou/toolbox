@@ -22,7 +22,7 @@ func (s SetType) String() string {
 	case NonThreadSafe:
 		return "NonThreadSafe"
 	}
-	return ""
+	return "Unknown"
 }
 
 // Interface is describing a Set. Sets are an unordered, unique list of values.
@@ -48,9 +48,9 @@ type Interface interface {
 // helpful to not write everywhere struct{}{}
 var keyExists = struct{}{}
 
-// New creates and initalizes a new Set interface. Its single parameter
+// New creates and initializes a new Set interface. Its single parameter
 // denotes the type of set to create. Either ThreadSafe or
-// NonThreadSafe. The default is ThreadSafe.
+// NonThreadSafe. Any other value defaults to ThreadSafe.
 func New(settype SetType) Interface {
 	if settype == NonThreadSafe {
 		return newNonTS()
@@ -93,17 +93,20 @@ func Difference(set1, set2 Interface, sets ...Interface) Interface {
 
 // Intersection returns a new set which contains items that only exist in all given sets.
 func Intersection(set1, set2 Interface, sets ...Interface) Interface {
-	all := Union(set1, set2, sets...)
-	result := Union(set1, set2, sets...)
+	// 以 set1 的副本为基础，逐个检查元素是否存在于所有其他集合中
+	result := set1.Copy()
 
-	all.Each(func(item interface{}) bool {
-		if !set1.Has(item) || !set2.Has(item) {
+	result.Each(func(item interface{}) bool {
+		// 如果 item 不在 set2 中，从结果中移除
+		if !set2.Has(item) {
 			result.Remove(item)
+			return true
 		}
-
+		// 检查所有额外的集合
 		for _, set := range sets {
 			if !set.Has(item) {
 				result.Remove(item)
+				return true
 			}
 		}
 		return true

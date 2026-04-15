@@ -17,7 +17,7 @@ func TestGetCidrIpRange(t *testing.T) {
 	ipmask := "192.168.1.2/24"
 	first, broadcast := GetCidrIpRange(ipmask)
 	t.Log(first, broadcast)
-	if first != "192.168.1.1" && broadcast != "192.168.1.255" {
+	if first != "192.168.1.1" || broadcast != "192.168.1.255" {
 		t.Error("GetCidrIpRange err:", first, broadcast)
 	}
 }

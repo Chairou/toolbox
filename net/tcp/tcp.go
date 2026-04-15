@@ -1,6 +1,7 @@
 package tcp
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"net"
@@ -28,14 +29,32 @@ type Server struct {
 	IpPort           string
 	OperationList    []operation
 	Tag              string
+	TagBytes         []byte // 预计算的 Tag 字节切片，避免每次 string→[]byte 转换
 	HeaderLength     int
 	TagSize          int
 	PacketLengthSize int
 	EndMarker        []byte
 }
 
+// connContext 每个连接的上下文，包含带缓冲的 reader/writer，避免每次 I/O 都系统调用
+type connContext struct {
+	conn   *net.TCPConn
+	reader *bufio.Reader
+	writer *bufio.Writer
+}
+
+// connCtxMap 全局连接上下文映射，通过 conn 指针查找对应的 bufio reader/writer
+var connCtxMap sync.Map
+
+// helloSuffix 预分配常量字节切片，避免每次调用时 string→[]byte 转换
+var helloSuffix = []byte(", Hello, world!")
+
 func Content(svr *Server, conn *net.TCPConn, input *[]byte) (output []byte, err error) {
-	return append(*input, []byte(", Hello, world!")...), nil
+	inputLen := len(*input)
+	result := make([]byte, inputLen+len(helloSuffix))
+	copy(result, *input)
+	copy(result[inputLen:], helloSuffix)
+	return result, nil
 }
 
 func NewTcpServerOption(ipPort string, option ServerOption) (*Server, error) {
@@ -81,24 +100,37 @@ var bufferPool = sync.Pool{
 	},
 }
 
+// connCtxPool 复用 connContext 中的 bufio.Reader/Writer
+var readerPool = sync.Pool{
+	New: func() interface{} {
+		return bufio.NewReaderSize(nil, 8192)
+	},
+}
+
+var writerPool = sync.Pool{
+	New: func() interface{} {
+		return bufio.NewWriterSize(nil, 8192)
+	},
+}
+
+// getConnCtx 获取连接上下文，如果不存在则返回 nil（兼容非 Server 管理的连接）
+func getConnCtx(conn *net.TCPConn) *connContext {
+	if v, ok := connCtxMap.Load(conn); ok {
+		return v.(*connContext)
+	}
+	return nil
+}
+
 // 定义处理过程函数，前一个处理函数的输出是后一个处理函数的输入
 func (s *Server) process(functions []operation, t *Server, conn *net.TCPConn, input *[]byte) error {
 	var err error
 	var result []byte
-	if input == nil {
-		result = nil
-	} else {
+	if input != nil {
 		result = *input
 	}
 
 	for _, f := range functions {
-		buf := bufferPool.Get().([]byte)
-		buf = buf[:0]
-		if result != nil {
-			buf = append(buf, result...)
-		}
-		result, err = f(t, conn, &buf)
-		bufferPool.Put(buf)
+		result, err = f(t, conn, &result)
 		if err != nil {
 			fmt.Println("主循环错误，退出：", err)
 			return err
@@ -127,12 +159,35 @@ func (s *Server) Run() error {
 }
 
 func (s *Server) HandleConnection(conn *net.TCPConn) {
-	defer func(conn *net.TCPConn) {
+	// 设置 TCP_NODELAY，禁用 Nagle 算法，减少小包延迟
+	conn.SetNoDelay(true)
+
+	// 为每个连接创建带缓冲的 reader/writer，减少系统调用次数
+	reader := readerPool.Get().(*bufio.Reader)
+	reader.Reset(conn)
+
+	writer := writerPool.Get().(*bufio.Writer)
+	writer.Reset(conn)
+
+	ctx := &connContext{
+		conn:   conn,
+		reader: reader,
+		writer: writer,
+	}
+	// 注册到全局映射，让 operation 函数可以通过 conn 查找 bufio reader/writer
+	connCtxMap.Store(conn, ctx)
+
+	defer func() {
+		connCtxMap.Delete(conn)
+		writer.Flush()
+		readerPool.Put(reader)
+		writerPool.Put(writer)
 		err := conn.Close()
 		if err != nil {
 			fmt.Println("Close Connection, err:" + err.Error())
 		}
-	}(conn)
+	}()
+
 	for {
 		err := s.process(s.OperationList, s, conn, nil)
 		if err != nil {
@@ -143,6 +198,7 @@ func (s *Server) HandleConnection(conn *net.TCPConn) {
 
 func (s *Server) SetTag(tag string) {
 	s.Tag = tag
+	s.TagBytes = []byte(tag)
 	s.TagSize = len(tag)
 }
 
@@ -150,7 +206,5 @@ func (s *Server) Close(conn *net.TCPConn) (err error) {
 	if conn == nil {
 		return errors.New("conn is nil，close err")
 	}
-	_ = conn.Close()
-	conn = nil
-	return nil
+	return conn.Close()
 }

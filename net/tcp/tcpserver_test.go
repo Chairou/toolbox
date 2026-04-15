@@ -7,7 +7,7 @@ import (
 
 func TestTcpTlvServer(t *testing.T) {
 	opt := ServerOption{}
-	opt.Tag = "FF"
+	opt.Tag = "BF"
 	opt.PacketLengthSize = PACKAGE_LENGTH_FOUR_BYTE
 	opt.Type = TYPE_TLV
 

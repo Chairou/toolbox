@@ -1,30 +1,30 @@
+// Package listopt 提供列表（切片）常用操作的工具函数
 package listopt
 
 import (
 	"reflect"
-	"sort"
 	"strings"
 )
 
 // SplitList 平均分割一个list到num个list里
 func SplitList(arr []string, num int64) [][]string {
 	max := int64(len(arr))
-	if max < num {
+	if num <= 0 || max < num {
 		return nil
 	}
-	var segmens = make([][]string, 0)
+	segments := make([][]string, 0, num)
 	quantity := max / num
-	end := int64(0)
-	for i := int64(1); i <= num; i++ {
-		qu := i * quantity
-		if i != num {
-			segmens = append(segmens, arr[i-1+end:qu])
-		} else {
-			segmens = append(segmens, arr[i-1+end:])
+	remainder := max % num
+	start := int64(0)
+	for i := int64(0); i < num; i++ {
+		size := quantity
+		if i < remainder {
+			size++
 		}
-		end = qu - i
+		segments = append(segments, arr[start:start+size])
+		start += size
 	}
-	return segmens
+	return segments
 }
 
 // RemoveRepeatedElement 移除数组中重复的元素
@@ -62,6 +62,7 @@ func RemoveRepeatedElement(slice interface{}) []interface{} {
 	return newSlice
 }
 
+// RemoveDuplicateString 移除字符串切片中的重复元素，保持原始顺序
 func RemoveDuplicateString(languages []string) []string {
 	result := make([]string, 0, len(languages))
 	temp := map[string]struct{}{}
@@ -75,6 +76,7 @@ func RemoveDuplicateString(languages []string) []string {
 	return result
 }
 
+// RemoveDuplicateInt 移除整数切片中的重复元素，保持原始顺序
 func RemoveDuplicateInt(languages []int) []int {
 	result := make([]int, 0, len(languages))
 	temp := map[int]struct{}{}
@@ -88,36 +90,35 @@ func RemoveDuplicateInt(languages []int) []int {
 	return result
 }
 
-// DeleteString 删除列表中的字串
+// DeleteString 删除列表中第一个匹配的字符串，未找到则返回原切片
 func DeleteString(strList []string, delStr string) []string {
-	j := 0
 	if len(strList) == 0 {
 		return strList
 	}
-	for _, val := range strList {
+	for i, val := range strList {
 		if val == delStr {
-			break
+			return append(strList[:i], strList[i+1:]...)
 		}
-		j++
 	}
-	return append(strList[:j], strList[j+1:]...)
+	return strList
 }
 
-// IntersectStr 求交集
+// IntersectStr 求两个字符串切片的交集
 func IntersectStr(slice1, slice2 []string) []string {
-	m := make(map[string]int)
-	nn := make([]string, 0)
+	m := make(map[string]bool)
 	for _, v := range slice1 {
-		m[v]++
+		m[v] = true
 	}
 
+	seen := make(map[string]bool)
+	result := make([]string, 0)
 	for _, v := range slice2 {
-		times, _ := m[v]
-		if times == 1 {
-			nn = append(nn, v)
+		if m[v] && !seen[v] {
+			result = append(result, v)
+			seen[v] = true
 		}
 	}
-	return nn
+	return result
 }
 
 // UnionStr 求并集
@@ -174,26 +175,24 @@ func DifferenceStr2(slice1 []string, slice2 []string) []string {
 	return difference
 }
 
-// In 判断是否在数组内
+// In 判断目标字符串是否在数组内
 func In(strList []string, target string) bool {
-	sort.Strings(strList)
-	index := sort.SearchStrings(strList, target)
-	if index < len(strList) && strList[index] == target {
-		return true
+	for _, v := range strList {
+		if v == target {
+			return true
+		}
 	}
 	return false
 }
 
-// ReverseStr 反序输出
+// ReverseStr 返回反序的新切片，不修改原切片
 func ReverseStr(arr []string) []string {
-	var temp string
 	length := len(arr)
-	for i := 0; i < length/2; i++ {
-		temp = (arr)[i]
-		(arr)[i] = (arr)[length-1-i]
-		(arr)[length-1-i] = temp
+	result := make([]string, length)
+	for i := 0; i < length; i++ {
+		result[i] = arr[length-1-i]
 	}
-	return arr
+	return result
 }
 
 // IsContainsInStringArr 是否包含在数组中
@@ -257,14 +256,10 @@ func InIntArr(arr []int, id int) bool {
 	return false
 }
 
-// KeyInIntMap 是否在int类型Map中
+// KeyInIntMap 判断key是否在int类型Map中
 func KeyInIntMap(m map[int]interface{}, id int) bool {
-	for k := range m {
-		if id == k {
-			return true
-		}
-	}
-	return false
+	_, ok := m[id]
+	return ok
 }
 
 // GetValue 获取未知类型的值

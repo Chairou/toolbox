@@ -21,7 +21,7 @@ func TestGetFirstAndLastDateOfWeek(t *testing.T) {
 	t1 := time.Date(2022, 1, 1, 1, 1, 1, 1, time.Local)
 	monday, sunday := GetFirstAndLastDateOfWeek(t1)
 	t.Log(monday, sunday)
-	if monday != "2023-02-13" || sunday != "2023-02-19" {
+	if monday != "2021-12-27" || sunday != "2022-01-02" {
 		t.Error("GetFirstAndLastDateOfWeek err:", monday, sunday)
 	}
 }

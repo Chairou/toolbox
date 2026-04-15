@@ -1,3 +1,4 @@
+// Package check 提供常用的数据校验工具函数
 package check
 
 import (
@@ -5,15 +6,28 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/Chairou/toolbox/util/conv"
-	"math"
 	"net"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/Chairou/toolbox/util/conv"
 )
 
-// HashString hash字符串
+// 预编译正则表达式，避免重复编译
+var (
+	sqlInjectRe  = regexp.MustCompile(`(?:')|(?:--)|(/\*(?:.|[\n\r])*?\*/)|(?i)(\b(select|update|and|or|delete|insert|trancate|char|chr|into|substr|ascii|declare|exec|count|master|into|drop|execute)\b)`)
+	qqNumberRe   = regexp.MustCompile(`^[1-9][0-9]{4,13}$`)
+	openidRe     = regexp.MustCompile(`^[a-zA-Z0-9_-]{28,34}$`)
+	emailRe      = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]+@[a-z0-9]+(\.[a-z]{2,})*\.[a-z]{2,}$`)
+	mobileRe     = regexp.MustCompile(`^1([38][0-9]|14[579]|5[^4]|16[6]|7[0-35-8]|9[189])\d{8}$`)
+	idCardRe     = regexp.MustCompile(`^[\d]{6}(19|20)[\d]{2}(0[1-9]|1[0-2])(0[1-9]|[12][\d]|3[01])[\d]{3}[\dX]$`)
+	idCardSumRe  = regexp.MustCompile(`^(\d{6})(\d{4})(\d{2})(\d{2})(\d{3})(\d|X)$`)
+	validFieldRe = regexp.MustCompile(`^[\p{Han}\p{Latin}0-9_,\.\-]+$`)
+	sqlFieldRe   = regexp.MustCompile(`^[\p{Latin}0-9_\.\-]+$`)
+)
+
+// HashString 对字符串进行SHA1哈希
 func HashString(str string) string {
 	h := sha1.New()
 	h.Write([]byte(str))
@@ -23,12 +37,13 @@ func HashString(str string) string {
 
 // IsSQLInject 正则过滤sql注入的方法
 func IsSQLInject(toMatchStr string) bool {
-	str := `(?:')|(?:--)|(/\\*(?:.|[\\n\\r])*?\\*/)|(?i)(\b(select|update|and|or|delete|insert|trancate|char|chr|into|substr|ascii|declare|exec|count|master|into|drop|execute)\b)`
-	re, err := regexp.Compile(str)
-	if err != nil {
-		return false
-	}
-	return re.MatchString(toMatchStr)
+	return sqlInjectRe.MatchString(toMatchStr)
+}
+
+// IsSqlInject 保留旧函数名以保持向后兼容
+// Deprecated: 请使用 IsSQLInject
+func IsSqlInject(toMatchStr string) bool {
+	return IsSQLInject(toMatchStr)
 }
 
 // IsNumeric 验证数字类型
@@ -80,58 +95,38 @@ func IsNumeric(val interface{}) bool {
 			}
 		}
 		return true
+	default:
+		return false
 	}
-	return false
 }
 
-func IsQQNumber(qq string) (err error) {
-	pattern := "^[1-9][0-9]{4,13}$"
-	matched, err := regexp.MatchString(pattern, qq)
-	if err != nil {
-		return err
-	}
-	if !matched {
-		//长度验证
-		if len(qq) < 5 {
-			return fmt.Errorf("输入的QQ号[%s]格式不正确,请输入正确的QQ", qq)
-		}
+// IsQQNumber 验证QQ号格式是否正确
+func IsQQNumber(qq string) error {
+	if !qqNumberRe.MatchString(qq) {
+		return fmt.Errorf("输入的QQ号[%s]格式不正确,请输入正确的QQ", qq)
 	}
 	return nil
 }
 
-func IsOpenid(openid string) (err error) {
-	//验证是否为openid
-	pattern := "^[a-zA-Z0-9_-]{28,34}$"
-	matched, err := regexp.MatchString(pattern, openid)
-	if err != nil {
-		return err
-	}
-	if !matched {
-		//长度验证
-		if len(openid) < 5 {
-			return fmt.Errorf("输入的openid[%s]格式不正确,请输入正确的openid", openid)
-		}
+// IsOpenid 验证openid格式是否正确
+func IsOpenid(openid string) error {
+	if !openidRe.MatchString(openid) {
+		return fmt.Errorf("输入的openid[%s]格式不正确,请输入正确的openid", openid)
 	}
 	return nil
 }
 
-func IsEmail(email string) (err error) {
-	//验证是否为email
-	pattern := "^[a-z0-9]{1}[a-z0-9_-]{1,}@[a-z0-9]{1,}(.[a-z]{2,})*.[a-z]{2,}$"
-	matched, err := regexp.MatchString(pattern, email)
-	if err != nil {
-		return err
-	}
-	if !matched {
+// IsEmail 验证邮箱地址格式是否正确
+func IsEmail(email string) error {
+	if !emailRe.MatchString(email) {
 		return fmt.Errorf("输入的邮箱地址[%s]格式不正确,请输入正确的邮箱地址", email)
 	}
 	return nil
 }
 
+// IsMobile 验证手机号格式是否正确
 func IsMobile(mobile string) bool {
-	reg := `^1([38][0-9]|14[579]|5[^4]|16[6]|7[0-35-8]|9[189])\d{8}$`
-	rgx := regexp.MustCompile(reg)
-	return rgx.MatchString(mobile)
+	return mobileRe.MatchString(mobile)
 }
 
 // IsValidIDCardNumber 只能用到2099年, 到达2100年就会出错
@@ -148,9 +143,7 @@ func IsValidIDCardNumber(id string) bool {
 	}
 
 	// 判断身份证号的格式是否正确
-	pattern := `^[\d]{6}(19|20)[\d]{2}(0[1-9]|1[0-2])(0[1-9]|[12][\d]|3[01])[\d]{3}[\dX]$`
-	reg := regexp.MustCompile(pattern)
-	if !reg.MatchString(id) {
+	if !idCardRe.MatchString(id) {
 		return false
 	}
 
@@ -165,8 +158,7 @@ func IsValidIDCardCheckSum(idCard string) bool {
 	}
 
 	// 正则表达式匹配格式
-	match, _ := regexp.MatchString(`^(\d{6})(\d{4})(\d{2})(\d{2})(\d{3})(\d|X)$`, idCard)
-	if !match {
+	if !idCardSumRe.MatchString(idCard) {
 		return false
 	}
 
@@ -188,80 +180,67 @@ func IsValidIDCardCheckSum(idCard string) bool {
 	return checkCode == string(idCard[17])
 }
 
-// IsValidField 检查合法输入, 白名单, 汉字, 数字, 字母,下划线,点
-func IsValidField(field string) (err error) {
+// IsValidField 检查合法输入, 白名单, 汉字, 数字, 字母, 下划线, 点
+func IsValidField(field string) error {
 	if len(field) <= 0 {
 		return fmt.Errorf("field is null")
 	}
-	//验证是否为field
-	pattern := `^[\p{Han}\p{Latin}0-9_,\.\-]+$`
-	matched, err := regexp.MatchString(pattern, field)
-	if err != nil {
-		return err
-	}
-	if !matched {
+	if !validFieldRe.MatchString(field) {
 		return fmt.Errorf("所传字段[%s]存在注入风险", field)
 	}
 	return nil
 }
 
-func IsValidFields(fields ...string) (err error) {
+// IsValidFields 批量检查多个字段的合法性
+func IsValidFields(fields ...string) error {
 	if len(fields) <= 0 {
-		err := errors.New("IsValidFields: field is null")
-		return err
+		return errors.New("IsValidFields: field is null")
 	}
 	finalErrorBuf := strings.Builder{}
 	finalErrorBuf.WriteString("IsValidFields:{ ")
+	hasError := false
 	for _, arg := range fields {
 		err := IsValidField(arg)
 		if err != nil {
+			hasError = true
 			finalErrorBuf.WriteString("【 ")
 			finalErrorBuf.WriteString(arg)
 			finalErrorBuf.WriteString(" is not Valid 】, ")
 		}
 	}
-	finaStr := strings.TrimRight(finalErrorBuf.String(), ", ")
-
-	finaStr += " }"
-	if len(finalErrorBuf.String()) == len("IsValidFields:{ ") {
+	if !hasError {
 		return nil
-	} else {
-		return errors.New(finaStr)
 	}
+	finalStr := strings.TrimRight(finalErrorBuf.String(), ", ")
+	finalStr += " }"
+	return errors.New(finalStr)
 }
 
+// IsIP 验证IP地址格式是否正确
 func IsIP(ip string) bool {
-	address := net.ParseIP(ip)
-	if address == nil {
-		fmt.Println("ip地址格式不正确")
-		return false
-	} else {
-		fmt.Println("正确的ip地址", address.String())
-		return true
-	}
+	return net.ParseIP(ip) != nil
 }
 
+// InNumRange 检查数值是否在[min, max]范围内
 func InNumRange(val interface{}, min, max float64) bool {
 	mid, ok := conv.Float64(val)
 	if !ok {
 		return false
 	}
-	if math.Max(mid, min) == mid && math.Max(mid, max) == max {
-		return true
-	} else {
-		return false
-	}
+	return mid >= min && mid <= max
 }
 
-func IsSqlField(str string) bool {
-	pattern := `^[\p{Latin}0-9_\.\-]+$`
-	matched, err := regexp.MatchString(pattern, str)
-	if err != nil {
-		return false
-	}
-	if !matched {
-		return false
-	} else {
-		return true
-	}
+// IsSQLField 检查字符串是否为合法的SQL字段名
+func IsSQLField(str string) bool {
+	return sqlFieldRe.MatchString(str)
 }
+
+// IsSqlField 保留旧函数名以保持向后兼容
+// Deprecated: 请使用 IsSQLField
+func IsSqlField(str string) bool {
+	return IsSQLField(str)
+}
+
+// 以下保留旧函数签名的兼容别名（返回值带命名的旧版本）
+// 注意：旧版 IsQQNumber/IsOpenid/IsEmail/IsValidField/IsValidFields 的返回值签名
+// 从 (err error) 改为 error，这是向后兼容的，调用方无需修改

@@ -1,3 +1,4 @@
+// Package cal 提供日期、IP、数值等常用计算工具函数
 package cal
 
 import (
@@ -8,14 +9,26 @@ import (
 )
 
 const (
-	TIME_DATE      string = "2006-01-02"
-	TIME_COMMON    string = "2006-01-02 15:04:05"
-	TIME_SHORTDATE string = "20060102"
+	TimeDate      string = "2006-01-02"
+	TimeCommon    string = "2006-01-02 15:04:05"
+	TimeShortDate string = "20060102"
 
-	TIME_TO_DAYS    int = 1
-	TIME_TO_HOURS   int = 2
-	TIME_TO_MINUTES int = 3
-	TIME_TO_SECONDS int = 4
+	TimeToDays    int = 1
+	TimeToHours   int = 2
+	TimeToMinutes int = 3
+	TimeToSeconds int = 4
+)
+
+// 保留旧常量名以保持向后兼容
+const (
+	TIME_DATE      = TimeDate
+	TIME_COMMON    = TimeCommon
+	TIME_SHORTDATE = TimeShortDate
+
+	TIME_TO_DAYS    = TimeToDays
+	TIME_TO_HOURS   = TimeToHours
+	TIME_TO_MINUTES = TimeToMinutes
+	TIME_TO_SECONDS = TimeToSeconds
 )
 
 // GetDiffTime get the diff time from previous to later time
@@ -45,17 +58,19 @@ func GetDiffTime(previousTime, laterTime interface{}, flag int) (int64, error) {
 func getDiff(previous, later time.Time, flag int) int64 {
 	var ret int64
 	switch flag {
-	case TIME_TO_DAYS:
+	case TimeToDays:
 		later = time.Date(later.Year(), later.Month(), later.Day(), 0, 0, 0, 0, time.Local)
 		previous = time.Date(previous.Year(), previous.Month(), previous.Day(), 0,
 			0, 0, 0, time.Local)
 		ret = int64(math.Abs(later.Sub(previous).Hours() / 24))
-	case TIME_TO_HOURS:
+	case TimeToHours:
 		ret = int64(math.Abs(later.Sub(previous).Hours()))
-	case TIME_TO_MINUTES:
+	case TimeToMinutes:
 		ret = int64(math.Abs(later.Sub(previous).Minutes()))
-	case TIME_TO_SECONDS:
+	case TimeToSeconds:
 		ret = int64(math.Abs(later.Sub(previous).Seconds()))
+	default:
+		ret = 0
 	}
 	return ret
 }
@@ -80,32 +95,32 @@ func GetFirstAndLastDateOfWeek(date time.Time) (weekMonday, weekSunday string) {
 	return
 }
 
-func getDiffStr(previous, later string, flag int) (int64, error) {
-	var previousTime, laterTime time.Time
+func getDiffStr(laterStr, previousStr string, flag int) (int64, error) {
+	var laterTime, previousTime time.Time
 	var err1, err2 error
-	len1 := len(previous)
-	len2 := len(later)
+	len1 := len(laterStr)
+	len2 := len(previousStr)
 
 	switch len1 {
 	case 8:
-		previousTime, err1 = time.ParseInLocation(TIME_SHORTDATE, previous, time.Local)
+		laterTime, err1 = time.ParseInLocation(TimeShortDate, laterStr, time.Local)
 	case 10:
-		previousTime, err1 = time.ParseInLocation(TIME_DATE, previous, time.Local)
+		laterTime, err1 = time.ParseInLocation(TimeDate, laterStr, time.Local)
 	case 19:
-		previousTime, err1 = time.ParseInLocation(TIME_COMMON, previous, time.Local)
+		laterTime, err1 = time.ParseInLocation(TimeCommon, laterStr, time.Local)
 	default:
-		err1 = errors.New("previous format not supported")
+		err1 = errors.New("later format not supported")
 	}
 
 	switch len2 {
 	case 8:
-		laterTime, err2 = time.ParseInLocation(TIME_SHORTDATE, later, time.Local)
+		previousTime, err2 = time.ParseInLocation(TimeShortDate, previousStr, time.Local)
 	case 10:
-		laterTime, err2 = time.ParseInLocation(TIME_DATE, later, time.Local)
+		previousTime, err2 = time.ParseInLocation(TimeDate, previousStr, time.Local)
 	case 19:
-		laterTime, err2 = time.ParseInLocation(TIME_COMMON, later, time.Local)
+		previousTime, err2 = time.ParseInLocation(TimeCommon, previousStr, time.Local)
 	default:
-		err2 = errors.New("later format not supported")
+		err2 = errors.New("previous format not supported")
 	}
 
 	if err1 != nil {
@@ -121,24 +136,24 @@ func getDiffStr(previous, later string, flag int) (int64, error) {
 
 // UnixTimeStamp2TimeStr timestamp转换为标准日期时间
 func UnixTimeStamp2TimeStr(sec int64) string {
-	return time.Unix(sec, 0).Format(TIME_COMMON)
+	return time.Unix(sec, 0).Format(TimeCommon)
 }
 
 // DayListBetweenStartEnd 获取两个日期之间的所有日期
 func DayListBetweenStartEnd(start, end string) ([]string, error) {
 	dayList := make([]string, 0)
-	days, err := getDiffStr(start, end, TIME_TO_DAYS)
+	days, err := getDiffStr(start, end, TimeToDays)
 	if err != nil {
 		return nil, err
 	}
-	t1, err := time.ParseInLocation(TIME_DATE, start, time.Local)
+	t1, err := time.ParseInLocation(TimeDate, start, time.Local)
 	if err != nil {
 		return nil, err
 	}
 
 	for i := 0; i < int(days)+1; i++ {
 		tmpDate := t1.AddDate(0, 0, i)
-		dayList = append(dayList, tmpDate.Format(TIME_DATE))
+		dayList = append(dayList, tmpDate.Format(TimeDate))
 	}
 	return dayList, nil
 }
@@ -150,13 +165,13 @@ func Yesterday(today string) (string, error) {
 	if today == "" {
 		nTime = time.Now()
 	} else {
-		nTime, err = time.ParseInLocation(TIME_DATE, today, time.Local)
+		nTime, err = time.ParseInLocation(TimeDate, today, time.Local)
 		if err != nil {
 			return "", err
 		}
 	}
 	yesterdayTime := nTime.AddDate(0, 0, -1)
-	logDay := yesterdayTime.Format(TIME_DATE)
+	logDay := yesterdayTime.Format(TimeDate)
 	return logDay, nil
 }
 
@@ -167,24 +182,24 @@ func Tomorrow(today string) (string, error) {
 	if today == "" {
 		nTime = time.Now()
 	} else {
-		nTime, err = time.ParseInLocation(TIME_DATE, today, time.Local)
+		nTime, err = time.ParseInLocation(TimeDate, today, time.Local)
 		if err != nil {
 			return "", err
 		}
 	}
 	tomorrowTime := nTime.AddDate(0, 0, 1)
-	logDay := tomorrowTime.Format(TIME_DATE)
+	logDay := tomorrowTime.Format(TimeDate)
 	return logDay, nil
 }
 
 // GetCurrentAndNextHour 获取当前时间和后一小时
 func GetCurrentAndNextHour(timeStr string) (string, string, error) {
-	now, err := time.ParseInLocation(TIME_COMMON, timeStr, time.Local)
+	now, err := time.ParseInLocation(TimeCommon, timeStr, time.Local)
 	if err != nil {
 		return "", "", err
 	}
-	currentHour := now.Truncate(time.Hour).Format(TIME_COMMON)
-	nextHour := now.Truncate(time.Hour).Add(time.Hour).Format(TIME_COMMON)
+	currentHour := now.Truncate(time.Hour).Format(TimeCommon)
+	nextHour := now.Truncate(time.Hour).Add(time.Hour).Format(TimeCommon)
 	return currentHour, nextHour, nil
 }
 
@@ -227,11 +242,11 @@ func GetWeekNumByDate(date string) int {
 
 // GetCalDataStr 计算日期加减后的string
 func GetCalDataStr(date string, delta int) string {
-	d, err := time.Parse(TIME_DATE, date)
+	d, err := time.Parse(TimeDate, date)
 	if err != nil {
 		return ""
 	}
-	return d.AddDate(0, 0, delta).Format(TIME_DATE)
+	return d.AddDate(0, 0, delta).Format(TimeDate)
 }
 
 // GetTimestampGap 获取时间间隔的起始时间戳，用来做基于时间的幂等函数
@@ -243,7 +258,7 @@ func GetTimestampGap(intervalMinutes int) int64 {
 }
 
 // 获取当前时间的时间戳，基于指定的秒数
-func getCurrentIntervalTimestamp(intervalSeconds int) int64 {
+func GetCurrentIntervalTimestamp(intervalSeconds int) int64 {
 	now := time.Now()
 	// 计算当前时间属于哪个时间间隔
 	intervalStart := now.Truncate(time.Duration(intervalSeconds) * time.Second)

@@ -48,6 +48,7 @@ func LenToSubNetMask(subnet int) string {
 	return resultMask
 }
 
+// GetCidrIpRange 获取CIDR地址范围的首地址和广播地址
 func GetCidrIpRange(cidr string) (first string, broadcast string) {
 	ip := strings.Split(cidr, "/")[0]
 	ipSegs := strings.Split(ip, ".")
@@ -70,11 +71,10 @@ func getCidrHostNum(maskLen int) uint {
 	return cidrIpNum
 }
 
-// 获取Cidr的掩码
+// getCidrIpMask 获取Cidr的掩码
 func getCidrIpMask(maskLen int) string {
 	// ^uint32(0)二进制为32个比特1，通过向左位移，得到CIDR掩码的二进制
 	cidrMask := ^uint32(0) << uint(32-maskLen)
-	fmt.Println(fmt.Sprintf("%b \n", cidrMask))
 	//计算CIDR掩码的四个片段，将想要得到的片段移动到内存最低8位后，将其强转为8位整型，从而得到
 	cidrMaskSeg1 := uint8(cidrMask >> 24)
 	cidrMaskSeg2 := uint8(cidrMask >> 16)

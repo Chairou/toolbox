@@ -1,3 +1,4 @@
+// Package encode 提供常用的编码、哈希、压缩和加解密工具函数
 package encode
 
 import (
@@ -10,189 +11,168 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/base64"
-	"encoding/hex"
 	"fmt"
+	"hash"
 	"io"
 	"os"
 )
 
-func FlatCompress(origData []byte) (result []byte, err error) {
+// FlatCompress 使用flate算法压缩数据
+func FlatCompress(origData []byte) ([]byte, error) {
 	var buf bytes.Buffer
 	w, err := flate.NewWriter(&buf, -1)
 	if err != nil {
 		return nil, err
 	}
 	_, err = w.Write(origData)
+	if err != nil {
+		return nil, err
+	}
 	err = w.Close()
-	result = buf.Bytes()
-	return
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
 
-func FlatUnCompress(compressData []byte) (result []byte, err error) {
-	result, err = io.ReadAll(flate.NewReader(bytes.NewReader(compressData)))
-	return
+// FlatUnCompress 使用flate算法解压数据
+func FlatUnCompress(compressData []byte) ([]byte, error) {
+	return io.ReadAll(flate.NewReader(bytes.NewReader(compressData)))
 }
 
-func Base64Encode(origData []byte) (result string) {
-	result = base64.StdEncoding.EncodeToString(origData)
-	return result
+// Base64Encode 对数据进行Base64编码
+func Base64Encode(origData []byte) string {
+	return base64.StdEncoding.EncodeToString(origData)
 }
 
-func Base64Decode(encodedData string) (result []byte, err error) {
-	result, err = base64.StdEncoding.DecodeString(encodedData)
-	return result, err
+// Base64Decode 对Base64编码的字符串进行解码
+func Base64Decode(encodedData string) ([]byte, error) {
+	return base64.StdEncoding.DecodeString(encodedData)
 }
 
-func MD5(origData []byte) (result string) {
+// MD5 计算数据的MD5哈希值
+func MD5(origData []byte) string {
 	has := md5.Sum(origData)
-	result = fmt.Sprintf("%x", has) //将[]byte转成16进制
-	return result
+	return fmt.Sprintf("%x", has)
 }
 
-func MD5File(fileName string) (result string, err error) {
+// hashFile 通用的文件哈希计算辅助函数
+func hashFile(fileName string, h hash.Hash) (string, error) {
 	f, err := os.Open(fileName)
 	if err != nil {
 		return "", err
 	}
-	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-			fmt.Println("MD5File|Close err:", err)
-		}
-	}(f)
+	defer f.Close()
 
-	h := md5.New()
 	if _, err := io.Copy(h, f); err != nil {
 		return "", err
 	}
-	result = hex.EncodeToString(h.Sum(nil))
-	return result, nil
+	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
-func Sha1(origData []byte) (result string) {
+// MD5File 计算文件的MD5哈希值
+func MD5File(fileName string) (string, error) {
+	return hashFile(fileName, md5.New())
+}
+
+// Sha1 计算数据的SHA1哈希值
+func Sha1(origData []byte) string {
 	h := sha1.New()
 	h.Write(origData)
-	result = fmt.Sprintf("%x", h.Sum(nil))
-	return result
+	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func Sha1File(fileName string) (result string, err error) {
-	f, err := os.Open(fileName)
-	if err != nil {
-		return "", err
-	}
-	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-			fmt.Println("MD5File|Close err:", err)
-		}
-	}(f)
-
-	h := sha1.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return "", err
-	}
-	result = fmt.Sprintf("%x", h.Sum(nil))
-	return result, nil
+// Sha1File 计算文件的SHA1哈希值
+func Sha1File(fileName string) (string, error) {
+	return hashFile(fileName, sha1.New())
 }
 
-func Sha256(origData []byte) (result string) {
+// Sha256 计算数据的SHA256哈希值
+func Sha256(origData []byte) string {
 	h := sha256.New()
 	h.Write(origData)
-	result = fmt.Sprintf("%x", h.Sum(nil))
-	return result
+	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func Sha256File(fileName string) (result string, err error) {
-	f, err := os.Open(fileName)
-	if err != nil {
-		return "", err
-	}
-	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-			fmt.Println("MD5File|Close err:", err)
-		}
-	}(f)
-
-	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return "", err
-	}
-	result = fmt.Sprintf("%x", h.Sum(nil))
-	return result, nil
+// Sha256File 计算文件的SHA256哈希值
+func Sha256File(fileName string) (string, error) {
+	return hashFile(fileName, sha256.New())
 }
 
-func Sha512(origData []byte) (result string) {
+// Sha512 计算数据的SHA512哈希值
+func Sha512(origData []byte) string {
 	h := sha512.New()
 	h.Write(origData)
-	result = fmt.Sprintf("%x", h.Sum(nil))
-	return result
+	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func Sha512File(fileName string) (result string, err error) {
-	f, err := os.Open(fileName)
-	if err != nil {
-		return "", err
-	}
-	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-			fmt.Println("MD5File|Close err:", err)
-		}
-	}(f)
-	h := sha512.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return "", err
-	}
-	result = fmt.Sprintf("%x", h.Sum(nil))
-	return result, nil
+// Sha512File 计算文件的SHA512哈希值
+func Sha512File(fileName string) (string, error) {
+	return hashFile(fileName, sha512.New())
 }
 
-// PKCS5Padding @brief:填充明文
+// PKCS5Padding 对明文进行PKCS5填充
 func PKCS5Padding(plaintext []byte, blockSize int) []byte {
 	padding := blockSize - len(plaintext)%blockSize
 	paddingText := bytes.Repeat([]byte{byte(padding)}, padding)
 	return append(plaintext, paddingText...)
 }
 
-// PKCS5UnPadding @brief:去除填充数据
-func PKCS5UnPadding(origData []byte) []byte {
+// PKCS5UnPadding 去除PKCS5填充数据
+func PKCS5UnPadding(origData []byte) ([]byte, error) {
 	length := len(origData)
+	if length == 0 {
+		return nil, fmt.Errorf("PKCS5UnPadding: input data is empty")
+	}
 	unpadding := int(origData[length-1])
-	return origData[:(length - unpadding)]
+	if unpadding > length || unpadding == 0 {
+		return nil, fmt.Errorf("PKCS5UnPadding: invalid padding size %d", unpadding)
+	}
+	// 校验所有填充字节是否一致
+	for i := length - unpadding; i < length; i++ {
+		if origData[i] != byte(unpadding) {
+			return nil, fmt.Errorf("PKCS5UnPadding: invalid padding byte at position %d", i)
+		}
+	}
+	return origData[:(length - unpadding)], nil
 }
 
-// AesEncrypt @brief:AES加密
-// AES秘钥的长度只能是16、24或32字节，分别对应三种AES，即AES-128, AES-192和AES-256，三者的区别是加密的轮数不同；
+// AesEncrypt AES-CBC加密
+// AES秘钥的长度只能是16、24或32字节，分别对应AES-128, AES-192和AES-256
 func AesEncrypt(origData, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
 
-	//AES分组长度为128位，所以blockSize=16，单位字节
+	// AES分组长度为128位，所以blockSize=16，单位字节
 	blockSize := block.BlockSize()
 	origData = PKCS5Padding(origData, blockSize)
-	blockMode := cipher.NewCBCEncrypter(block, key[:blockSize]) //初始向量的长度必须等于块block的长度16字节
+	blockMode := cipher.NewCBCEncrypter(block, key[:blockSize])
 	encrypted := make([]byte, len(origData))
 	blockMode.CryptBlocks(encrypted, origData)
 	return encrypted, nil
 }
 
-// AesDecrypt @brief:AES解密
-// AES秘钥的长度只能是16、24或32字节，分别对应三种AES，即AES-128, AES-192和AES-256，三者的区别是加密的轮数不同；
+// AesDecrypt AES-CBC解密
+// AES秘钥的长度只能是16、24或32字节，分别对应AES-128, AES-192和AES-256
 func AesDecrypt(crypted, key []byte) ([]byte, error) {
+	if len(crypted) == 0 {
+		return nil, fmt.Errorf("AesDecrypt: encrypted data is empty")
+	}
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
 
-	//AES分组长度为128位，所以blockSize=16，单位字节
+	// AES分组长度为128位，所以blockSize=16，单位字节
 	blockSize := block.BlockSize()
-	blockMode := cipher.NewCBCDecrypter(block, key[:blockSize]) //初始向量的长度必须等于块block的长度16字节
+	if len(crypted)%blockSize != 0 {
+		return nil, fmt.Errorf("AesDecrypt: encrypted data length %d is not a multiple of block size %d",
+			len(crypted), blockSize)
+	}
+	blockMode := cipher.NewCBCDecrypter(block, key[:blockSize])
 	origData := make([]byte, len(crypted))
 	blockMode.CryptBlocks(origData, crypted)
-	origData = PKCS5UnPadding(origData)
-	return origData, nil
+	return PKCS5UnPadding(origData)
 }

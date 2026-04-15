@@ -1,15 +1,29 @@
 package cal
 
 import (
-	"github.com/Chairou/toolbox/util/conv"
 	"math"
 	"strconv"
+
+	"github.com/Chairou/toolbox/util/conv"
 )
 
+// CutOffType 取整方式类型
+type CutOffType int
+
+const (
+	// CutOffCeil 向上取整
+	CutOffCeil CutOffType = 2
+	// CutOffRound 四舍五入
+	CutOffRound CutOffType = 3
+	// CutOffFloor 向下取整
+	CutOffFloor CutOffType = 4
+)
+
+// 保留旧变量名以保持向后兼容
 var (
-	CUT_OFF_CEIL  = 2
-	CUT_OFF_ROUND = 3
-	CUT_OFF_FLOOR = 4
+	CUT_OFF_CEIL  = int(CutOffCeil)
+	CUT_OFF_ROUND = int(CutOffRound)
+	CUT_OFF_FLOOR = int(CutOffFloor)
 )
 
 // CeilFloat 向上取整，保留多少位小数
@@ -47,29 +61,29 @@ func PercentVal(num float64, places int, cutoff int) string {
 	}
 	precision := places + 2
 	var tmp float64
-	switch cutoff {
-	case CUT_OFF_CEIL:
+	switch CutOffType(cutoff) {
+	case CutOffCeil:
 		tmp = CeilFloat(num, precision)
-	case CUT_OFF_ROUND:
+	case CutOffRound:
 		tmp = RoundFloat(num, precision)
-	case CUT_OFF_FLOOR:
+	case CutOffFloor:
 		tmp = FloorFloat(num, precision)
 	default:
-		panic("invaild cutoff")
+		panic("invalid cutoff")
 	}
-	//return fmt.Sprintf("%.2f%%", tmp*100)
 	return strconv.FormatFloat(tmp*100, 'f', places, 64)
 }
 
+// Percent 输出带百分号的百分比字符串
 func Percent(num float64, places int, cutoff int) string {
 	return PercentVal(num, places, cutoff) + "%"
 }
 
-// AnyPercent 任意类型转换为百分比，不过实话意义不是特别大，就是方便一点
+// AnyPercent 任意类型转换为百分比
 func AnyPercent(num interface{}, places int, cutoff int) string {
 	numFloat, ok := conv.Float64(num)
-	if ok == false {
-		panic("AnyPercent err: num cann't turn into float64")
+	if !ok {
+		panic("AnyPercent err: num can't convert to float64")
 	}
 	return Percent(numFloat, places, cutoff)
 }

@@ -39,31 +39,33 @@ func (h *MinHeap) Pop() interface{} {
 // Percentile 输出中位数
 func (h *MinHeap) Percentile() float64 {
 	popNum := 0
-	var Percentile float64
+	var percentile float64
 	if h.Len()&1 == 0 {
 		popNum = h.Len() / 2
 		for i := 0; i < popNum; i++ {
-			Percentile = h.Pop().(float64)
+			percentile = h.Pop().(float64)
 		}
-		Percentile += h.Pop().(float64)
-		avgPercentile := float64(Percentile) / 2
+		percentile += h.Pop().(float64)
+		avgPercentile := percentile / 2
 		return avgPercentile
 	} else {
 		popNum = (h.Len() / 2) + 1
 	}
 	for i := 0; i < popNum; i++ {
-		Percentile = h.Pop().(float64)
+		percentile = h.Pop().(float64)
 	}
-	return float64(Percentile)
+	return percentile
 }
 
+// NewMinHeapList 根据float64切片创建并初始化一个最小堆
 func NewMinHeapList(a []float64) *MinHeap {
 	h := MinHeap(a)
 	heap.Init(&h)
 	return &h
 }
 
-func NewMaxHeap() *MinHeap {
+// NewMinHeap 创建并初始化一个空的最小堆
+func NewMinHeap() *MinHeap {
 	h := MinHeap{}
 	heap.Init(&h)
 	return &h

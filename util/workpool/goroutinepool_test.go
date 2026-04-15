@@ -34,12 +34,17 @@ func TestNewRateLimitedGoRoutinePool_Basic(t *testing.T) {
 	stop := make(chan struct{})
 	defer close(stop)
 
-	p := NewRateLimitedGoRoutinePool(5, stop, ctx, 10, 1)
+	start := time.Now()
+	p := NewRateLimitedGoRoutinePool(5, stop, ctx, 1, 1)
 	if p == nil {
 		t.Fatal("NewRateLimitedGoRoutinePool returned nil")
 	}
 	if p.size != 5 {
 		t.Errorf("expected size=5, got %d", p.size)
+	}
+	end := time.Now()
+	if end.Sub(start) > 10*time.Millisecond {
+		t.Errorf("expected quick init, took %v", end.Sub(start))
 	}
 }
 
@@ -259,8 +264,9 @@ func TestSubmitAndRun_ConcurrentResults(t *testing.T) {
 		return atomic.LoadInt64(&counter), nil
 	}
 
-	p := NewRateLimitedGoRoutinePool(10, stop, ctx, 100, 1)
+	p := NewRateLimitedGoRoutinePool(10, stop, ctx, 10, 1)
 
+	start := time.Now()
 	for i := 0; i < taskNum; i++ {
 		task := GoRoutineExecutor{
 			TaskID:          fmt.Sprintf("concurrent-%d", i),
@@ -271,6 +277,8 @@ func TestSubmitAndRun_ConcurrentResults(t *testing.T) {
 	}
 
 	results := p.Run()
+	end := time.Now()
+	t.Logf("submitted %d tasks in %v", taskNum, end.Sub(start).Seconds())
 	if len(results) != taskNum {
 		t.Fatalf("expected %d results, got %d", taskNum, len(results))
 	}

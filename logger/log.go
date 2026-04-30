@@ -219,6 +219,10 @@ func (l *Logger) output(pc uintptr, calldepth int, appendOutput func([]byte) []b
 			if !ok {
 				file = "???"
 				line = 0
+			} else {
+				if file == "comm.go" {
+					_, file, line, ok = runtime.Caller(calldepth + 1)
+				}
 			}
 		} else {
 			fs := runtime.CallersFrames([]uintptr{pc})

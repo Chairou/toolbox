@@ -220,13 +220,14 @@ func (l *Logger) output(pc uintptr, calldepth int, appendOutput func([]byte) []b
 			if !ok {
 				file = "???"
 				line = 0
-			} else {
+		} else {
 				// 跳过日志中间层文件，向上查找真正的业务调用方
-				skipFiles := []string{"comm.go", "logger.go", "log.go", "context.go"}
-				for i := 1; i <= 6; i++ {
+				// 通过路径判断是否属于 logger 包或 gin 框架包内部文件
+				skipPaths := []string{"/logger/", "/gin/"}
+				for i := 1; i <= 10; i++ {
 					shouldSkip := false
-					for _, sf := range skipFiles {
-						if strings.HasSuffix(file, sf) {
+					for _, sp := range skipPaths {
+						if strings.Contains(file, sp) {
 							shouldSkip = true
 							break
 						}

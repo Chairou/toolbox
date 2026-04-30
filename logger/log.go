@@ -221,6 +221,7 @@ func (l *Logger) output(pc uintptr, calldepth int, appendOutput func([]byte) []b
 				line = 0
 			} else {
 				if file == "comm.go" {
+					fmt.Println("comm.go")
 					_, file, line, ok = runtime.Caller(calldepth + 1)
 				}
 			}

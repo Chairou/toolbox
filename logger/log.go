@@ -222,8 +222,8 @@ func (l *Logger) output(pc uintptr, calldepth int, appendOutput func([]byte) []b
 				line = 0
 			} else {
 				// 跳过日志中间层文件，向上查找真正的业务调用方
-				skipFiles := []string{"comm.go", "logger.go", "log.go"}
-				for i := 1; i <= 5; i++ {
+				skipFiles := []string{"comm.go", "logger.go", "log.go", "context.go"}
+				for i := 1; i <= 6; i++ {
 					shouldSkip := false
 					for _, sf := range skipFiles {
 						if strings.HasSuffix(file, sf) {

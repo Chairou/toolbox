@@ -19,6 +19,7 @@ import (
 	"io"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -220,9 +221,25 @@ func (l *Logger) output(pc uintptr, calldepth int, appendOutput func([]byte) []b
 				file = "???"
 				line = 0
 			} else {
-				if file == "comm.go" {
-					fmt.Println("comm.go")
-					_, file, line, ok = runtime.Caller(calldepth + 1)
+				// 跳过日志中间层文件，向上查找真正的业务调用方
+				skipFiles := []string{"comm.go", "logger.go", "log.go"}
+				for i := 1; i <= 5; i++ {
+					shouldSkip := false
+					for _, sf := range skipFiles {
+						if strings.HasSuffix(file, sf) {
+							shouldSkip = true
+							break
+						}
+					}
+					if !shouldSkip {
+						break
+					}
+					_, file, line, ok = runtime.Caller(calldepth + i)
+					if !ok {
+						file = "???"
+						line = 0
+						break
+					}
 				}
 			}
 		} else {

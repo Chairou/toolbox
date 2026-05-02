@@ -813,7 +813,7 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 		h(ctx)
 		largeTransferList := []string{"File Transfer"}
 		if !listopt.IsInStringArr(largeTransferList, responseDumper.Header().Get("Content-Description")) {
-			ctx.Infof(" \n%s\n>--------End API Handler----------<", responseDumper.bytes())
+			ctx.Infof("<Response>\n%s\n</Response>\n>-------------------End API Handler--------------------<", responseDumper.bytes())
 		}
 	}
 }

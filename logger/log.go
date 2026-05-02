@@ -19,7 +19,6 @@ import (
 	"io"
 	"os"
 	"runtime"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -220,28 +219,6 @@ func (l *Logger) output(pc uintptr, calldepth int, appendOutput func([]byte) []b
 			if !ok {
 				file = "???"
 				line = 0
-		} else {
-				// 跳过日志中间层文件，向上查找真正的业务调用方
-				// 通过路径判断是否属于 logger 包或 gin 框架包内部文件
-				skipPaths := []string{"/logger/", "/gin/"}
-				for i := 1; i <= 10; i++ {
-					shouldSkip := false
-					for _, sp := range skipPaths {
-						if strings.Contains(file, sp) {
-							shouldSkip = true
-							break
-						}
-					}
-					if !shouldSkip {
-						break
-					}
-					_, file, line, ok = runtime.Caller(calldepth + i)
-					if !ok {
-						file = "???"
-						line = 0
-						break
-					}
-				}
 			}
 		} else {
 			fs := runtime.CallersFrames([]uintptr{pc})

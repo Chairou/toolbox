@@ -7,12 +7,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
 	"github.com/Chairou/toolbox/conf"
 
-	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"path"
@@ -804,7 +804,7 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 				ctx.Infof("Request too large, output 4k : %s%s\n\n------------------", buf.String()[0:256],
 					buf.String()[buf.Len()-256:])
 			}
-			c.Request.Body = ioutil.NopCloser(bytes.NewReader(buf.Bytes()))
+			c.Request.Body = io.NopCloser(bytes.NewReader(buf.Bytes()))
 		}
 
 		responseDumper := &responseDumper{ResponseWriter: c.Writer, outBuffer: bytes.NewBuffer(nil)}
@@ -813,7 +813,7 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 		h(ctx)
 		largeTransferList := []string{"File Transfer"}
 		if !listopt.IsInStringArr(largeTransferList, responseDumper.Header().Get("Content-Description")) {
-			ctx.Infof("<Response>\n%s\n</Response>\n>-------------------End API Handler--------------------<", responseDumper.bytes())
+			ctx.Infof("\n<Response>\n%s\n</Response>\n>======================== End API Handler =========================<", responseDumper.bytes())
 		}
 	}
 }

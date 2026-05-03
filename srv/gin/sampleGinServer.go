@@ -28,6 +28,13 @@ type Config struct {
 	MysqlDb      string `yaml:"mysql_db" json:"mysql_db" env:"mysql_db"`
 	MysqlCharSet string `yaml:"mysql_charset" json:"mysql_charset" env:"mysql_charset"`
 	LogFileName  string `yaml:"log_file_name" json:"log_file_name" env:"log_file_name"`
+	FileName     string `yaml:"fileName" json:"fileName" env:"fileName"`             // 日志路径和文件名 如./log/test.log
+	Level        int    `yaml:"level" json:"level" env:"level"`                      // 日志级别，可选 DEBUG_LEVEL、INFO_LEVEL、ERROR_LEVEL
+	MaxSizeMB    int    `yaml:"maxSizeMB" json:"maxSizeMB" env:"maxSizeMB"`          // 单个日志文件最大大小（MB）
+	MaxBackups   int    `yaml:"maxBackups" json:"maxBackups" env:"maxBackups"`       // 最大保留的旧日志文件数量
+	MaxAgeDay    int    `yaml:"maxAgeDay" json:"maxAgeDay" env:"maxAgeDay"`          // 旧日志文件最大保留天数
+	Compress     string `yaml:"compress" json:"compress" env:"compress"`             // 是否压缩旧日志文件，默认不压缩
+	PrintConsole string `yaml:"printConsole" json:"printConsole" env:"printConsole"` // 是否同时输出到控制台
 }
 
 type Catalog struct {
@@ -47,6 +54,13 @@ func init() {
 	_ = os.Setenv("mysql_host", "127.0.0.1:3306")
 	_ = os.Setenv("mysql_user", "root")
 	_ = os.Setenv("mysql_pass", "root123456")
+	_ = os.Setenv("fileName", "test.log")
+	_ = os.Setenv("level", "0")
+	_ = os.Setenv("maxSizeMB", "100")
+	_ = os.Setenv("maxBackups", "10")
+	_ = os.Setenv("MaxAgeDay", "31")
+	_ = os.Setenv("compress", "false")
+	_ = os.Setenv("printConsole", "true")
 }
 
 func (Catalog) TableName() string { return "t_catalog" }
@@ -64,8 +78,9 @@ func main() {
 		})
 	})
 	r := g.NewServer("dev", "srv.log", nil)
+	//r := g.NewServerWithConf("dev", config, nil)
 
-	fmt.Println("start server at *:80")
+	fmt.Println("start server at *:8080")
 	err := r.Run(":8080")
 	if err != nil {
 		fmt.Println("RUN err:", err)

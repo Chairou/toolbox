@@ -40,20 +40,19 @@ func TestLogger(t *testing.T) {
 func TestLogPool_SetLevel(t *testing.T) {
 	log, err := NewLogPool("test1", "./tmp/test1.log")
 	if err != nil {
-		t.Error("NewLogPool err:", err)
+		t.Fatal("NewLogPool err:", err)
 	}
 	log.SetLevel(ERROR_LEVEL)
 	log.Info("write INFO in ERROR_LEVEL")
 
 	log = GetLogName("test1")
-	if log != nil {
-		t.Error("NewLogPool err:", err)
+	if log == nil {
+		t.Fatal("GetLogName should return existing instance, got nil")
 	}
 	log.Info("write INFO in ERROR_LEVEL")
 	log.SetLevel(INFO_LEVEL)
 	log.Info("write INFO in INFO_LEVEL")
 	GetLog().Info("QQQQQQ")
-
 }
 
 func TestSetPrefix(t *testing.T) {

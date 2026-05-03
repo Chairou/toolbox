@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Chairou/toolbox/conf"
+	"github.com/jinzhu/copier"
 
 	"net/http"
 	"net/http/httputil"
@@ -35,6 +36,7 @@ const API_REMOTE_ERROR = -97
 const API_ARG_ERROR = -96
 
 var log *logger.LogPool
+var logV2 *logger.LogPoolV2
 var conf1 *conf.Config
 
 type H map[string]any
@@ -118,9 +120,51 @@ func NewServer(env string, logFileName string, middle []func(c *Context)) *gin.E
 	for _, v := range middle {
 		stdRouter.Use(v)
 	}
-
 	SetupRouter(stdRouter)
+	return r
+}
 
+func NewServerWithConf(env string, conf any, middle []func(c *Context)) *gin.Engine {
+	var err error
+	logOpt := logger.LogOpt{}
+	err = copier.Copy(&logOpt, conf)
+	if err != nil {
+		_ = fmt.Errorf("NewServerWithConf|copier.Copy err: %v", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("config : %+v", logOpt)
+	logV2, err = logger.NewLogOpt("api", &logOpt)
+	if err != nil {
+		_ = fmt.Errorf("NewLogPool err: %v", err)
+		os.Exit(1)
+	}
+	r := gin.Default()
+
+	logV2.Info("START HTTP SERVER AND LOGGING NOW")
+	mode := env
+	switch mode {
+	case "dev":
+		gin.SetMode(gin.DebugMode)
+	case "test":
+		gin.SetMode(gin.TestMode)
+	case "release":
+		gin.SetMode(gin.ReleaseMode)
+	default:
+		gin.SetMode(gin.DebugMode)
+	}
+	stdRouter := &RouterGroup{
+		routerGroup: &r.RouterGroup,
+	}
+	stdRouter.Use(SafeCheck)
+	stdRouter.Use(ResponseRecorder)
+	stdRouter.Use(CorsMiddleware)
+
+	for _, v := range middle {
+		stdRouter.Use(v)
+	}
+	SetupRouter(stdRouter)
+	logV2.Info("FINISHED HTTP SERVER START")
 	return r
 }
 
@@ -203,22 +247,33 @@ func (c *Context) RetJson(code int, data interface{}, messages ...interface{}) {
 // and writes to log with level = Debug.
 func (c *Context) Debugf(format string, params ...interface{}) {
 	msg := fmt.Sprintf(c.requestID+" "+format, params...)
-	log.Error(msg)
+	if logV2 != nil {
+		logV2.Debug(msg)
+	} else if log != nil {
+		log.Debug(msg)
+	}
 }
 
 // Infof formats message according to format specifier
 // and writes to log with level = Info.
 func (c *Context) Infof(format string, params ...interface{}) {
 	msg := fmt.Sprintf(c.requestID+" "+format, params...)
-	log.Info(msg)
-
+	if logV2 != nil {
+		logV2.Info(msg)
+	} else if log != nil {
+		log.Info(msg)
+	}
 }
 
 // Errorf formats message according to format specifier
 // and writes to log with level = Error.
 func (c *Context) Errorf(format string, params ...interface{}) error {
 	msg := fmt.Sprintf(format, params...)
-	log.Error(msg)
+	if logV2 != nil {
+		logV2.Error(msg)
+	} else if log != nil {
+		log.Error(msg)
+	}
 	return errors.New(msg)
 }
 
@@ -226,21 +281,33 @@ func (c *Context) Errorf(format string, params ...interface{}) error {
 // and writes to log with level = Debug
 func (c *Context) Debug(v ...interface{}) {
 	msg := c.requestID + " " + fmt.Sprint(v...)
-	log.Debug(msg)
+	if logV2 != nil {
+		logV2.Debug(msg)
+	} else if log != nil {
+		log.Debug(msg)
+	}
 }
 
 // Info formats message using the default formats for its operands
 // and writes to log with level = Info
 func (c *Context) Info(v ...interface{}) {
 	msg := c.requestID + " " + fmt.Sprint(v...)
-	log.Info(msg)
+	if logV2 != nil {
+		logV2.Info(msg)
+	} else if log != nil {
+		log.Info(msg)
+	}
 }
 
 // Error formats message using the default formats for its operands
 // and writes to log with level = Error
 func (c *Context) Error(v ...interface{}) error {
 	msg := fmt.Sprint(v...)
-	log.Error(c.requestID + " " + msg)
+	if logV2 != nil {
+		logV2.Error(c.requestID + " " + msg)
+	} else if log != nil {
+		log.Error(c.requestID + " " + msg)
+	}
 	return errors.New(msg)
 }
 

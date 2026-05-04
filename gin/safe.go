@@ -141,14 +141,13 @@ func ResponseRecorder(c *Context) {
 		ResponseWriter: c.Writer,
 	}
 	c.Writer = blw
-
 	// 处理请求
 	c.Next()
 
 	// 请求处理完成后，记录响应体
 	largeTransferList := []string{"File Transfer"}
 	if !listopt.IsInStringArr(largeTransferList, blw.ResponseWriter.Header().Get("Content-Description")) {
-		fmt.Println(time.Now().Format(time.DateTime), " [Response body]: "+blw.body.String())
+		fmt.Println(time.Now().Format(time.DateTime), " [Response body123]: "+blw.body.String())
 	} else {
 		bodyStr := blw.body.String()
 		if len(bodyStr) > 512 {

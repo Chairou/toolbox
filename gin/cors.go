@@ -14,10 +14,8 @@ import (
 func CorsMiddleware(c *Context) {
 	// 允许所有来源
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-
 	// 允许的请求方法
 	c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD")
-
 	// 允许的请求头
 	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, Token")
 

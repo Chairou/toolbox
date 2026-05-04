@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Chairou/toolbox/conf"
+	"github.com/jinzhu/copier"
 
 	"net/http"
 	"net/http/httputil"
@@ -34,7 +35,14 @@ const API_DB_ERROR = -98
 const API_REMOTE_ERROR = -97
 const API_ARG_ERROR = -96
 
-var log *logger.LogPool
+// Logger 统一的日志接口
+type Logger interface {
+	Debug(v ...interface{})
+	Info(v ...interface{})
+	Error(v ...interface{})
+}
+
+var logPtr Logger
 var conf1 *conf.Config
 
 type H map[string]any
@@ -90,11 +98,12 @@ type responseDumper struct {
 
 func NewServer(env string, logFileName string, middle []func(c *Context)) *gin.Engine {
 	var err error
-	log, err = logger.NewLogPool("api", logFileName)
+	log, err := logger.NewLogPool("api", logFileName)
 	if err != nil {
 		_ = fmt.Errorf("NewLogPool err: %v", err)
 		os.Exit(1)
 	}
+	logPtr = log
 	r := gin.Default()
 
 	mode := env
@@ -118,9 +127,52 @@ func NewServer(env string, logFileName string, middle []func(c *Context)) *gin.E
 	for _, v := range middle {
 		stdRouter.Use(v)
 	}
-
 	SetupRouter(stdRouter)
+	return r
+}
 
+func NewServerWithConf(env string, conf any, middle []func(c *Context)) *gin.Engine {
+	var err error
+	logOpt := logger.LogOpt{}
+	err = copier.Copy(&logOpt, conf)
+	if err != nil {
+		_ = fmt.Errorf("NewServerWithConf|copier.Copy err: %v", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("config : %+v", logOpt)
+	logV2, err := logger.NewLogOpt("api", &logOpt)
+	if err != nil {
+		_ = fmt.Errorf("NewLogPool err: %v", err)
+		os.Exit(1)
+	}
+	logPtr = logV2
+	r := gin.Default()
+
+	logV2.Info("START HTTP SERVER AND LOGGING NOW")
+	mode := env
+	switch mode {
+	case "dev":
+		gin.SetMode(gin.DebugMode)
+	case "test":
+		gin.SetMode(gin.TestMode)
+	case "release":
+		gin.SetMode(gin.ReleaseMode)
+	default:
+		gin.SetMode(gin.DebugMode)
+	}
+	stdRouter := &RouterGroup{
+		routerGroup: &r.RouterGroup,
+	}
+	stdRouter.Use(SafeCheck)
+	stdRouter.Use(ResponseRecorder)
+	stdRouter.Use(CorsMiddleware)
+
+	for _, v := range middle {
+		stdRouter.Use(v)
+	}
+	SetupRouter(stdRouter)
+	logV2.Info("FINISHED HTTP SERVER START")
 	return r
 }
 
@@ -203,22 +255,27 @@ func (c *Context) RetJson(code int, data interface{}, messages ...interface{}) {
 // and writes to log with level = Debug.
 func (c *Context) Debugf(format string, params ...interface{}) {
 	msg := fmt.Sprintf(c.requestID+" "+format, params...)
-	log.Error(msg)
+	if logPtr != nil {
+		logPtr.Debug(msg)
+	}
 }
 
 // Infof formats message according to format specifier
 // and writes to log with level = Info.
 func (c *Context) Infof(format string, params ...interface{}) {
 	msg := fmt.Sprintf(c.requestID+" "+format, params...)
-	log.Info(msg)
-
+	if logPtr != nil {
+		logPtr.Info(msg)
+	}
 }
 
 // Errorf formats message according to format specifier
 // and writes to log with level = Error.
 func (c *Context) Errorf(format string, params ...interface{}) error {
-	msg := fmt.Sprintf(format, params...)
-	log.Error(msg)
+	msg := c.requestID + " " + fmt.Sprintf(format, params...)
+	if logPtr != nil {
+		logPtr.Error(msg)
+	}
 	return errors.New(msg)
 }
 
@@ -226,21 +283,27 @@ func (c *Context) Errorf(format string, params ...interface{}) error {
 // and writes to log with level = Debug
 func (c *Context) Debug(v ...interface{}) {
 	msg := c.requestID + " " + fmt.Sprint(v...)
-	log.Debug(msg)
+	if logPtr != nil {
+		logPtr.Debug(msg)
+	}
 }
 
 // Info formats message using the default formats for its operands
 // and writes to log with level = Info
 func (c *Context) Info(v ...interface{}) {
 	msg := c.requestID + " " + fmt.Sprint(v...)
-	log.Info(msg)
+	if logPtr != nil {
+		logPtr.Info(msg)
+	}
 }
 
 // Error formats message using the default formats for its operands
 // and writes to log with level = Error
 func (c *Context) Error(v ...interface{}) error {
 	msg := fmt.Sprint(v...)
-	log.Error(c.requestID + " " + msg)
+	if logPtr != nil {
+		logPtr.Error(c.requestID + " " + msg)
+	}
 	return errors.New(msg)
 }
 
@@ -767,7 +830,7 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 
 		defer func() {
 			if err := recover(); err != nil {
-				if log != nil {
+				if logPtr != nil {
 					stack := stack(1)
 					_ = ctx.Errorf("[Recovery] panic recovered:\n%s\n%s", err, stack)
 				}

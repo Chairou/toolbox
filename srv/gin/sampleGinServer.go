@@ -33,8 +33,8 @@ type Config struct {
 	MaxSizeMB    int    `yaml:"maxSizeMB" json:"maxSizeMB" env:"maxSizeMB"`          // 单个日志文件最大大小（MB）
 	MaxBackups   int    `yaml:"maxBackups" json:"maxBackups" env:"maxBackups"`       // 最大保留的旧日志文件数量
 	MaxAgeDay    int    `yaml:"maxAgeDay" json:"maxAgeDay" env:"maxAgeDay"`          // 旧日志文件最大保留天数
-	Compress     string `yaml:"compress" json:"compress" env:"compress"`             // 是否压缩旧日志文件，默认不压缩
-	PrintConsole string `yaml:"printConsole" json:"printConsole" env:"printConsole"` // 是否同时输出到控制台
+	Compress     int    `yaml:"compress" json:"compress" env:"compress"`             // 是否压缩旧日志文件，默认不压缩
+	PrintConsole int    `yaml:"printConsole" json:"printConsole" env:"printConsole"` // 是否同时输出到控制台
 }
 
 type Catalog struct {
@@ -59,8 +59,8 @@ func init() {
 	_ = os.Setenv("maxSizeMB", "100")
 	_ = os.Setenv("maxBackups", "10")
 	_ = os.Setenv("MaxAgeDay", "31")
-	_ = os.Setenv("compress", "false")
-	_ = os.Setenv("printConsole", "true")
+	_ = os.Setenv("compress", "0")
+	_ = os.Setenv("printConsole", "0")
 }
 
 func (Catalog) TableName() string { return "t_catalog" }

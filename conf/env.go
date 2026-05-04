@@ -8,7 +8,6 @@ import (
 )
 
 func loadConfFromEnv[T any](config T) error {
-	fmt.Printf("config type: %+v\n", config)
 	val := reflect.ValueOf(config).Elem()
 	t := val.Type()
 
@@ -47,7 +46,7 @@ func loadConfFromEnv[T any](config T) error {
 				return fmt.Errorf("invalid int value for field %s: %s", field.Name, envValue)
 			}
 			fieldValue.SetInt(int64(intVal))
-			
+
 		case reflect.String:
 			if fieldValue.String() != "" {
 				continue

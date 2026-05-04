@@ -42,7 +42,7 @@ type Logger interface {
 	Error(v ...interface{})
 }
 
-var log_ptr Logger
+var logPtr Logger
 var conf1 *conf.Config
 
 type H map[string]any
@@ -103,7 +103,7 @@ func NewServer(env string, logFileName string, middle []func(c *Context)) *gin.E
 		_ = fmt.Errorf("NewLogPool err: %v", err)
 		os.Exit(1)
 	}
-	log_ptr = log
+	logPtr = log
 	r := gin.Default()
 
 	mode := env
@@ -146,7 +146,7 @@ func NewServerWithConf(env string, conf any, middle []func(c *Context)) *gin.Eng
 		_ = fmt.Errorf("NewLogPool err: %v", err)
 		os.Exit(1)
 	}
-	log_ptr = logV2
+	logPtr = logV2
 	r := gin.Default()
 
 	logV2.Info("START HTTP SERVER AND LOGGING NOW")
@@ -255,8 +255,8 @@ func (c *Context) RetJson(code int, data interface{}, messages ...interface{}) {
 // and writes to log with level = Debug.
 func (c *Context) Debugf(format string, params ...interface{}) {
 	msg := fmt.Sprintf(c.requestID+" "+format, params...)
-	if log_ptr != nil {
-		log_ptr.Debug(msg)
+	if logPtr != nil {
+		logPtr.Debug(msg)
 	}
 }
 
@@ -264,17 +264,17 @@ func (c *Context) Debugf(format string, params ...interface{}) {
 // and writes to log with level = Info.
 func (c *Context) Infof(format string, params ...interface{}) {
 	msg := fmt.Sprintf(c.requestID+" "+format, params...)
-	if log_ptr != nil {
-		log_ptr.Info(msg)
+	if logPtr != nil {
+		logPtr.Info(msg)
 	}
 }
 
 // Errorf formats message according to format specifier
 // and writes to log with level = Error.
 func (c *Context) Errorf(format string, params ...interface{}) error {
-	msg := fmt.Sprintf(format, params...)
-	if log_ptr != nil {
-		log_ptr.Error(msg)
+	msg := c.requestID + " " + fmt.Sprintf(format, params...)
+	if logPtr != nil {
+		logPtr.Error(msg)
 	}
 	return errors.New(msg)
 }
@@ -283,8 +283,8 @@ func (c *Context) Errorf(format string, params ...interface{}) error {
 // and writes to log with level = Debug
 func (c *Context) Debug(v ...interface{}) {
 	msg := c.requestID + " " + fmt.Sprint(v...)
-	if log_ptr != nil {
-		log_ptr.Debug(msg)
+	if logPtr != nil {
+		logPtr.Debug(msg)
 	}
 }
 
@@ -292,8 +292,8 @@ func (c *Context) Debug(v ...interface{}) {
 // and writes to log with level = Info
 func (c *Context) Info(v ...interface{}) {
 	msg := c.requestID + " " + fmt.Sprint(v...)
-	if log_ptr != nil {
-		log_ptr.Info(msg)
+	if logPtr != nil {
+		logPtr.Info(msg)
 	}
 }
 
@@ -301,8 +301,8 @@ func (c *Context) Info(v ...interface{}) {
 // and writes to log with level = Error
 func (c *Context) Error(v ...interface{}) error {
 	msg := fmt.Sprint(v...)
-	if log_ptr != nil {
-		log_ptr.Error(c.requestID + " " + msg)
+	if logPtr != nil {
+		logPtr.Error(c.requestID + " " + msg)
 	}
 	return errors.New(msg)
 }
@@ -830,7 +830,7 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 
 		defer func() {
 			if err := recover(); err != nil {
-				if log_ptr != nil {
+				if logPtr != nil {
 					stack := stack(1)
 					_ = ctx.Errorf("[Recovery] panic recovered:\n%s\n%s", err, stack)
 				}

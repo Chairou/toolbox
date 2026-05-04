@@ -77,8 +77,8 @@ func main() {
 			g.WriteRetJson(c, 0, nil, "pong")
 		})
 	})
-	r := g.NewServer("dev", "srv.log", nil)
-	//r := g.NewServerWithConf("dev", config, nil)
+	//r := g.NewServer("dev", "srv.log", nil)
+	r := g.NewServerWithConf("dev", config, nil)
 
 	fmt.Println("start server at *:8080")
 	err := r.Run(":8080")

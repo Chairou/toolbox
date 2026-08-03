@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
 // ExamplePostJSONStream 展示如何对接一个真实的 SSE 服务（以 OpenAI / 通义 / 混元等
@@ -226,6 +228,16 @@ type TextMessage struct {
 		Size int    `json:"size"`
 	} `json:"files"`
 }
+type TextMessageReply struct {
+	Seq     int `json:"seq"`
+	Content struct {
+		Type    string `json:"type"`
+		Payload struct {
+			Delta string `json:"delta"`
+		} `json:"payload"`
+		Timestamp int64 `json:"timestamp"`
+	} `json:"content"`
+}
 
 func TestPostJSONStreamIMate(t *testing.T) {
 	iMateToken := "ut_prod_chairou_thjakloo83avxqh8wds0vzm3e"
@@ -294,11 +306,18 @@ func TestPostJSONStreamIMate(t *testing.T) {
 	}
 	reader := bufio.NewReader(streamResp.Body)
 	var events []string
-	var id, data string
+	var id, data, finalData string
 	// flush 将当前累积的 (id, data) 作为一条事件保存并重置
 	flush := func() {
 		if data != "" {
 			events = append(events, fmt.Sprintf("%s:%s", id, data))
+			textMessageReply := &TextMessageReply{}
+			err = jsoniter.UnmarshalFromString(data, &textMessageReply)
+			if err != nil {
+				t.Errorf("jsoniter.UnmarshalFromString(data, &textMessageReply) error: %v", err)
+				return
+			}
+			finalData += textMessageReply.Content.Payload.Delta
 			t.Logf("SSE event => id=%s data=%s", id, data)
 		}
 		id, data = "", ""
@@ -324,4 +343,5 @@ func TestPostJSONStreamIMate(t *testing.T) {
 		}
 	}
 	t.Logf("total SSE events: %d", len(events))
+	t.Log("finalData: ", finalData)
 }

@@ -141,6 +141,27 @@ func PostJSON(url string, body interface{}) Helper {
 	}
 }
 
+// PostJSONStream 创建 application/json 的 POST 请求，并以流式方式发送。
+// 返回的 Helper 需要调用 DoStream() 获取 *http.Response，
+// 由调用方负责逐块读取响应体（如 SSE）并在结束后 Close()。
+// 该函数会额外设置 Accept: text/event-stream 头，便于服务端识别流式请求。
+func PostJSONStream(url string, body interface{}) Helper {
+	var h Helper
+	switch value := body.(type) {
+	case string:
+		h = NewRequest("POST", url, strings.NewReader(value)).SetHeader("Content-Type",
+			"application/json")
+	default:
+		byteBody, err := jsoniter.Marshal(body)
+		if err != nil {
+			return errorHelper(fmt.Errorf("new request error: %w", err))
+		}
+		h = NewRequest("POST", url, bytes.NewReader(byteBody)).SetHeader("Content-Type",
+			"application/json")
+	}
+	return h.SetHeader("Accept", "text/event-stream")
+}
+
 func PostJsonRet(url string, body interface{}, retJson interface{}) error {
 	var client Helper
 	switch value := body.(type) {

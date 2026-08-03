@@ -211,8 +211,20 @@ type IMateChatListRet struct {
 			CreatedAt     string `json:"createdAt"`
 			UpdatedAt     string `json:"updatedAt"`
 		} `json:"list"`
-		Total int `json:"total"`
+		Total string `json:"total"`
 	} `json:"data"`
+}
+
+type TextMessage struct {
+	Text                string `json:"text"`
+	UploadMediaRevision int    `json:"upload_media_revision"`
+	Files               []struct {
+		Url  string `json:"url"`
+		Id   string `json:"id"`
+		Mime string `json:"mime"`
+		Name string `json:"name"`
+		Size int    `json:"size"`
+	} `json:"files"`
 }
 
 func TestPostJSONStreamIMate(t *testing.T) {
@@ -241,6 +253,7 @@ func TestPostJSONStreamIMate(t *testing.T) {
 		t.Errorf("resp.UnmarshalFromBody(&iMateRet) error: %v", err)
 		return
 	}
+	t.Logf("iMateRet: %+v", resp.BaseResult().RetBody)
 	t.Logf("iMateRet: %+v", iMateRet)
 
 	// 获取会话列表
@@ -258,14 +271,47 @@ func TestPostJSONStreamIMate(t *testing.T) {
 		t.Errorf("resp.UnmarshalFromBody(&chatListRet) error: %v", err)
 		return
 	}
-	t.Logf("iMateRet: %+v", iMateRet)
+	t.Logf("chatListRet: %+v", chatListRet)
 	// 进行对话
-	//chatUrl := baseUrl + "/api/v1/open/imates/" + iMateRet.Data[0].ClientUuid + "/chats/" + iMateRet.Data[0].ChatId + "/messages"
-	//helper = POST(chatUrl)
-	//helper.AddHeaderMap(iMateHeader)
-	//helper.SetBody(map[string]string{"content": "你好"})
-	//resp = helper.Do()
-	//if resp.Error() != nil {
-	//	t.Fatalf(" helper.Do() error: %v", resp.Error())
-	//}
+	chatUrl := baseUrl + "/api/v1/open/imates/" + iMateRet.Data[0].ClientUuid + "/chats/" + chatListRet.Data.List[0].ChatKey + "/messages/stream"
+	messageReq := TextMessage{
+		Text: "你好，请输出全国各大城市今天的天气情况",
+	}
+	helper = PostJSONStream(chatUrl, messageReq)
+	helper.AddHeaderMap(iMateHeader)
+	helper.SetTimeout(30*time.Second, 0)
+
+	streamResp, err := helper.DoStream()
+	if err != nil {
+		t.Fatalf(" helper.DoStream() error: %v", err)
+	}
+	defer streamResp.Body.Close()
+
+	if streamResp.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status: %d, %s", streamResp.StatusCode, streamResp.Status)
+	}
+	reader := bufio.NewReader(streamResp.Body)
+	var events []string
+	var id, data string
+	for {
+		line, err := reader.ReadString('\n')
+		line = strings.TrimRight(line, "\n")
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			t.Fatalf("read error: %v", err)
+		}
+		switch {
+		case line == "":
+			if data != "" {
+				events = append(events, fmt.Sprintf("%s:%s", id, data))
+			}
+			id, data = "", ""
+		case strings.HasPrefix(line, "id:"):
+			id = strings.TrimSpace(strings.TrimPrefix(line, "id:"))
+		case strings.HasPrefix(line, "data:"):
+			data = strings.TrimSpace(strings.TrimPrefix(line, "data:"))
+		}
+	}
 }

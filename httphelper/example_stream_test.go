@@ -178,28 +178,24 @@ func TestPostJSONStream_RealisticServer(t *testing.T) {
 }
 
 type IMateReply struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-	Data    []struct {
-		ClientUuid      string `json:"clientUuid"`
-		BotName         string `json:"botName"`
-		Avatar          string `json:"avatar"`
-		ClientType      string `json:"clientType"`
-		Username        string `json:"username"`
-		IsOwner         bool   `json:"isOwner"`
-		Status          string `json:"status"`
-		Model           string `json:"model"`
-		OpenclawVersion string `json:"openclawVersion"`
-		WebchatStatus   string `json:"webchatStatus"`
-		ItfsSpaceId     string `json:"itfsSpaceId"`
-		AgentType       string `json:"agentType"`
-		EnvType         string `json:"envType"`
-		ShareType       string `json:"shareType"`
-	} `json:"data"`
+	ClientUuid      string `json:"clientUuid"`
+	BotName         string `json:"botName"`
+	Avatar          string `json:"avatar"`
+	ClientType      string `json:"clientType"`
+	Username        string `json:"username"`
+	IsOwner         bool   `json:"isOwner"`
+	Status          string `json:"status"`
+	Model           string `json:"model"`
+	OpenclawVersion string `json:"openclawVersion"`
+	WebchatStatus   string `json:"webchatStatus"`
+	ItfsSpaceId     string `json:"itfsSpaceId"`
+	AgentType       string `json:"agentType"`
+	EnvType         string `json:"envType"`
+	ShareType       string `json:"shareType"`
 }
 
 func TestPostJSONStreamIMate(t *testing.T) {
-	iMateToken := " tai_pat_ZZNWVhC0RMcG0ypnNeAD6C8_YWI1NfqihtDNup1RzFQ.S3Ih6sZrZBBVhs29tbVpq6jhLB9Dom08OxOYnWlxS6E"
+	iMateToken := "ut_prod_chairou_thjakloo83avxqh8wds0vzm3e"
 	baseUrl := "http://imate.woa.com/server/web-api/"
 	getIMateUrl := baseUrl + "/api/v1/open/imates"
 	iMateHeader := map[string]string{

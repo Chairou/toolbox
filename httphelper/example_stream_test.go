@@ -194,6 +194,27 @@ type IMateReply struct {
 	ShareType       string `json:"shareType"`
 }
 
+type IMateChatListRet struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    struct {
+		List []struct {
+			ChatKey       string `json:"chatKey"`
+			ClientUuid    string `json:"clientUuid"`
+			Creator       string `json:"creator"`
+			ChatName      string `json:"chatName"`
+			LastMessageId string `json:"lastMessageId"`
+			Status        int    `json:"status"`
+			ChatType      string `json:"chatType"`
+			LastSessionId string `json:"lastSessionId"`
+			Model         string `json:"model"`
+			CreatedAt     string `json:"createdAt"`
+			UpdatedAt     string `json:"updatedAt"`
+		} `json:"list"`
+		Total int `json:"total"`
+	} `json:"data"`
+}
+
 func TestPostJSONStreamIMate(t *testing.T) {
 	iMateToken := "ut_prod_chairou_thjakloo83avxqh8wds0vzm3e"
 	baseUrl := "http://imate.woa.com/server/web-api/"
@@ -203,24 +224,48 @@ func TestPostJSONStreamIMate(t *testing.T) {
 		"Authorization": "Bearer " + iMateToken,
 		"X-Username":    "chairou",
 	}
-	type Ret struct {
+	type IMateRet struct {
 		Code    int          `json:"code"`
 		Message string       `json:"message"`
 		Data    []IMateReply `json:"data"`
 	}
-	ret := Ret{}
+	iMateRet := IMateRet{}
 	helper := GET(getIMateUrl)
 	helper.AddHeaderMap(iMateHeader)
 	resp := helper.Do()
 	if resp.Error() != nil {
 		t.Fatalf(" helper.Do() error: %v", resp.Error())
 	}
-	err := resp.UnmarshalFromBody(&ret)
+	err := resp.UnmarshalFromBody(&iMateRet)
 	if err != nil {
-		t.Errorf("resp.UnmarshalFromBody(&ret) error: %v", err)
+		t.Errorf("resp.UnmarshalFromBody(&iMateRet) error: %v", err)
 		return
 	}
-	t.Logf("resp: %+v", resp.BaseResult().RetBody)
-	t.Logf("ret: %+v", ret)
+	t.Logf("iMateRet: %+v", iMateRet)
 
+	// 获取会话列表
+	//GET /api/v1/open/imates/{clientUuid}/chats
+	chatListUrl := baseUrl + "/api/v1/open/imates/" + iMateRet.Data[0].ClientUuid + "/chats"
+	helper = GET(chatListUrl)
+	helper.AddHeaderMap(iMateHeader)
+	resp = helper.Do()
+	chatListRet := IMateChatListRet{}
+	if resp.Error() != nil {
+		t.Fatalf(" helper.Do() error: %v", resp.Error())
+	}
+	err = resp.UnmarshalFromBody(&chatListRet)
+	if err != nil {
+		t.Errorf("resp.UnmarshalFromBody(&chatListRet) error: %v", err)
+		return
+	}
+	t.Logf("iMateRet: %+v", iMateRet)
+	// 进行对话
+	//chatUrl := baseUrl + "/api/v1/open/imates/" + iMateRet.Data[0].ClientUuid + "/chats/" + iMateRet.Data[0].ChatId + "/messages"
+	//helper = POST(chatUrl)
+	//helper.AddHeaderMap(iMateHeader)
+	//helper.SetBody(map[string]string{"content": "你好"})
+	//resp = helper.Do()
+	//if resp.Error() != nil {
+	//	t.Fatalf(" helper.Do() error: %v", resp.Error())
+	//}
 }

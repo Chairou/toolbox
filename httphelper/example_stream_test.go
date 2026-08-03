@@ -279,7 +279,9 @@ func TestPostJSONStreamIMate(t *testing.T) {
 	}
 	helper = PostJSONStream(chatUrl, messageReq)
 	helper.AddHeaderMap(iMateHeader)
-	helper.SetTimeout(30*time.Second, 0)
+	// 流式场景：dial 超时 5s 足够，整体超时必须设为 0（不限制），
+	// 否则 client.Timeout 会把长连接一并计入超时，导致中途被切断。
+	helper.SetTimeout(5*time.Second, 0)
 
 	streamResp, err := helper.DoStream()
 	if err != nil {
@@ -293,25 +295,33 @@ func TestPostJSONStreamIMate(t *testing.T) {
 	reader := bufio.NewReader(streamResp.Body)
 	var events []string
 	var id, data string
+	// flush 将当前累积的 (id, data) 作为一条事件保存并重置
+	flush := func() {
+		if data != "" {
+			events = append(events, fmt.Sprintf("%s:%s", id, data))
+			t.Logf("SSE event => id=%s data=%s", id, data)
+		}
+		id, data = "", ""
+	}
 	for {
 		line, err := reader.ReadString('\n')
 		line = strings.TrimRight(line, "\n")
 		if err != nil {
 			if err == io.EOF {
+				// EOF 前把最后一条未落盘的事件冲出去
+				flush()
 				break
 			}
 			t.Fatalf("read error: %v", err)
 		}
 		switch {
 		case line == "":
-			if data != "" {
-				events = append(events, fmt.Sprintf("%s:%s", id, data))
-			}
-			id, data = "", ""
+			flush()
 		case strings.HasPrefix(line, "id:"):
 			id = strings.TrimSpace(strings.TrimPrefix(line, "id:"))
 		case strings.HasPrefix(line, "data:"):
 			data = strings.TrimSpace(strings.TrimPrefix(line, "data:"))
 		}
 	}
+	t.Logf("total SSE events: %d", len(events))
 }

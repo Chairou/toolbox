@@ -66,6 +66,10 @@ type Helper interface {
 	// Do 发送请求
 	Do() Result
 
+	// DoStream 发送请求并返回原始的 *http.Response，由调用方负责读取 Body 并在结束后 Close。
+	// 适用于 SSE、Chunked 等需要流式接收响应的场景。
+	DoStream() (*http.Response, error)
+
 	error() error
 
 	SetUploadFile(fileName string, fileSize int64) Helper
@@ -343,6 +347,40 @@ func (p *httpHelper) error() error {
 	return p.Err
 }
 
+// DoStream 发送请求并返回原始的 *http.Response，由调用方负责读取 Body 并在结束后 Close。
+// 适用于 SSE、Chunked 等需要流式接收响应的场景。
+func (p *httpHelper) DoStream() (*http.Response, error) {
+	p.Uuid = uuid2.NewString()
+
+	// 读取并缓存请求体，便于重放（与 Do 保持一致）
+	var byteBody []byte
+	if p.req.Body != nil {
+		var err error
+		byteBody, err = io.ReadAll(p.req.Body)
+		if err != nil {
+			redStr := color.SetColor(color.Red, fmt.Sprintf("%v", err))
+			s := fmt.Sprintf("%s  io.ReadAll err: %s", p.Uuid, redStr)
+			log.Error(s)
+			return nil, fmt.Errorf("io.ReadAll err: %v", err)
+		}
+	}
+	if len(byteBody) > 0 {
+		p.req.Body = io.NopCloser(bytes.NewReader(byteBody))
+	} else {
+		p.req.Body = nil
+	}
+
+	resp, err := p.client.Do(p.req)
+	if err != nil {
+		redStr := color.SetColor(color.Red, fmt.Sprintf("%v", err))
+		s := fmt.Sprintf("%s do http request err: %s", p.Uuid, redStr)
+		log.Error(s)
+		return nil, fmt.Errorf("do http request err: %v", err)
+	}
+	// 注意：不在此处关闭/读取 resp.Body，交由调用方处理。
+	return resp, nil
+}
+
 type errHelper struct {
 	Err error
 }
@@ -419,6 +457,10 @@ func (p *errHelper) AddSign(appID string, appSecret string) Helper { return p }
 
 func (p *errHelper) Do() Result {
 	return &errResult{error: p.error()}
+}
+
+func (p *errHelper) DoStream() (*http.Response, error) {
+	return nil, p.error()
 }
 
 func (p *errHelper) SetUploadFile(fileName string, fileSize int64) Helper { return p }

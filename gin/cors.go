@@ -6,36 +6,50 @@ import (
 	"strings"
 )
 
-// CorsMiddleware CORS 中间件，允许所有跨域请求
+// CorsMiddleware CORS 中间件，放行所有跨域请求（包括携带凭证的请求）
+//
+// 实现原理：采用动态反射策略，而非静态白名单。
+// 1. Origin：反射请求中的 Origin 头，而非写死 "*"，以此兼容 Access-Control-Allow-Credentials
+// 2. Methods：反射预检请求中的 Access-Control-Request-Method，任意 HTTP 方法均可通过
+// 3. Headers：反射预检请求中的 Access-Control-Request-Headers，任意自定义头部均可通过
+//
 // 使用方法：
 //
 //	router := gin.Default()
 //	router.Use(CorsMiddleware())
 func CorsMiddleware(c *Context) {
-	// 允许所有来源
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	// 允许的请求方法
-	c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD")
-	// 允许的请求头
-	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, Token")
+	// 动态反射请求中的 Origin，以支持携带凭证的跨域请求（不能与 "*" 共存）
+	origin := c.Request.Header.Get("Origin")
+	if origin != "" {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+	} else {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	}
 
-	// 允许浏览器访问的响应头
-	c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type")
+	// 允许携带凭证（cookies、HTTP认证、TLS客户端证书等）
+	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 
-	// 允许携带凭证（cookies）
-	//c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+	// 允许浏览器读取所有响应头
+	c.Writer.Header().Set("Access-Control-Expose-Headers", "*")
 
-	// 预检请求的缓存时间（秒）
+	// 预检请求缓存 24 小时，减少不必要的 OPTIONS 请求
 	c.Writer.Header().Set("Access-Control-Max-Age", "86400")
 
-	// 处理 OPTIONS 预检请求
+	// 处理 OPTIONS 预检请求：客户端要什么就返回什么
 	if c.Request.Method == "OPTIONS" {
+		// 反射请求方法：放行任意 HTTP 方法
+		if reqMethod := c.Request.Header.Get("Access-Control-Request-Method"); reqMethod != "" {
+			c.Writer.Header().Set("Access-Control-Allow-Methods", reqMethod)
+		}
+		// 反射请求头：放行任意自定义头部
+		if reqHeaders := c.Request.Header.Get("Access-Control-Request-Headers"); reqHeaders != "" {
+			c.Writer.Header().Set("Access-Control-Allow-Headers", reqHeaders)
+		}
 		c.AbortWithStatus(http.StatusNoContent)
 		return
 	}
 
 	c.Next()
-
 }
 
 // CustomCorsMiddleware 自定义 CORS 中间件，可配置具体参数

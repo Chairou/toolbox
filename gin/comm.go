@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Chairou/toolbox/conf"
+	"github.com/Chairou/toolbox/util/mapsort"
 	"github.com/jinzhu/copier"
 
 	"net/http"
@@ -443,6 +444,52 @@ func (c *Context) CheckParam(key string, param interface{}, defaultValue []inter
 	}
 	//不在取值范围内,返回错误
 	return c.Error("param " + key + " value is error.")
+}
+
+// GetQueryParams 获取GET请求的所有查询参数
+// 返回 key -> 值列表，同名参数（如 ?tag=a&tag=b）的全部取值都会保留
+func (c *Context) GetQueryParams() map[string][]string {
+	if c.Context == nil || c.Request == nil || c.Request.URL == nil {
+		return map[string][]string{}
+	}
+	query := c.Request.URL.Query()
+	ret := make(map[string][]string, len(query))
+	for k, v := range query {
+		ret[k] = v
+	}
+	return ret
+}
+
+// GetQueryParamsFlat 获取GET请求的所有查询参数，同名参数用 separator 连接成字符串
+// 适合日志打印、透传下游等只需要单值的场景
+func (c *Context) GetQueryParamsFlat(separator string) map[string]string {
+	query := c.GetQueryParams()
+	ret := make(map[string]string, len(query))
+	for k, v := range query {
+		ret[k] = strings.Join(v, separator)
+	}
+	return ret
+}
+
+// GetQueryParamsSort 获取GET请求的所有查询参数，同名参数用 separator 连接成字符串
+// 适合日志打印、透传下游等只需要单值的场景
+func (c *Context) GetQueryParamsSort(separator string, ascending bool) []mapsort.KVPair[string, string] {
+	query := c.GetQueryParams()
+	ret := make(map[string]string, len(query))
+	for k, v := range query {
+		ret[k] = strings.Join(v, separator)
+	}
+	sortParamsList := mapsort.SortByKey(ret, ascending)
+	return sortParamsList
+}
+
+// GetQueryParamsString 获取GET请求的所有查询参数，拼成可直接打印的字符串
+// 直接返回原始 query string（如 "pId=123&channel_id=abc"），保持请求方的原始顺序与编码
+func (c *Context) GetQueryParamsString() string {
+	if c.Context == nil || c.Request == nil || c.Request.URL == nil {
+		return ""
+	}
+	return c.Request.URL.RawQuery
 }
 
 // genCondition 生成条件

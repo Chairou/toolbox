@@ -5,7 +5,7 @@
 *.exe
 *.kubeconfig
 logdata
-.idea
+.idea/
 .DS_Store
 .vscode
 # editor and IDE paraphernalia

@@ -2,25 +2,26 @@ package conf
 
 import (
 	"fmt"
-	"github.com/Chairou/toolbox/util/structtool"
-	"github.com/jinzhu/copier"
 	"log"
 	"os"
+
+	"github.com/Chairou/toolbox/util/structtool"
+	"github.com/jinzhu/copier"
 )
 
-func mergeConfig[T any](conf, cmd, file, env *T) {
+func mergeConfig[T any](conf, cmd, env, file *T) {
 	_ = copier.CopyWithOption(conf, file, copier.Option{IgnoreEmpty: true})
 	_ = copier.CopyWithOption(conf, env, copier.Option{IgnoreEmpty: true})
 	_ = copier.CopyWithOption(conf, cmd, copier.Option{IgnoreEmpty: true})
 	fmt.Printf("FINIAL: %#v\n", conf)
 }
 
-// LoadAllConf 优先级，命令行，配置文件，环境变量
+// LoadAllConf 优先级，命令行，环境变量，配置文件
 func LoadAllConf[T any](conf *T) {
-	cmdConfig := structtool.NewEmptyInstance(conf)
-	fileConfig := structtool.NewEmptyInstance(conf)
-	envConfig := structtool.NewEmptyInstance(conf)
 	once.Do(func() {
+		cmdConfig := structtool.NewEmptyInstance(conf)
+		fileConfig := structtool.NewEmptyInstance(conf)
+		envConfig := structtool.NewEmptyInstance(conf)
 		//读取命令行参数
 		err := LoadConfFromCmd(cmdConfig)
 		if err != nil {
@@ -48,8 +49,7 @@ func LoadAllConf[T any](conf *T) {
 		}
 		fmt.Printf("env: %+v\n", envConfig)
 		//合并配置
-		mergeConfig(conf, cmdConfig, fileConfig, envConfig)
-
+		mergeConfig(conf, cmdConfig, envConfig, fileConfig)
 	})
 }
 

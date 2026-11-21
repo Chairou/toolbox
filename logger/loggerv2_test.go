@@ -74,9 +74,9 @@ func TestGetLogV2(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	testInst := GetLogV2()
-	if testInst == nil {
-		t.Error("GetLogV2 return nil")
+	// 不能依赖编号 1：包内其他测试可能已创建并关闭了第一个实例（Close 会注销它）
+	if testInst := GetLogNameV2("test"); testInst != logInst {
+		t.Error("GetLogNameV2 did not return the registered instance")
 	}
 	logInst.Info("test info message")
 	t.Log("GetLogV2 success")

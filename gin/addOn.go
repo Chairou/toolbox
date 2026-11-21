@@ -2,9 +2,10 @@ package gin
 
 import (
 	"fmt"
-	"github.com/Chairou/toolbox/util/conv"
 	"net/http"
 	"strings"
+
+	"github.com/Chairou/toolbox/util/conv"
 )
 
 func WriteRetJson(c *Context, code int, data interface{}, messages ...interface{}) {
@@ -51,7 +52,7 @@ func WriteRetJson(c *Context, code int, data interface{}, messages ...interface{
 		}
 	}
 	ret.Msg = msg
-	fmt.Println(ret)
+	//fmt.Println(ret)
 	c.JSON(http.StatusOK, ret)
 }
 

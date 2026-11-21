@@ -33,8 +33,8 @@ func TestNewLogPool_Basic(t *testing.T) {
 	if lp.PrintConsole != false {
 		t.Errorf("期望 PrintConsole=false, 实际=%v", lp.PrintConsole)
 	}
-	if lp.Fd == nil {
-		t.Error("期望 Fd 不为 nil")
+	if lp.file == nil {
+		t.Error("期望 file 不为 nil")
 	}
 	if lp.infoLogger == nil || lp.debugLogger == nil || lp.errorLogger == nil {
 		t.Error("期望所有 logger 实例不为 nil")
@@ -421,27 +421,27 @@ func TestClose(t *testing.T) {
 		t.Fatalf("NewLogPool 创建失败: %v", err)
 	}
 
-	if lp.Fd == nil {
-		t.Fatal("关闭前 Fd 不应为 nil")
+	if lp.file == nil {
+		t.Fatal("关闭前 file 不应为 nil")
 	}
 
 	err = lp.Close()
 	if err != nil {
 		t.Errorf("Close 不应返回错误: %v", err)
 	}
-
-	// 关闭后再次写入应该失败（文件描述符已关闭）
-	_, writeErr := lp.Fd.Write([]byte("test"))
-	if writeErr == nil {
-		t.Error("关闭后写入文件描述符应返回错误")
+	if lp.file.file != nil {
+		t.Error("Close 之后底层文件句柄应已释放")
+	}
+	if GetLogName("close_test") != nil {
+		t.Error("Close 之后实例应从注册表中移除")
 	}
 }
 
-func TestClose_NilFd(t *testing.T) {
-	lp := &LogPool{Fd: nil}
+func TestClose_NilFile(t *testing.T) {
+	lp := &LogPool{}
 	err := lp.Close()
 	if err != nil {
-		t.Errorf("Fd 为 nil 时 Close 不应返回错误: %v", err)
+		t.Errorf("file 为 nil 时 Close 不应返回错误: %v", err)
 	}
 }
 

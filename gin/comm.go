@@ -247,7 +247,7 @@ func (c *Context) RetJson(code int, data interface{}, messages ...interface{}) {
 		}
 	}
 	ret.Msg = msg.String()
-	fmt.Println(ret)
+	//fmt.Println(ret)
 	c.JSON(http.StatusOK, ret)
 
 }
@@ -310,23 +310,29 @@ func (c *Context) Error(v ...interface{}) error {
 
 // GetPager 获取分页参数
 func (c *Context) GetPager() (pageIndex, pageSize uint, code int, err error) {
+	const (
+		DefaultPageIndex = 1
+		MaxPageSize      = 10000
+		PageIndexInvalid = 59998
+		PageSizeInvalid  = 59999
+	)
 	pIndex := c.Query("pageIndex")
 	if len(pIndex) == 0 {
-		pageIndex = 1 //默认查第一页
+		pageIndex = DefaultPageIndex //默认查第一页
 	} else {
 		mPageIndex, err := strconv.Atoi(pIndex)
 		if err != nil || mPageIndex <= 0 {
-			return pageIndex, pageSize, 59998, c.Error("pageIndex is invalid, pageIndex：" + pIndex)
+			return pageIndex, pageSize, PageIndexInvalid, c.Error("pageIndex is invalid, pageIndex：" + pIndex)
 		}
 		pageIndex = uint(mPageIndex)
 	}
 	pSize := c.Query("pageSize")
 	if len(pSize) == 0 {
-		pageSize = 10000 //默认查10000条
+		pageSize = MaxPageSize //默认查10000条
 	} else {
 		mPageSize, err := strconv.Atoi(pSize)
-		if err != nil || mPageSize <= 0 {
-			return pageIndex, pageSize, 59999, c.Error("pageSize is invalid, pageSize：" + pSize)
+		if err != nil || mPageSize <= 0 || mPageSize > MaxPageSize {
+			return pageIndex, pageSize, PageSizeInvalid, c.Error("pageSize is invalid, pageSize：" + pSize)
 		}
 		pageSize = uint(mPageSize)
 	}
@@ -852,7 +858,6 @@ func wrapHandler(h HandlerFunc) gin.HandlerFunc {
 		requestID := c.GetString(_RequestIDKey)
 		if len(requestID) == 0 {
 			if requestID = c.Request.Header.Get("X-Request-Id"); len(requestID) > 0 {
-				requestID = requestID[8:16]
 				c.Set(_RequestIDKey, requestID)
 				c.Writer.Header().Set("X-Request-Id", requestID)
 			} else {
@@ -1124,7 +1129,6 @@ func wrapMiddleware(h HandlerFunc) gin.HandlerFunc {
 		requestID := c.GetString(_RequestIDKey)
 		if len(requestID) == 0 {
 			if requestID = c.Request.Header.Get("X-Request-Id"); len(requestID) > 0 {
-				requestID = requestID[8:16]
 				c.Set(_RequestIDKey, requestID)
 				c.Writer.Header().Set("X-Request-Id", requestID)
 			} else {

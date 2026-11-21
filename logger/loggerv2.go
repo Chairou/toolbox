@@ -15,6 +15,9 @@ import (
 var nameLogMap2 sync.Map
 var intLogMap2 sync.Map
 
+// newLogMu 保证同名日志池只会被创建一次，避免并发时重复打开同一文件
+var newLogMu sync.Mutex
+
 // LogIntFileNameV2 日志文件编号管理器，用于为日志池分配递增编号
 type LogIntFileNameV2 struct {
 	Lock     sync.RWMutex
@@ -23,13 +26,14 @@ type LogIntFileNameV2 struct {
 
 var logInitV2 LogIntFileNameV2
 
-// LogPoolV2 日志池，封装了日志文件描述符和多级别日志记录器
+// LogPoolV2 日志池，封装了日志文件句柄和多级别日志记录器
 type LogPoolV2 struct {
-	Fd           *os.File
 	Name         string
 	FileName     string
 	Level        int
 	PrintConsole int
+	file         *Loggerj // 实际写入的文件，由 Close 释放
+	num          int      // 在 intLogMap2 中的编号，Close 时用于注销
 	infoLogger   *Logger
 	debugLogger  *Logger
 	errorLogger  *Logger
@@ -55,6 +59,9 @@ func NewLogOpt(name string, opt *LogOpt) (*LogPoolV2, error) {
 	if opt.FileName == "" {
 		return nil, errors.New("logger file name or path is empty")
 	}
+	newLogMu.Lock()
+	defer newLogMu.Unlock()
+
 	if inst, ok := nameLogMap2.Load(name); ok {
 		return inst.(*LogPoolV2), nil
 	}
@@ -81,23 +88,18 @@ func NewLogOpt(name string, opt *LogOpt) (*LogPoolV2, error) {
 			return nil, fmt.Errorf("logger mkdir failed, err: %w, dir: %s", err, dir2)
 		}
 	}
-	var logFileName = pathFileName
 
-	fd, err := os.OpenFile(logFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0664)
+	// 探测文件是否可写，尽早暴露权限等问题；写入由 lumberjack 按需打开文件
+	probe, err := os.OpenFile(pathFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0664)
 	if err != nil {
 		return nil, err
 	}
-	infoLog := New(fd, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
-	debugLog := New(fd, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
-	errorLog := New(fd, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
-
-	inst.Fd = fd
-	inst.infoLogger = infoLog
-	inst.debugLogger = debugLog
-	inst.errorLogger = errorLog
+	if err := probe.Close(); err != nil {
+		return nil, err
+	}
 
 	lumberjackLogger := &Loggerj{
-		Filename:   logFileName,
+		Filename:   pathFileName,
 		MaxSize:    500, // megabytes
 		MaxBackups: 10,
 		MaxAge:     31,    //days
@@ -115,11 +117,12 @@ func NewLogOpt(name string, opt *LogOpt) (*LogPoolV2, error) {
 	if opt.Compress == 1 {
 		lumberjackLogger.Compress = true
 	}
+	inst.file = lumberjackLogger
 
-	// 设置日志分割
-	debugLog.SetOutput(lumberjackLogger)
-	infoLog.SetOutput(lumberjackLogger)
-	errorLog.SetOutput(lumberjackLogger)
+	flags := log.Ldate | log.Ltime | log.Lshortfile
+	inst.infoLogger = New(lumberjackLogger, "INFO: ", flags)
+	inst.debugLogger = New(lumberjackLogger, "DEBUG: ", flags)
+	inst.errorLogger = New(lumberjackLogger, "ERROR: ", flags)
 
 	nameLogMap2.Store(name, inst)
 	logInitV2.SaveIntLogMap(inst)
@@ -167,6 +170,7 @@ func (c *LogIntFileNameV2) SaveIntLogMap(inst *LogPoolV2) {
 	c.Lock.Lock()
 	defer c.Lock.Unlock()
 	intLogMap2.Store(c.orderNum, inst)
+	inst.num = c.orderNum
 	c.orderNum++
 }
 
@@ -174,137 +178,124 @@ func (c *LogPoolV2) SetPrintConsole(isEnable int) {
 	c.PrintConsole = isEnable
 }
 
-func (c *LogPoolV2) DebugfTag(tag string, format string, v ...any) {
-	if c.Level <= DEBUG_LEVEL {
-		s := tag + " " + fmt.Sprintf(format, v...)
-		_ = c.debugLogger.Output(3, s)
-		if c.PrintConsole == 1 {
-			log.Println(s)
-		}
+// emit 写入日志文件，并在开启控制台输出时打印 console 内容。
+// 调用链为 用户代码 -> 公开方法 -> emit -> Output，因此 Output 的调用深度为 3，
+// 保证 Lshortfile 报告的是用户代码的文件名和行号。
+func (c *LogPoolV2) emit(l *Logger, s string, console string) {
+	_ = l.Output(3, s)
+	if c.PrintConsole == 1 {
+		log.Println(console)
 	}
 }
+
+// logEnabled 判断 level 是否达到当前日志池的输出级别
+func (c *LogPoolV2) logEnabled(level int) bool {
+	return c.Level <= level
+}
+
+func (c *LogPoolV2) DebugfTag(tag string, format string, v ...any) {
+	if c.logEnabled(DEBUG_LEVEL) {
+		s := tag + " " + fmt.Sprintf(format, v...)
+		c.emit(c.debugLogger, s, s)
+	}
+}
+
 func (c *LogPoolV2) Debugf(format string, v ...any) {
-	if c.Level <= DEBUG_LEVEL {
+	if c.logEnabled(DEBUG_LEVEL) {
 		s := fmt.Sprintf(format, v...)
-		_ = c.debugLogger.Output(3, s)
-		if c.PrintConsole == 1 {
-			log.Println(s)
-		}
+		c.emit(c.debugLogger, s, s)
 	}
 }
 
 func (c *LogPoolV2) DebugTag(tag string, v ...any) {
-	if c.Level <= DEBUG_LEVEL {
+	if c.logEnabled(DEBUG_LEVEL) {
 		s := tag + " " + fmt.Sprintln(v...)
-		_ = c.debugLogger.Output(3, s)
-		if c.PrintConsole == 1 {
-			log.Println(s)
-		}
+		c.emit(c.debugLogger, s, s)
 	}
 }
+
 func (c *LogPoolV2) Debug(v ...any) {
-	if c.Level <= DEBUG_LEVEL {
+	if c.logEnabled(DEBUG_LEVEL) {
 		s := fmt.Sprintln(v...)
-		_ = c.debugLogger.Output(3, s)
-		if c.PrintConsole == 1 {
-			log.Println(s)
-		}
+		c.emit(c.debugLogger, s, s)
 	}
 }
 
 func (c *LogPoolV2) InfofTag(tag string, format string, v ...any) {
-	if c.Level <= INFO_LEVEL {
+	if c.logEnabled(INFO_LEVEL) {
 		s := tag + " " + fmt.Sprintf(format, v...)
-		_ = c.infoLogger.Output(3, s)
-		if c.PrintConsole == 1 {
-			log.Println(s)
-		}
+		c.emit(c.infoLogger, s, s)
 	}
 }
+
 func (c *LogPoolV2) Infof(format string, v ...any) {
-	if c.Level <= INFO_LEVEL {
+	if c.logEnabled(INFO_LEVEL) {
 		s := fmt.Sprintf(format, v...)
-		_ = c.infoLogger.Output(3, s)
-		if c.PrintConsole == 1 {
-			log.Println(s)
-		}
+		c.emit(c.infoLogger, s, s)
 	}
 }
 
 func (c *LogPoolV2) InfoTag(tag string, v ...any) {
-	if c.Level <= INFO_LEVEL {
+	if c.logEnabled(INFO_LEVEL) {
 		s := tag + " " + fmt.Sprintln(v...)
-		_ = c.infoLogger.Output(3, s)
-		if c.PrintConsole == 1 {
-			log.Println(s)
-		}
+		c.emit(c.infoLogger, s, s)
 	}
 }
 
 func (c *LogPoolV2) Info(v ...any) {
-	if c.Level <= INFO_LEVEL {
+	if c.logEnabled(INFO_LEVEL) {
 		s := fmt.Sprintln(v...)
-		_ = c.infoLogger.Output(3, s)
-		if c.PrintConsole == 1 {
-			log.Println(s)
-		}
+		c.emit(c.infoLogger, s, s)
 	}
 }
 
+// 错误日志始终输出，不受 Level 限制；控制台输出使用红色
 func (c *LogPoolV2) ErrorfTag(tag string, format string, v ...any) {
 	s := tag + " " + fmt.Sprintf(format, v...)
-	coloredStr := color.SetColor(color.Red, s)
-	_ = c.errorLogger.Output(3, s)
-	if c.PrintConsole == 1 {
-		log.Println(coloredStr)
-	}
+	c.emit(c.errorLogger, s, color.SetColor(color.Red, s))
 }
 
 func (c *LogPoolV2) Errorf(format string, v ...any) {
 	s := fmt.Sprintf(format, v...)
-	coloredStr := color.SetColor(color.Red, s)
-	_ = c.errorLogger.Output(3, s)
-	if c.PrintConsole == 1 {
-		log.Println(coloredStr)
-	}
+	c.emit(c.errorLogger, s, color.SetColor(color.Red, s))
 }
 
 func (c *LogPoolV2) ErrorTag(tag string, v ...any) {
 	s := tag + " " + fmt.Sprintln(v...)
-	coloredStr := color.SetColor(color.Red, s)
-	_ = c.errorLogger.Output(3, s)
-	if c.PrintConsole == 1 {
-		log.Println(coloredStr)
-	}
+	c.emit(c.errorLogger, s, color.SetColor(color.Red, s))
 }
 
 func (c *LogPoolV2) Error(v ...any) {
 	s := fmt.Sprintln(v...)
-	coloredStr := color.SetColor(color.Red, s)
-	_ = c.errorLogger.Output(3, s)
-	if c.PrintConsole == 1 {
-		log.Println(coloredStr)
-	}
+	c.emit(c.errorLogger, s, color.SetColor(color.Red, s))
 }
 
 func (c *LogPoolV2) SetLevel(level int) error {
 	if level >= DEBUG_LEVEL && level <= ERROR_LEVEL {
 		c.Level = level
-		nameLogMap2.Store(c.Name, c)
 		return nil
 	}
 	return errors.New("level must be DEBUG_LEVEL, INFO_LEVEL, ERROR_LEVEL")
 }
 
-// Close 关闭日志池，释放文件描述符
+// Close 从注册表中注销日志池并关闭日志文件，释放文件句柄。
+// 注销后同名的 NewLogOpt 会创建新实例；已持有的旧实例若再次写入，
+// lumberjack 会重新打开文件，但它不再能通过 GetLogNameV2/GetLogNumV2 获取。
 func (c *LogPoolV2) Close() error {
-	if c.Fd != nil {
-		return c.Fd.Close()
+	newLogMu.Lock()
+	defer newLogMu.Unlock()
+
+	// 只删除仍指向自身的注册项，避免误删之后用同名创建的新实例
+	nameLogMap2.CompareAndDelete(c.Name, c)
+	intLogMap2.CompareAndDelete(c.num, c)
+
+	if c.file == nil {
+		return nil
 	}
-	return nil
+	return c.file.Close()
 }
 
-// 检查日志文件路径是否安全
+// safePath 将用户路径限制在基准目录内，返回解析符号链接后的绝对路径
 func safePath(basePath, userPath string) (string, error) {
 	// 清理路径中的 ../ ./ 等
 	cleaned := filepath.Clean(userPath)
@@ -336,7 +327,8 @@ func safePath(basePath, userPath string) (string, error) {
 		baseAbs = realBase
 	}
 	rel, err := filepath.Rel(baseAbs, resolved)
-	if err != nil || strings.HasPrefix(rel, "..") {
+	// 只拒绝真正的上级目录（".." 或 "../..."），不误伤 "..app.log" 这类文件名
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 		return "", fmt.Errorf("path escapes base directory: %s", userPath)
 	}
 

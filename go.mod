@@ -18,7 +18,7 @@ require (
 	gitlab.com/elktree/ecc v0.0.0-20190314182556-d86af7b58391
 	golang.org/x/text v0.35.0
 	golang.org/x/time v0.15.0
-	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.31.1
 	k8s.io/klog/v2 v2.140.0
@@ -78,5 +78,4 @@ require (
 	golang.org/x/sys v0.43.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

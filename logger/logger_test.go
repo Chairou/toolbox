@@ -33,7 +33,7 @@ func TestNewLogPool_Basic(t *testing.T) {
 	if lp.PrintConsole != false {
 		t.Errorf("期望 PrintConsole=false, 实际=%v", lp.PrintConsole)
 	}
-	if lp.file == nil {
+	if lp.fd == nil {
 		t.Error("期望 file 不为 nil")
 	}
 	if lp.infoLogger == nil || lp.debugLogger == nil || lp.errorLogger == nil {
@@ -421,7 +421,7 @@ func TestClose(t *testing.T) {
 		t.Fatalf("NewLogPool 创建失败: %v", err)
 	}
 
-	if lp.file == nil {
+	if lp.fd == nil {
 		t.Fatal("关闭前 file 不应为 nil")
 	}
 
@@ -429,7 +429,7 @@ func TestClose(t *testing.T) {
 	if err != nil {
 		t.Errorf("Close 不应返回错误: %v", err)
 	}
-	if lp.file.file != nil {
+	if lp.fd.file != nil {
 		t.Error("Close 之后底层文件句柄应已释放")
 	}
 	if GetLogName("close_test") != nil {

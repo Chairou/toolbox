@@ -3,6 +3,7 @@ package logger
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -276,6 +277,21 @@ func (c *LogPoolV2) SetLevel(level int) error {
 		return nil
 	}
 	return errors.New("level must be DEBUG_LEVEL, INFO_LEVEL, ERROR_LEVEL")
+}
+
+// Writer 暴露底层日志文件的 io.Writer，供其他日志模块（如 log、gin、第三方 logger）写入同一个日志文件。
+// 该 Writer 并发安全，并与本日志池共用同一套转存策略（MaxSizeMB/MaxBackups/MaxAgeDay/Compress），
+// 写入超过大小限制时会自动转存。调用方不应关闭该 Writer，请通过 LogPoolV2.Close 统一释放。
+func (c *LogPoolV2) Writer() io.Writer {
+	return c.fd
+}
+
+// Rotate 手动触发日志转存：关闭当前文件并重命名为带时间戳的备份，之后的写入进入新文件。
+func (c *LogPoolV2) Rotate() error {
+	if c.fd == nil {
+		return errors.New("logger file is not initialized")
+	}
+	return c.fd.Rotate()
 }
 
 // Close 从注册表中注销日志池并关闭日志文件，释放文件句柄。

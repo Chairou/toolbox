@@ -11,7 +11,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/Chairou/toolbox/conf"
 	"github.com/Chairou/toolbox/util/mapsort"
 	"github.com/jinzhu/copier"
 
@@ -41,10 +40,11 @@ type Logger interface {
 	Debug(v ...interface{})
 	Info(v ...interface{})
 	Error(v ...interface{})
+	Writer() io.Writer
+	Rotate() error
 }
 
 var logPtr Logger
-var conf1 *conf.Config
 
 type H map[string]any
 
@@ -150,7 +150,7 @@ func NewServerWithConf(env string, conf any, middle []func(c *Context)) *gin.Eng
 	logPtr = logV2
 	r := gin.Default()
 
-	logV2.Info("START HTTP SERVER AND LOGGING NOW")
+	logPtr.Info("START HTTP SERVER AND LOGGING NOW")
 	mode := env
 	switch mode {
 	case "dev":
@@ -173,7 +173,7 @@ func NewServerWithConf(env string, conf any, middle []func(c *Context)) *gin.Eng
 		stdRouter.Use(v)
 	}
 	SetupRouter(stdRouter)
-	logV2.Info("FINISHED HTTP SERVER START")
+	logPtr.Info("FINISHED HTTP SERVER START")
 	return r
 }
 

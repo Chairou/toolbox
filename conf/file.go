@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func loadConfFromFile[T any](fileName string, config T) error {
+func loadConfFromFile[T any](fileName string, config *T) error {
 	fd, err := os.OpenFile(fileName, os.O_RDONLY, 0666)
 	if err != nil {
 		return err

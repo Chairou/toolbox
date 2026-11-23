@@ -30,8 +30,8 @@ var logInitV2 LogIntFileNameV2
 type LogPoolV2 struct {
 	Name         string
 	LogFileName  string
-	Level        int
-	PrintConsole int
+	LogLevel     int      // 日志级别，可选 DEBUG_LEVEL、INFO_LEVEL、ERROR_LEVEL
+	PrintConsole int      // 是否同时输出到控制台
 	fd           *Loggerj // 实际写入的文件，由 Close 释放
 	num          int      // 在 intLogMap2 中的编号，Close 时用于注销
 	infoLogger   *Logger
@@ -77,7 +77,7 @@ func NewLogOpt(name string, opt *LogOpt) (*LogPoolV2, error) {
 	inst := &LogPoolV2{
 		Name:         name,
 		LogFileName:  pathFileName,
-		Level:        level,
+		LogLevel:     level,
 		PrintConsole: opt.PrintConsole,
 	}
 
@@ -190,7 +190,7 @@ func (c *LogPoolV2) emit(l *Logger, s string, console string) {
 
 // logEnabled 判断 level 是否达到当前日志池的输出级别
 func (c *LogPoolV2) logEnabled(level int) bool {
-	return c.Level <= level
+	return c.LogLevel <= level
 }
 
 func (c *LogPoolV2) DebugfTag(tag string, format string, v ...any) {
@@ -249,7 +249,7 @@ func (c *LogPoolV2) Info(v ...any) {
 	}
 }
 
-// ErrorfTag 错误日志始终输出，不受 Level 限制；控制台输出使用红色
+// ErrorfTag 错误日志始终输出，不受 LogLevel 限制；控制台输出使用红色
 func (c *LogPoolV2) ErrorfTag(tag string, format string, v ...any) {
 	s := tag + " " + fmt.Sprintf(format, v...)
 	c.emit(c.errorLogger, s, color.SetColor(color.Red, s))
@@ -272,7 +272,7 @@ func (c *LogPoolV2) Error(v ...any) {
 
 func (c *LogPoolV2) SetLevel(level int) error {
 	if level >= DEBUG_LEVEL && level <= ERROR_LEVEL {
-		c.Level = level
+		c.LogLevel = level
 		return nil
 	}
 	return errors.New("level must be DEBUG_LEVEL, INFO_LEVEL, ERROR_LEVEL")

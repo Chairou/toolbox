@@ -16,7 +16,7 @@ const v2TestDir = "testdata_loggerv2"
 func newV2TestPool(t *testing.T, name string) *LogPoolV2 {
 	t.Helper()
 	t.Cleanup(func() { _ = os.RemoveAll(v2TestDir) })
-	inst, err := NewLogOpt(name, &LogOpt{FileName: filepath.Join(v2TestDir, name+".log")})
+	inst, err := NewLogOpt(name, &LogOpt{LogFileName: filepath.Join(v2TestDir, name+".log")})
 	if err != nil {
 		t.Fatalf("NewLogOpt failed: %v", err)
 	}
@@ -63,7 +63,7 @@ func TestNewLogOptConcurrentSameName(t *testing.T) {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			inst, err := NewLogOpt(name, &LogOpt{FileName: filepath.Join(v2TestDir, name+".log")})
+			inst, err := NewLogOpt(name, &LogOpt{LogFileName: filepath.Join(v2TestDir, name+".log")})
 			if err != nil {
 				t.Errorf("NewLogOpt failed: %v", err)
 				return
@@ -89,7 +89,7 @@ func TestNewLogOptConcurrentSameName(t *testing.T) {
 func TestCloseUnregisters(t *testing.T) {
 	const name = "close_unregister"
 	t.Cleanup(func() { _ = os.RemoveAll(v2TestDir) })
-	opt := &LogOpt{FileName: filepath.Join(v2TestDir, name+".log")}
+	opt := &LogOpt{LogFileName: filepath.Join(v2TestDir, name+".log")}
 
 	old, err := NewLogOpt(name, opt)
 	if err != nil {

@@ -69,7 +69,7 @@ func TestGetLogV2(t *testing.T) {
 	opt.MaxAgeDay = 7
 	opt.Compress = 1
 	opt.PrintConsole = 0
-	opt.FileName = "./log/test.log"
+	opt.LogFileName = "./log/test.log"
 	logInst, err := NewLogOpt("test", &opt)
 	if err != nil {
 		t.Error(err)
@@ -89,7 +89,7 @@ func TestInitLog2(t *testing.T) {
 	opt.MaxAgeDay = 7
 	opt.Compress = 0
 	opt.PrintConsole = 1
-	opt.FileName = "./log/test.log"
+	opt.LogFileName = "./log/test.log"
 	logInst, err := NewLogOpt("test", &opt)
 	if err != nil {
 		t.Log("InitLog| init logger failed", err)

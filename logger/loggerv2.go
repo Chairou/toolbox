@@ -29,10 +29,10 @@ var logInitV2 LogIntFileNameV2
 // LogPoolV2 日志池，封装了日志文件句柄和多级别日志记录器
 type LogPoolV2 struct {
 	Name         string
-	FileName     string
+	LogFileName  string
 	Level        int
 	PrintConsole int
-	file         *Loggerj // 实际写入的文件，由 Close 释放
+	fd           *Loggerj // 实际写入的文件，由 Close 释放
 	num          int      // 在 intLogMap2 中的编号，Close 时用于注销
 	infoLogger   *Logger
 	debugLogger  *Logger
@@ -41,7 +41,7 @@ type LogPoolV2 struct {
 
 // LogOpt 日志配置选项
 type LogOpt struct {
-	FileName     string `config:"fileName"`     // 日志文件名或路径
+	LogFileName  string `config:"logFileName"`  // 日志文件名或路径
 	Level        int    `config:"level"`        // 日志级别，可选 DEBUG_LEVEL、INFO_LEVEL、ERROR_LEVEL
 	MaxSizeMB    int    `config:"maxSizeMB"`    // 单个日志文件最大大小（MB）
 	MaxBackups   int    `config:"maxBackups"`   // 最大保留的旧日志文件数量
@@ -56,7 +56,7 @@ func init() {
 
 // NewLogOpt 根据配置选项创建日志池实例，如果同名实例已存在则直接返回
 func NewLogOpt(name string, opt *LogOpt) (*LogPoolV2, error) {
-	if opt.FileName == "" {
+	if opt.LogFileName == "" {
 		return nil, errors.New("logger file name or path is empty")
 	}
 	newLogMu.Lock()
@@ -65,7 +65,7 @@ func NewLogOpt(name string, opt *LogOpt) (*LogPoolV2, error) {
 	if inst, ok := nameLogMap2.Load(name); ok {
 		return inst.(*LogPoolV2), nil
 	}
-	pathFileName, err := safePath("./", opt.FileName)
+	pathFileName, err := safePath("./", opt.LogFileName)
 	if err != nil {
 		return nil, fmt.Errorf("logger fileName failed, err: %w", err)
 	}
@@ -76,7 +76,7 @@ func NewLogOpt(name string, opt *LogOpt) (*LogPoolV2, error) {
 	}
 	inst := &LogPoolV2{
 		Name:         name,
-		FileName:     pathFileName,
+		LogFileName:  pathFileName,
 		Level:        level,
 		PrintConsole: opt.PrintConsole,
 	}
@@ -117,7 +117,7 @@ func NewLogOpt(name string, opt *LogOpt) (*LogPoolV2, error) {
 	if opt.Compress == 1 {
 		lumberjackLogger.Compress = true
 	}
-	inst.file = lumberjackLogger
+	inst.fd = lumberjackLogger
 
 	flags := log.Ldate | log.Ltime | log.Lshortfile
 	inst.infoLogger = New(lumberjackLogger, "INFO: ", flags)
@@ -249,7 +249,7 @@ func (c *LogPoolV2) Info(v ...any) {
 	}
 }
 
-// 错误日志始终输出，不受 Level 限制；控制台输出使用红色
+// ErrorfTag 错误日志始终输出，不受 Level 限制；控制台输出使用红色
 func (c *LogPoolV2) ErrorfTag(tag string, format string, v ...any) {
 	s := tag + " " + fmt.Sprintf(format, v...)
 	c.emit(c.errorLogger, s, color.SetColor(color.Red, s))
@@ -289,10 +289,10 @@ func (c *LogPoolV2) Close() error {
 	nameLogMap2.CompareAndDelete(c.Name, c)
 	intLogMap2.CompareAndDelete(c.num, c)
 
-	if c.file == nil {
+	if c.fd == nil {
 		return nil
 	}
-	return c.file.Close()
+	return c.fd.Close()
 }
 
 // safePath 将用户路径限制在基准目录内，返回解析符号链接后的绝对路径

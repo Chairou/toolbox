@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-func loadConfFromEnv[T any](config T) error {
+func loadConfFromEnv[T any](config *T) error {
 	val := reflect.ValueOf(config).Elem()
 	t := val.Type()
 

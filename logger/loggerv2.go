@@ -42,7 +42,7 @@ type LogPoolV2 struct {
 // LogOpt 日志配置选项
 type LogOpt struct {
 	LogFileName  string `config:"logFileName"`  // 日志文件名或路径
-	Level        int    `config:"level"`        // 日志级别，可选 DEBUG_LEVEL、INFO_LEVEL、ERROR_LEVEL
+	LogLevel     int    `config:"logLevel"`     // 日志级别，可选 DEBUG_LEVEL、INFO_LEVEL、ERROR_LEVEL
 	MaxSizeMB    int    `config:"maxSizeMB"`    // 单个日志文件最大大小（MB）
 	MaxBackups   int    `config:"maxBackups"`   // 最大保留的旧日志文件数量
 	MaxAgeDay    int    `config:"maxAgeDay"`    // 旧日志文件最大保留天数
@@ -70,7 +70,7 @@ func NewLogOpt(name string, opt *LogOpt) (*LogPoolV2, error) {
 		return nil, fmt.Errorf("logger fileName failed, err: %w", err)
 	}
 
-	level := opt.Level
+	level := opt.LogLevel
 	if level < DEBUG_LEVEL || level > ERROR_LEVEL {
 		level = DEBUG_LEVEL
 	}

@@ -3,6 +3,7 @@ package logger
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -37,7 +38,7 @@ type LogPool struct {
 	Path         string
 	PrintConsole bool
 	num          int      // 在 intLogMap 中的编号，Close 时用于注销
-	file         *Loggerj // 实际写入的文件，由 Close 释放
+	fd           *Loggerj // 实际写入的文件，由 Close 释放
 	infoLogger   *Logger
 	debugLogger  *Logger
 	errorLogger  *Logger
@@ -94,7 +95,7 @@ func NewLogPool(name string, fileName string) (*LogPool, error) {
 		MaxAge:     31,    //days
 		Compress:   false, // disabled by default
 	}
-	inst.file = lumberjackLogger
+	inst.fd = lumberjackLogger
 
 	flags := log.Ldate | log.Ltime | log.Lshortfile
 	inst.infoLogger = New(lumberjackLogger, "INFO: ", flags)
@@ -262,8 +263,23 @@ func (c *LogPool) Close() error {
 	nameLogMap.CompareAndDelete(c.Name, c)
 	intLogMap.CompareAndDelete(c.num, c)
 
-	if c.file == nil {
+	if c.fd == nil {
 		return nil
 	}
-	return c.file.Close()
+	return c.fd.Close()
+}
+
+// Writer 暴露底层日志文件的 io.Writer，供其他日志模块（如 log、gin、第三方 logger）写入同一个日志文件。
+// 该 Writer 并发安全，并与本日志池共用同一套转存策略（MaxSizeMB/MaxBackups/MaxAgeDay/Compress），
+// 写入超过大小限制时会自动转存。调用方不应关闭该 Writer，请通过 LogPoolV2.Close 统一释放。
+func (c *LogPool) Writer() io.Writer {
+	return c.fd
+}
+
+// Rotate 手动触发日志转存：关闭当前文件并重命名为带时间戳的备份，之后的写入进入新文件。
+func (c *LogPool) Rotate() error {
+	if c.fd == nil {
+		return errors.New("logger file is not initialized")
+	}
+	return c.fd.Rotate()
 }
